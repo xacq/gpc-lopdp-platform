@@ -52,7 +52,6 @@ class SystemSetting(models.Model):
 
     ruc = models.CharField(
         max_length=13,
-        unique=True,
     )
 
     domain = CITextField(
