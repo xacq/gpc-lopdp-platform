@@ -1,10 +1,10 @@
-from django.contrib.postgres.functions import RandomUUID
 import uuid
 
 from django.contrib.auth.base_user import (
     AbstractBaseUser,
     BaseUserManager,
 )
+from django.contrib.postgres.functions import RandomUUID
 from django.db import models
 from django.db.models import Q
 from django.db.models.functions import Now
@@ -183,6 +183,7 @@ class Role(models.Model):
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
+        db_default=RandomUUID(),
         editable=False,
     )
 
@@ -236,9 +237,9 @@ class UserRole(models.Model):
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
+        db_default=RandomUUID(),
         editable=False,
     )
-
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -338,6 +339,7 @@ class MFADevice(models.Model):
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
+        db_default=RandomUUID(),
         editable=False,
     )
 
