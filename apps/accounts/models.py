@@ -7,10 +7,12 @@ from django.contrib.auth.base_user import (
 from django.contrib.postgres.functions import RandomUUID
 from django.db import models
 from django.db.models import Q
-from django.db.models.functions import Now
+from django.contrib.postgres.functions import (
+    RandomUUID,
+    TransactionNow,
+)
 
 from .fields import CIEmailField
-
 
 class UserManager(BaseUserManager):
     use_in_migrations = True
@@ -94,18 +96,22 @@ class User(AbstractBaseUser):
 
     is_active = models.BooleanField(
         default=True,
+        db_default=True,
     )
 
     is_staff = models.BooleanField(
         default=False,
+        db_default=False,
     )
 
     is_superuser = models.BooleanField(
         default=False,
+        db_default=False,
     )
 
     failed_login_attempts = models.IntegerField(
         default=0,
+        db_default=0,
     )
 
     locked_until = models.DateTimeField(
@@ -114,12 +120,12 @@ class User(AbstractBaseUser):
     )
 
     created_at = models.DateTimeField(
-        db_default=Now(),
+        db_default=TransactionNow(),
         editable=False,
     )
 
     updated_at = models.DateTimeField(
-        db_default=Now(),
+        db_default=TransactionNow(),
     )
 
     objects = UserManager()
@@ -190,7 +196,6 @@ class Role(models.Model):
     code = models.CharField(
         max_length=30,
         choices=Code.choices,
-        unique=True,
     )
 
     name = models.CharField(
@@ -204,10 +209,11 @@ class Role(models.Model):
 
     is_active = models.BooleanField(
         default=True,
+        db_default=True,
     )
 
     created_at = models.DateTimeField(
-        db_default=Now(),
+        db_default=TransactionNow(),
         editable=False,
     )
     class Meta:
@@ -215,6 +221,10 @@ class Role(models.Model):
         ordering = ["code"]
 
         constraints = [
+            models.UniqueConstraint(
+                fields=["code"],
+                name="uq_roles_code",
+            ),
             models.CheckConstraint(
                 condition=Q(
                     code__in=[
@@ -240,20 +250,25 @@ class UserRole(models.Model):
         db_default=RandomUUID(),
         editable=False,
     )
+# UserRole
+
     user = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
         related_name="role_assignments",
+        db_index=False,
     )
 
     role = models.ForeignKey(
         Role,
         on_delete=models.RESTRICT,
         related_name="user_assignments",
+        db_index=False,
     )
 
     is_primary = models.BooleanField(
         default=False,
+        db_default=False,
     )
 
     assigned_by = models.ForeignKey(
@@ -262,10 +277,12 @@ class UserRole(models.Model):
         null=True,
         blank=True,
         related_name="roles_assigned",
+        db_column="assigned_by",
+        db_index=False,
     )
 
     assigned_at = models.DateTimeField(
-        db_default=Now(),
+        db_default=TransactionNow(),
         editable=False,
     )
 
@@ -347,6 +364,7 @@ class MFADevice(models.Model):
         User,
         on_delete=models.CASCADE,
         related_name="mfa_devices",
+        db_index=False,
     )
 
     device_name = models.CharField(
@@ -357,20 +375,24 @@ class MFADevice(models.Model):
         max_length=20,
         choices=DeviceType.choices,
         default=DeviceType.TOTP,
+        db_default="TOTP",
     )
 
     secret_encrypted = models.BinaryField()
 
-    encryption_key_version = models.PositiveSmallIntegerField(
+    encryption_key_version = models.SmallIntegerField(
         default=1,
+        db_default=1,
     )
 
     is_confirmed = models.BooleanField(
         default=False,
+        db_default=False,
     )
 
     is_active = models.BooleanField(
         default=True,
+        db_default=True,
     )
 
     confirmed_at = models.DateTimeField(
@@ -384,7 +406,7 @@ class MFADevice(models.Model):
     )
 
     created_at = models.DateTimeField(
-        db_default=Now(),
+        db_default=TransactionNow(),
         editable=False,
     )
 
