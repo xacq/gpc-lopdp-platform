@@ -9,6 +9,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import connection, transaction
 
+from apps.accounts.models import Role
 from apps.audit.models import AuditLog
 from apps.audit.services.audit import AuditService
 from apps.cases.models import (
@@ -41,6 +42,40 @@ class CaseActorError(
     CaseWorkflowError
 ):
     pass
+
+
+class CasePermissionError(
+    CaseWorkflowError
+):
+    pass
+
+
+class CaseAssigneeError(
+    CaseWorkflowError
+):
+    pass
+
+
+class CaseTransitionError(
+    CaseWorkflowError
+):
+    def __init__(
+        self,
+        *,
+        request_id,
+        current_status,
+        target_status,
+    ):
+        self.request_id = request_id
+        self.current_status = current_status
+        self.target_status = target_status
+
+        super().__init__(
+            f"Invalid case transition for "
+            f"{request_id}: "
+            f"{current_status} -> "
+            f"{target_status}"
+        )
 
 
 class InactiveRightError(
@@ -88,6 +123,31 @@ class CaseSubjectSnapshot:
 
 
 class CaseWorkflowService:
+    MANAGER_ROLE_CODES = {
+        Role.Code.ADMIN,
+        Role.Code.DPD,
+        Role.Code.RESPONSABLE,
+    }
+
+    ASSIGNEE_ROLE_CODES = {
+        Role.Code.ADMIN,
+        Role.Code.DPD,
+        Role.Code.RESPONSABLE,
+        Role.Code.OPERADOR,
+    }
+
+    OPERATIONAL_TRANSITIONS = {
+        RightsRequest.Status.RECEIVED: {
+            RightsRequest.Status.UNDER_REVIEW,
+        },
+        RightsRequest.Status.UNDER_REVIEW: {
+            RightsRequest.Status.AWAITING_INFORMATION,
+        },
+        RightsRequest.Status.AWAITING_INFORMATION: {
+            RightsRequest.Status.UNDER_REVIEW,
+        },
+    }
+
     @classmethod
     def _get_system_setting(
         cls,
@@ -154,6 +214,159 @@ class CaseWorkflowService:
             )
 
         return persisted_actor
+
+    @classmethod
+    def _active_role_codes(
+        cls,
+        user,
+    ) -> set[str]:
+        if user is None:
+            return set()
+
+        return set(
+            user.role_assignments
+            .filter(
+                revoked_at__isnull=True,
+                role__is_active=True,
+            )
+            .values_list(
+                "role__code",
+                flat=True,
+            )
+        )
+
+    @classmethod
+    def _require_manager_permission(
+        cls,
+        actor,
+    ) -> None:
+        if (
+            actor.is_active
+            and actor.is_superuser
+        ):
+            return
+
+        role_codes = (
+            cls._active_role_codes(
+                actor
+            )
+        )
+
+        if not (
+            role_codes
+            & cls.MANAGER_ROLE_CODES
+        ):
+            raise CasePermissionError(
+                "Actor is not allowed "
+                "to assign cases."
+            )
+
+    @classmethod
+    def _validate_assignee(
+        cls,
+        assignee,
+    ):
+        assignee_id = getattr(
+            assignee,
+            "pk",
+            None,
+        )
+
+        if assignee_id is None:
+            raise CaseAssigneeError(
+                "Assignee must be an active "
+                "persisted user."
+            )
+
+        user_model = get_user_model()
+
+        persisted_assignee = (
+            user_model.objects
+            .filter(
+                pk=assignee_id,
+                is_active=True,
+            )
+            .first()
+        )
+
+        if persisted_assignee is None:
+            raise CaseAssigneeError(
+                "Assignee must be an active "
+                "persisted user."
+            )
+
+        if (
+            persisted_assignee.is_active
+            and persisted_assignee.is_superuser
+        ):
+            return persisted_assignee
+
+        role_codes = (
+            cls._active_role_codes(
+                persisted_assignee
+            )
+        )
+
+        if not (
+            role_codes
+            & cls.ASSIGNEE_ROLE_CODES
+        ):
+            raise CaseAssigneeError(
+                "Assignee does not have "
+                "an active operational role."
+            )
+
+        return persisted_assignee
+    @classmethod
+    def _require_transition_permission(
+        cls,
+        *,
+        actor,
+        request: RightsRequest,
+    ) -> None:
+        if (
+            actor.is_active
+            and actor.is_superuser
+        ):
+            return
+
+        role_codes = (
+            cls._active_role_codes(
+                actor
+            )
+        )
+
+        if (
+            role_codes
+            & cls.MANAGER_ROLE_CODES
+        ):
+            return
+
+        if (
+            Role.Code.OPERADOR
+            in role_codes
+            and request.assigned_to_id
+            == actor.id
+        ):
+            return
+
+        raise CasePermissionError(
+            "Actor is not allowed "
+            "to transition this case."
+        )
+
+    @classmethod
+    def _database_now(
+        cls,
+    ):
+        with connection.cursor() as cursor:
+            cursor.execute(
+                "SELECT "
+                "transaction_timestamp()"
+            )
+            row = cursor.fetchone()
+
+        return row[0]
 
     @classmethod
     def _validate_source_channel(
@@ -625,6 +838,300 @@ class CaseWorkflowService:
             )
 
             return request
+
+    @classmethod
+    def assign(
+        cls,
+        *,
+        request: RightsRequest,
+        assignee,
+        actor,
+        correlation_id: (
+            uuid.UUID | None
+        ) = None,
+    ) -> RightsRequest:
+        actor = cls._validate_actor(
+            actor
+        )
+
+        if actor is None:
+            raise CaseActorError(
+                "Assignment requires "
+                "an actor."
+            )
+
+        cls._require_manager_permission(
+            actor
+        )
+
+        assignee = cls._validate_assignee(
+            assignee
+        )
+
+        if correlation_id is None:
+            correlation_id = uuid.uuid4()
+        elif not isinstance(
+            correlation_id,
+            uuid.UUID,
+        ):
+            correlation_id = uuid.UUID(
+                str(correlation_id)
+            )
+
+        with transaction.atomic():
+            locked_request = (
+                RightsRequest.objects
+                .select_for_update()
+                .get(pk=request.pk)
+            )
+
+            previous_assignee_id = (
+                locked_request
+                .assigned_to_id
+            )
+
+            if (
+                previous_assignee_id
+                == assignee.id
+            ):
+                return locked_request
+
+            db_now = cls._database_now()
+
+            locked_request.assigned_to = (
+                assignee
+            )
+            locked_request.updated_at = (
+                db_now
+            )
+
+            locked_request.save(
+                update_fields=[
+                    "assigned_to",
+                    "updated_at",
+                ]
+            )
+
+            AuditService.write(
+                actor_type=(
+                    AuditLog.ActorType.USER
+                ),
+                actor=actor,
+                source=AuditLog.Source.WEB,
+                correlation_id=(
+                    correlation_id
+                ),
+                action=(
+                    "RIGHTS_REQUEST_ASSIGNED"
+                ),
+                entity_type=(
+                    "RIGHTS_REQUEST"
+                ),
+                entity_pk=(
+                    locked_request.id
+                ),
+                description=(
+                    "Rights request assigned."
+                ),
+                previous_values={
+                    "assigned_to_id": (
+                        str(
+                            previous_assignee_id
+                        )
+                        if (
+                            previous_assignee_id
+                            is not None
+                        )
+                        else None
+                    ),
+                },
+                new_values={
+                    "assigned_to_id": (
+                        str(assignee.id)
+                    ),
+                },
+                metadata={
+                    "reference_number": (
+                        locked_request
+                        .reference_number
+                    ),
+                },
+            )
+
+            return locked_request
+
+    @classmethod
+    def transition(
+        cls,
+        *,
+        request: RightsRequest,
+        target_status: str,
+        actor,
+        correlation_id: (
+            uuid.UUID | None
+        ) = None,
+    ) -> RightsRequest:
+        actor = cls._validate_actor(
+            actor
+        )
+
+        if actor is None:
+            raise CaseActorError(
+                "Transition requires "
+                "an actor."
+            )
+
+        target_status = (
+            target_status
+            .strip()
+            .upper()
+        )
+
+        valid_statuses = {
+            choice[0]
+            for choice in (
+                RightsRequest
+                .Status
+                .choices
+            )
+        }
+
+        if target_status not in (
+            valid_statuses
+        ):
+            raise ValueError(
+                "Invalid target_status: "
+                f"{target_status}"
+            )
+
+        if correlation_id is None:
+            correlation_id = uuid.uuid4()
+        elif not isinstance(
+            correlation_id,
+            uuid.UUID,
+        ):
+            correlation_id = uuid.UUID(
+                str(correlation_id)
+            )
+
+        with transaction.atomic():
+            locked_request = (
+                RightsRequest.objects
+                .select_for_update()
+                .get(pk=request.pk)
+            )
+
+            cls._require_transition_permission(
+                actor=actor,
+                request=locked_request,
+            )
+
+            current_status = (
+                locked_request.status
+            )
+
+            allowed_targets = (
+                cls.OPERATIONAL_TRANSITIONS
+                .get(
+                    current_status,
+                    set(),
+                )
+            )
+
+            if (
+                target_status
+                not in allowed_targets
+            ):
+                raise CaseTransitionError(
+                    request_id=(
+                        locked_request.id
+                    ),
+                    current_status=(
+                        current_status
+                    ),
+                    target_status=(
+                        target_status
+                    ),
+                )
+
+            db_now = cls._database_now()
+
+            locked_request.status = (
+                target_status
+            )
+            locked_request.updated_at = (
+                db_now
+            )
+
+            locked_request.save(
+                update_fields=[
+                    "status",
+                    "updated_at",
+                ]
+            )
+
+            RequestStatusHistory.objects.create(
+                request=locked_request,
+                previous_status=(
+                    current_status
+                ),
+                new_status=(
+                    target_status
+                ),
+                encryption_key_version=(
+                    locked_request
+                    .encryption_key_version
+                ),
+                changed_by=actor,
+                change_source=(
+                    RequestStatusHistory
+                    .ChangeSource
+                    .WEB
+                ),
+                changed_at=db_now,
+            )
+
+            AuditService.write(
+                actor_type=(
+                    AuditLog.ActorType.USER
+                ),
+                actor=actor,
+                source=AuditLog.Source.WEB,
+                correlation_id=(
+                    correlation_id
+                ),
+                action=(
+                    "RIGHTS_REQUEST_STATUS_CHANGED"
+                ),
+                entity_type=(
+                    "RIGHTS_REQUEST"
+                ),
+                entity_pk=(
+                    locked_request.id
+                ),
+                description=(
+                    "Rights request "
+                    "status changed."
+                ),
+                previous_values={
+                    "status": (
+                        current_status
+                    ),
+                },
+                new_values={
+                    "status": (
+                        target_status
+                    ),
+                },
+                metadata={
+                    "reference_number": (
+                        locked_request
+                        .reference_number
+                    ),
+                },
+            )
+
+            return locked_request
 
     @classmethod
     def decrypt_request_details(

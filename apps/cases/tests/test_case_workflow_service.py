@@ -4,13 +4,20 @@ import re
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 
+from apps.accounts.models import (
+    Role,
+    UserRole,
+)
 from apps.audit.models import AuditLog
 from apps.cases.models import (
     RequestStatusHistory,
     RightsRequest,
 )
 from apps.cases.services.cases import (
+    CaseAssigneeError,
     CaseConfigurationError,
+    CasePermissionError,
+    CaseTransitionError,
     CaseWorkflowService,
     InactiveRightError,
     RepresentativeSubjectMismatchError,
@@ -106,6 +113,38 @@ class CaseWorkflowServiceTests(TestCase):
             ),
             is_active=True,
         )
+
+    def create_user_with_role(
+        self,
+        *,
+        email,
+        role_code,
+        is_active=True,
+    ):
+        user_model = get_user_model()
+
+        user = user_model.objects.create_user(
+            email=email,
+            password="TestPassword123!",
+            full_name="Usuario Prueba",
+            is_active=is_active,
+        )
+
+        role, _ = Role.objects.get_or_create(
+            code=role_code,
+            defaults={
+                "name": role_code,
+                "is_active": True,
+            },
+        )
+
+        UserRole.objects.create(
+            user=user,
+            role=role,
+            is_primary=True,
+        )
+
+        return user
 
     def test_create_request_initializes_case(self):
         request = (
@@ -469,3 +508,359 @@ class CaseWorkflowServiceTests(TestCase):
             first.reference_number,
             second.reference_number,
         )
+
+    def test_manager_can_assign_case_to_operator(self):
+        manager = self.create_user_with_role(
+            email="manager@example.com",
+            role_code=Role.Code.RESPONSABLE,
+        )
+
+        operator = self.create_user_with_role(
+            email="assigned@example.com",
+            role_code=Role.Code.OPERADOR,
+        )
+
+        request = (
+            CaseWorkflowService
+            .create_request(
+                data_subject=self.subject,
+                right=self.right,
+                request_details="Prueba",
+            )
+        )
+
+        result = CaseWorkflowService.assign(
+            request=request,
+            assignee=operator,
+            actor=manager,
+        )
+
+        result.refresh_from_db()
+
+        self.assertEqual(
+            result.assigned_to_id,
+            operator.id,
+        )
+
+        audit = AuditLog.objects.get(
+            action="RIGHTS_REQUEST_ASSIGNED",
+            entity_pk=str(request.id),
+        )
+
+        self.assertEqual(
+            audit.new_values[
+                "assigned_to_id"
+            ],
+            str(operator.id),
+        )
+
+    def test_operator_cannot_assign_case(self):
+        operator = self.create_user_with_role(
+            email="operator@example.com",
+            role_code=Role.Code.OPERADOR,
+        )
+
+        another_operator = (
+            self.create_user_with_role(
+                email="other-operator@example.com",
+                role_code=Role.Code.OPERADOR,
+            )
+        )
+
+        request = (
+            CaseWorkflowService
+            .create_request(
+                data_subject=self.subject,
+                right=self.right,
+                request_details="Prueba",
+            )
+        )
+
+        with self.assertRaises(
+            CasePermissionError
+        ):
+            CaseWorkflowService.assign(
+                request=request,
+                assignee=another_operator,
+                actor=operator,
+            )
+
+        request.refresh_from_db()
+
+        self.assertIsNone(
+            request.assigned_to_id
+        )
+
+    def test_inactive_assignee_is_rejected(self):
+        manager = self.create_user_with_role(
+            email="manager@example.com",
+            role_code=Role.Code.RESPONSABLE,
+        )
+
+        inactive_operator = (
+            self.create_user_with_role(
+                email="inactive@example.com",
+                role_code=Role.Code.OPERADOR,
+                is_active=False,
+            )
+        )
+
+        request = (
+            CaseWorkflowService
+            .create_request(
+                data_subject=self.subject,
+                right=self.right,
+                request_details="Prueba",
+            )
+        )
+
+        with self.assertRaises(
+            CaseAssigneeError
+        ):
+            CaseWorkflowService.assign(
+                request=request,
+                assignee=inactive_operator,
+                actor=manager,
+            )
+
+        request.refresh_from_db()
+
+        self.assertIsNone(
+            request.assigned_to_id
+        )
+
+    def test_assigned_operator_can_start_review(self):
+        manager = self.create_user_with_role(
+            email="manager@example.com",
+            role_code=Role.Code.RESPONSABLE,
+        )
+
+        operator = self.create_user_with_role(
+            email="operator@example.com",
+            role_code=Role.Code.OPERADOR,
+        )
+
+        request = (
+            CaseWorkflowService
+            .create_request(
+                data_subject=self.subject,
+                right=self.right,
+                request_details="Prueba",
+            )
+        )
+
+        request = CaseWorkflowService.assign(
+            request=request,
+            assignee=operator,
+            actor=manager,
+        )
+
+        result = (
+            CaseWorkflowService.transition(
+                request=request,
+                target_status=(
+                    RightsRequest
+                    .Status
+                    .UNDER_REVIEW
+                ),
+                actor=operator,
+            )
+        )
+
+        result.refresh_from_db()
+
+        self.assertEqual(
+            result.status,
+            RightsRequest
+            .Status
+            .UNDER_REVIEW,
+        )
+
+        history = (
+            RequestStatusHistory.objects
+            .filter(request=result)
+            .order_by("id")
+        )
+
+        self.assertEqual(
+            history.count(),
+            2,
+        )
+
+        latest = history.last()
+
+        self.assertEqual(
+            latest.previous_status,
+            RightsRequest
+            .Status
+            .RECEIVED,
+        )
+        self.assertEqual(
+            latest.new_status,
+            RightsRequest
+            .Status
+            .UNDER_REVIEW,
+        )
+        self.assertEqual(
+            latest.changed_by_id,
+            operator.id,
+        )
+
+    def test_unassigned_operator_cannot_transition_case(self):
+        operator = self.create_user_with_role(
+            email="operator@example.com",
+            role_code=Role.Code.OPERADOR,
+        )
+
+        request = (
+            CaseWorkflowService
+            .create_request(
+                data_subject=self.subject,
+                right=self.right,
+                request_details="Prueba",
+            )
+        )
+
+        with self.assertRaises(
+            CasePermissionError
+        ):
+            CaseWorkflowService.transition(
+                request=request,
+                target_status=(
+                    RightsRequest
+                    .Status
+                    .UNDER_REVIEW
+                ),
+                actor=operator,
+            )
+
+        request.refresh_from_db()
+
+        self.assertEqual(
+            request.status,
+            RightsRequest
+            .Status
+            .RECEIVED,
+        )
+
+    def test_manager_can_transition_without_assignment(self):
+        manager = self.create_user_with_role(
+            email="manager@example.com",
+            role_code=Role.Code.DPD,
+        )
+
+        request = (
+            CaseWorkflowService
+            .create_request(
+                data_subject=self.subject,
+                right=self.right,
+                request_details="Prueba",
+            )
+        )
+
+        result = (
+            CaseWorkflowService.transition(
+                request=request,
+                target_status=(
+                    RightsRequest
+                    .Status
+                    .UNDER_REVIEW
+                ),
+                actor=manager,
+            )
+        )
+
+        result.refresh_from_db()
+
+        self.assertEqual(
+            result.status,
+            RightsRequest
+            .Status
+            .UNDER_REVIEW,
+        )
+
+    def test_invalid_operational_transition_is_rejected(self):
+        manager = self.create_user_with_role(
+            email="manager@example.com",
+            role_code=Role.Code.RESPONSABLE,
+        )
+
+        request = (
+            CaseWorkflowService
+            .create_request(
+                data_subject=self.subject,
+                right=self.right,
+                request_details="Prueba",
+            )
+        )
+
+        with self.assertRaises(
+            CaseTransitionError
+        ):
+            CaseWorkflowService.transition(
+                request=request,
+                target_status=(
+                    RightsRequest
+                    .Status
+                    .RESPONDED
+                ),
+                actor=manager,
+            )
+
+        request.refresh_from_db()
+
+        self.assertEqual(
+            request.status,
+            RightsRequest
+            .Status
+            .RECEIVED,
+        )
+
+        self.assertEqual(
+            RequestStatusHistory.objects
+            .filter(request=request)
+            .count(),
+            1,
+        )
+
+    def test_transition_generates_audit_entry(self):
+        manager = self.create_user_with_role(
+            email="manager@example.com",
+            role_code=Role.Code.RESPONSABLE,
+        )
+
+        request = (
+            CaseWorkflowService
+            .create_request(
+                data_subject=self.subject,
+                right=self.right,
+                request_details="Prueba",
+            )
+        )
+
+        CaseWorkflowService.transition(
+            request=request,
+            target_status=(
+                RightsRequest
+                .Status
+                .UNDER_REVIEW
+            ),
+            actor=manager,
+        )
+
+        audit = AuditLog.objects.get(
+            action=(
+                "RIGHTS_REQUEST_STATUS_CHANGED"
+            ),
+            entity_pk=str(request.id),
+        )
+
+        self.assertEqual(
+            audit.previous_values["status"],
+            RightsRequest.Status.RECEIVED,
+        )
+        self.assertEqual(
+            audit.new_values["status"],
+            RightsRequest.Status.UNDER_REVIEW,
+        )
+
