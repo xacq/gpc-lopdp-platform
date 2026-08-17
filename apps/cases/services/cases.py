@@ -13,6 +13,8 @@ from apps.accounts.models import Role
 from apps.audit.models import AuditLog
 from apps.audit.services.audit import AuditService
 from apps.cases.models import (
+    RequestClarification,
+    RequestDeadline,
     RequestStatusHistory,
     RightsRequest,
 )
@@ -138,12 +140,6 @@ class CaseWorkflowService:
 
     OPERATIONAL_TRANSITIONS = {
         RightsRequest.Status.RECEIVED: {
-            RightsRequest.Status.UNDER_REVIEW,
-        },
-        RightsRequest.Status.UNDER_REVIEW: {
-            RightsRequest.Status.AWAITING_INFORMATION,
-        },
-        RightsRequest.Status.AWAITING_INFORMATION: {
             RightsRequest.Status.UNDER_REVIEW,
         },
     }
@@ -317,6 +313,7 @@ class CaseWorkflowService:
             )
 
         return persisted_assignee
+
     @classmethod
     def _require_transition_permission(
         cls,
@@ -840,6 +837,83 @@ class CaseWorkflowService:
             return request
 
     @classmethod
+    def _record_status_change(
+        cls,
+        *,
+        request: RightsRequest,
+        target_status: str,
+        actor,
+        correlation_id: uuid.UUID,
+        trigger: str,
+    ) -> RightsRequest:
+        current_status = request.status
+
+        if current_status == target_status:
+            return request
+
+        db_now = cls._database_now()
+
+        request.status = target_status
+        request.updated_at = db_now
+
+        request.save(
+            update_fields=[
+                "status",
+                "updated_at",
+            ]
+        )
+
+        RequestStatusHistory.objects.create(
+            request=request,
+            previous_status=current_status,
+            new_status=target_status,
+            encryption_key_version=(
+                request.encryption_key_version
+            ),
+            changed_by=actor,
+            change_source=(
+                RequestStatusHistory
+                .ChangeSource
+                .WEB
+            ),
+            changed_at=db_now,
+        )
+
+        AuditService.write(
+            actor_type=(
+                AuditLog.ActorType.USER
+            ),
+            actor=actor,
+            source=AuditLog.Source.WEB,
+            correlation_id=correlation_id,
+            action=(
+                "RIGHTS_REQUEST_STATUS_CHANGED"
+            ),
+            entity_type=(
+                "RIGHTS_REQUEST"
+            ),
+            entity_pk=request.id,
+            description=(
+                "Rights request "
+                "status changed."
+            ),
+            previous_values={
+                "status": current_status,
+            },
+            new_values={
+                "status": target_status,
+            },
+            metadata={
+                "reference_number": (
+                    request.reference_number
+                ),
+                "trigger": trigger,
+            },
+        )
+
+        return request
+
+    @classmethod
     def assign(
         cls,
         *,
@@ -1054,84 +1128,353 @@ class CaseWorkflowService:
                     ),
                 )
 
-            db_now = cls._database_now()
-
-            locked_request.status = (
-                target_status
+            return cls._record_status_change(
+                request=locked_request,
+                target_status=target_status,
+                actor=actor,
+                correlation_id=correlation_id,
+                trigger="MANUAL_WORKFLOW",
             )
-            locked_request.updated_at = (
-                db_now
+
+    @classmethod
+    def apply_extension(
+        cls,
+        *,
+        request: RightsRequest,
+        reason: str,
+        actor,
+        correlation_id: (
+            uuid.UUID | None
+        ) = None,
+    ) -> RequestDeadline:
+        from apps.cases.services.deadlines import (
+            DeadlineService,
+        )
+
+        actor = cls._validate_actor(
+            actor
+        )
+
+        if actor is None:
+            raise CaseActorError(
+                "Extension requires "
+                "an actor."
             )
 
-            locked_request.save(
-                update_fields=[
-                    "status",
+        cls._require_manager_permission(
+            actor
+        )
+
+        if correlation_id is None:
+            correlation_id = uuid.uuid4()
+        elif not isinstance(
+            correlation_id,
+            uuid.UUID,
+        ):
+            correlation_id = uuid.UUID(
+                str(correlation_id)
+            )
+
+        with transaction.atomic():
+            locked_request = (
+                RightsRequest.objects
+                .select_for_update()
+                .get(pk=request.pk)
+            )
+
+            current_status = (
+                locked_request.status
+            )
+
+            if current_status not in {
+                RightsRequest.Status.UNDER_REVIEW,
+                RightsRequest.Status.AWAITING_INFORMATION,
+            }:
+                raise CaseTransitionError(
+                    request_id=(
+                        locked_request.id
+                    ),
+                    current_status=(
+                        current_status
+                    ),
+                    target_status=(
+                        RightsRequest
+                        .Status
+                        .EXTENDED
+                    ),
+                )
+
+            extension_deadline = (
+                DeadlineService
+                .apply_extension(
+                    request=locked_request,
+                    reason=reason,
+                    actor=actor,
+                    correlation_id=(
+                        correlation_id
+                    ),
+                )
+            )
+
+            if (
+                current_status
+                == RightsRequest
+                .Status
+                .UNDER_REVIEW
+            ):
+                cls._record_status_change(
+                    request=locked_request,
+                    target_status=(
+                        RightsRequest
+                        .Status
+                        .EXTENDED
+                    ),
+                    actor=actor,
+                    correlation_id=(
+                        correlation_id
+                    ),
+                    trigger=(
+                        "DEADLINE_EXTENSION_APPLIED"
+                    ),
+                )
+
+            return extension_deadline
+
+    @classmethod
+    def request_clarification(
+        cls,
+        *,
+        request: RightsRequest,
+        message: str,
+        actor,
+        legal_basis: str | None = None,
+        clarification_due_at=None,
+        correlation_id: (
+            uuid.UUID | None
+        ) = None,
+    ) -> RequestClarification:
+        from apps.cases.services.deadlines import (
+            DeadlineService,
+        )
+
+        actor = cls._validate_actor(
+            actor
+        )
+
+        if actor is None:
+            raise CaseActorError(
+                "Clarification requires "
+                "an actor."
+            )
+
+        if correlation_id is None:
+            correlation_id = uuid.uuid4()
+        elif not isinstance(
+            correlation_id,
+            uuid.UUID,
+        ):
+            correlation_id = uuid.UUID(
+                str(correlation_id)
+            )
+
+        with transaction.atomic():
+            locked_request = (
+                RightsRequest.objects
+                .select_for_update()
+                .get(pk=request.pk)
+            )
+
+            cls._require_transition_permission(
+                actor=actor,
+                request=locked_request,
+            )
+
+            current_status = (
+                locked_request.status
+            )
+
+            if current_status not in {
+                RightsRequest.Status.UNDER_REVIEW,
+                RightsRequest.Status.EXTENDED,
+            }:
+                raise CaseTransitionError(
+                    request_id=(
+                        locked_request.id
+                    ),
+                    current_status=(
+                        current_status
+                    ),
+                    target_status=(
+                        RightsRequest
+                        .Status
+                        .AWAITING_INFORMATION
+                    ),
+                )
+
+            clarification = (
+                DeadlineService
+                .request_clarification(
+                    request=locked_request,
+                    message=message,
+                    actor=actor,
+                    legal_basis=legal_basis,
+                    clarification_due_at=(
+                        clarification_due_at
+                    ),
+                    correlation_id=(
+                        correlation_id
+                    ),
+                )
+            )
+
+            cls._record_status_change(
+                request=locked_request,
+                target_status=(
+                    RightsRequest
+                    .Status
+                    .AWAITING_INFORMATION
+                ),
+                actor=actor,
+                correlation_id=(
+                    correlation_id
+                ),
+                trigger=(
+                    "CLARIFICATION_REQUESTED"
+                ),
+            )
+
+            return clarification
+
+    @classmethod
+    def receive_clarification(
+        cls,
+        *,
+        clarification: RequestClarification,
+        response_message: str,
+        actor,
+        correlation_id: (
+            uuid.UUID | None
+        ) = None,
+    ) -> RequestClarification:
+        from apps.cases.services.deadlines import (
+            DeadlineService,
+        )
+
+        actor = cls._validate_actor(
+            actor
+        )
+
+        if actor is None:
+            raise CaseActorError(
+                "Clarification reception "
+                "requires an actor."
+            )
+
+        if correlation_id is None:
+            correlation_id = uuid.uuid4()
+        elif not isinstance(
+            correlation_id,
+            uuid.UUID,
+        ):
+            correlation_id = uuid.UUID(
+                str(correlation_id)
+            )
+
+        request_id = getattr(
+            clarification,
+            "request_id",
+            None,
+        )
+
+        if request_id is None:
+            raise CaseWorkflowError(
+                "Clarification must be "
+                "persisted."
+            )
+
+        with transaction.atomic():
+            locked_request = (
+                RightsRequest.objects
+                .select_for_update()
+                .get(pk=request_id)
+            )
+
+            cls._require_transition_permission(
+                actor=actor,
+                request=locked_request,
+            )
+
+            if (
+                locked_request.status
+                != RightsRequest
+                .Status
+                .AWAITING_INFORMATION
+            ):
+                raise CaseTransitionError(
+                    request_id=(
+                        locked_request.id
+                    ),
+                    current_status=(
+                        locked_request.status
+                    ),
+                    target_status=(
+                        RightsRequest
+                        .Status
+                        .UNDER_REVIEW
+                    ),
+                )
+
+            received = (
+                DeadlineService
+                .receive_clarification(
+                    clarification=clarification,
+                    response_message=(
+                        response_message
+                    ),
+                    actor=actor,
+                    correlation_id=(
+                        correlation_id
+                    ),
+                )
+            )
+
+            locked_request.refresh_from_db(
+                fields=[
+                    "extension_applied",
+                    "current_due_at",
                     "updated_at",
                 ]
             )
 
-            RequestStatusHistory.objects.create(
-                request=locked_request,
-                previous_status=(
-                    current_status
-                ),
-                new_status=(
-                    target_status
-                ),
-                encryption_key_version=(
-                    locked_request
-                    .encryption_key_version
-                ),
-                changed_by=actor,
-                change_source=(
-                    RequestStatusHistory
-                    .ChangeSource
-                    .WEB
-                ),
-                changed_at=db_now,
-            )
+            if (
+                locked_request
+                .extension_applied
+            ):
+                target_status = (
+                    RightsRequest
+                    .Status
+                    .EXTENDED
+                )
+            else:
+                target_status = (
+                    RightsRequest
+                    .Status
+                    .UNDER_REVIEW
+                )
 
-            AuditService.write(
-                actor_type=(
-                    AuditLog.ActorType.USER
-                ),
+            cls._record_status_change(
+                request=locked_request,
+                target_status=target_status,
                 actor=actor,
-                source=AuditLog.Source.WEB,
                 correlation_id=(
                     correlation_id
                 ),
-                action=(
-                    "RIGHTS_REQUEST_STATUS_CHANGED"
+                trigger=(
+                    "CLARIFICATION_RECEIVED"
                 ),
-                entity_type=(
-                    "RIGHTS_REQUEST"
-                ),
-                entity_pk=(
-                    locked_request.id
-                ),
-                description=(
-                    "Rights request "
-                    "status changed."
-                ),
-                previous_values={
-                    "status": (
-                        current_status
-                    ),
-                },
-                new_values={
-                    "status": (
-                        target_status
-                    ),
-                },
-                metadata={
-                    "reference_number": (
-                        locked_request
-                        .reference_number
-                    ),
-                },
             )
 
-            return locked_request
+            return received
 
     @classmethod
     def decrypt_request_details(

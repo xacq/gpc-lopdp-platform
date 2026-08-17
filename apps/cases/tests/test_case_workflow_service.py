@@ -10,6 +10,8 @@ from apps.accounts.models import (
 )
 from apps.audit.models import AuditLog
 from apps.cases.models import (
+    RequestClarification,
+    RequestDeadline,
     RequestStatusHistory,
     RightsRequest,
 )
@@ -22,7 +24,15 @@ from apps.cases.services.cases import (
     InactiveRightError,
     RepresentativeSubjectMismatchError,
 )
-from apps.legal_content.models import RightCatalog
+from apps.cases.services.deadlines import (
+    ActiveDeadlineRequiredError,
+    ClarificationLegalBasisError,
+    DeadlineService,
+)
+from apps.legal_content.models import (
+    RightCatalog,
+    RightRule,
+)
 from apps.organization.models import SystemSetting
 from apps.subjects.services.subjects import (
     RepresentativeService,
@@ -77,6 +87,27 @@ class CaseWorkflowServiceTests(TestCase):
             RightCatalog.objects.create(
                 code="TEST_RIGHT",
                 name="Derecho de prueba",
+                is_active=True,
+            )
+        )
+
+        self.rule = (
+            RightRule.objects.create(
+                right=self.right,
+                response_days=5,
+                day_count_type=(
+                    RightRule
+                    .DayCountType
+                    .BUSINESS
+                ),
+                extension_allowed=True,
+                extension_days=3,
+                warning_days=2,
+                clarification_effect=(
+                    RightRule
+                    .ClarificationEffect
+                    .NO_CHANGE
+                ),
                 is_active=True,
             )
         )
@@ -862,5 +893,597 @@ class CaseWorkflowServiceTests(TestCase):
         self.assertEqual(
             audit.new_values["status"],
             RightsRequest.Status.UNDER_REVIEW,
+        )
+
+    def test_direct_awaiting_information_transition_is_rejected(self):
+        manager = self.create_user_with_role(
+            email="manager-direct@example.com",
+            role_code=Role.Code.RESPONSABLE,
+        )
+
+        request = (
+            CaseWorkflowService
+            .create_request(
+                data_subject=self.subject,
+                right=self.right,
+                request_details="Prueba",
+            )
+        )
+
+        request = (
+            CaseWorkflowService
+            .transition(
+                request=request,
+                target_status=(
+                    RightsRequest
+                    .Status
+                    .UNDER_REVIEW
+                ),
+                actor=manager,
+            )
+        )
+
+        with self.assertRaises(
+            CaseTransitionError
+        ):
+            CaseWorkflowService.transition(
+                request=request,
+                target_status=(
+                    RightsRequest
+                    .Status
+                    .AWAITING_INFORMATION
+                ),
+                actor=manager,
+            )
+
+    def test_request_clarification_moves_case_to_awaiting_information(self):
+        manager = self.create_user_with_role(
+            email="manager-clarify@example.com",
+            role_code=Role.Code.RESPONSABLE,
+        )
+
+        request = (
+            CaseWorkflowService
+            .create_request(
+                data_subject=self.subject,
+                right=self.right,
+                request_details="Prueba",
+            )
+        )
+
+        DeadlineService.initialize_initial(
+            request=request
+        )
+
+        request = (
+            CaseWorkflowService
+            .transition(
+                request=request,
+                target_status=(
+                    RightsRequest
+                    .Status
+                    .UNDER_REVIEW
+                ),
+                actor=manager,
+            )
+        )
+
+        clarification = (
+            CaseWorkflowService
+            .request_clarification(
+                request=request,
+                message=(
+                    "Complete la información."
+                ),
+                actor=manager,
+            )
+        )
+
+        request.refresh_from_db()
+
+        self.assertEqual(
+            request.status,
+            RightsRequest
+            .Status
+            .AWAITING_INFORMATION,
+        )
+
+        self.assertEqual(
+            clarification.status,
+            RequestClarification
+            .Status
+            .REQUESTED,
+        )
+
+        clarification_history = (
+            RequestStatusHistory.objects
+            .filter(
+                request=request,
+                previous_status=(
+                    RightsRequest
+                    .Status
+                    .UNDER_REVIEW
+                ),
+                new_status=(
+                    RightsRequest
+                    .Status
+                    .AWAITING_INFORMATION
+                ),
+            )
+        )
+
+        self.assertEqual(
+            clarification_history.count(),
+            1,
+        )
+
+        history = (
+            clarification_history.first()
+        )
+
+        self.assertEqual(
+            history.changed_by_id,
+            manager.id,
+        )
+
+    def test_receive_clarification_returns_case_to_under_review(self):
+        manager = self.create_user_with_role(
+            email="manager-receive@example.com",
+            role_code=Role.Code.RESPONSABLE,
+        )
+
+        request = (
+            CaseWorkflowService
+            .create_request(
+                data_subject=self.subject,
+                right=self.right,
+                request_details="Prueba",
+            )
+        )
+
+        DeadlineService.initialize_initial(
+            request=request
+        )
+
+        request = (
+            CaseWorkflowService
+            .transition(
+                request=request,
+                target_status=(
+                    RightsRequest
+                    .Status
+                    .UNDER_REVIEW
+                ),
+                actor=manager,
+            )
+        )
+
+        clarification = (
+            CaseWorkflowService
+            .request_clarification(
+                request=request,
+                message="Aclare.",
+                actor=manager,
+            )
+        )
+
+        received = (
+            CaseWorkflowService
+            .receive_clarification(
+                clarification=clarification,
+                response_message=(
+                    "Información aclarada."
+                ),
+                actor=manager,
+            )
+        )
+
+        request.refresh_from_db()
+
+        self.assertEqual(
+            received.status,
+            RequestClarification
+            .Status
+            .RECEIVED,
+        )
+
+        self.assertEqual(
+            request.status,
+            RightsRequest
+            .Status
+            .UNDER_REVIEW,
+        )
+
+    def test_assigned_operator_can_manage_clarification(self):
+        manager = self.create_user_with_role(
+            email="manager-operator@example.com",
+            role_code=Role.Code.RESPONSABLE,
+        )
+
+        operator = self.create_user_with_role(
+            email="operator-clarify@example.com",
+            role_code=Role.Code.OPERADOR,
+        )
+
+        request = (
+            CaseWorkflowService
+            .create_request(
+                data_subject=self.subject,
+                right=self.right,
+                request_details="Prueba",
+            )
+        )
+
+        DeadlineService.initialize_initial(
+            request=request
+        )
+
+        request = CaseWorkflowService.assign(
+            request=request,
+            assignee=operator,
+            actor=manager,
+        )
+
+        request = (
+            CaseWorkflowService
+            .transition(
+                request=request,
+                target_status=(
+                    RightsRequest
+                    .Status
+                    .UNDER_REVIEW
+                ),
+                actor=operator,
+            )
+        )
+
+        clarification = (
+            CaseWorkflowService
+            .request_clarification(
+                request=request,
+                message="Aclare.",
+                actor=operator,
+            )
+        )
+
+        CaseWorkflowService.receive_clarification(
+            clarification=clarification,
+            response_message="Respuesta.",
+            actor=operator,
+        )
+
+        request.refresh_from_db()
+
+        self.assertEqual(
+            request.status,
+            RightsRequest
+            .Status
+            .UNDER_REVIEW,
+        )
+
+    def test_manager_extension_moves_under_review_to_extended(self):
+        manager = self.create_user_with_role(
+            email="manager-extension@example.com",
+            role_code=Role.Code.RESPONSABLE,
+        )
+
+        request = (
+            CaseWorkflowService
+            .create_request(
+                data_subject=self.subject,
+                right=self.right,
+                request_details="Prueba",
+            )
+        )
+
+        DeadlineService.initialize_initial(
+            request=request
+        )
+
+        request = (
+            CaseWorkflowService
+            .transition(
+                request=request,
+                target_status=(
+                    RightsRequest
+                    .Status
+                    .UNDER_REVIEW
+                ),
+                actor=manager,
+            )
+        )
+
+        extension = (
+            CaseWorkflowService
+            .apply_extension(
+                request=request,
+                reason=(
+                    "Complejidad del caso"
+                ),
+                actor=manager,
+            )
+        )
+
+        request.refresh_from_db()
+
+        self.assertEqual(
+            request.status,
+            RightsRequest
+            .Status
+            .EXTENDED,
+        )
+
+        self.assertTrue(
+            request.extension_applied
+        )
+
+        self.assertEqual(
+            extension.deadline_type,
+            RequestDeadline
+            .DeadlineType
+            .EXTENSION,
+        )
+
+        self.assertEqual(
+            request.current_due_at,
+            extension.due_at,
+        )
+
+    def test_operator_cannot_apply_extension(self):
+        manager = self.create_user_with_role(
+            email="manager-op-extension@example.com",
+            role_code=Role.Code.RESPONSABLE,
+        )
+
+        operator = self.create_user_with_role(
+            email="operator-extension@example.com",
+            role_code=Role.Code.OPERADOR,
+        )
+
+        request = (
+            CaseWorkflowService
+            .create_request(
+                data_subject=self.subject,
+                right=self.right,
+                request_details="Prueba",
+            )
+        )
+
+        DeadlineService.initialize_initial(
+            request=request
+        )
+
+        request = CaseWorkflowService.assign(
+            request=request,
+            assignee=operator,
+            actor=manager,
+        )
+
+        request = (
+            CaseWorkflowService
+            .transition(
+                request=request,
+                target_status=(
+                    RightsRequest
+                    .Status
+                    .UNDER_REVIEW
+                ),
+                actor=operator,
+            )
+        )
+
+        with self.assertRaises(
+            CasePermissionError
+        ):
+            CaseWorkflowService.apply_extension(
+                request=request,
+                reason="No autorizado",
+                actor=operator,
+            )
+
+        request.refresh_from_db()
+
+        self.assertFalse(
+            request.extension_applied
+        )
+
+        self.assertEqual(
+            request.status,
+            RightsRequest
+            .Status
+            .UNDER_REVIEW,
+        )
+
+    def test_extended_case_returns_to_extended_after_clarification(self):
+        manager = self.create_user_with_role(
+            email="manager-extended-clarify@example.com",
+            role_code=Role.Code.RESPONSABLE,
+        )
+
+        request = (
+            CaseWorkflowService
+            .create_request(
+                data_subject=self.subject,
+                right=self.right,
+                request_details="Prueba",
+            )
+        )
+
+        DeadlineService.initialize_initial(
+            request=request
+        )
+
+        request = (
+            CaseWorkflowService
+            .transition(
+                request=request,
+                target_status=(
+                    RightsRequest
+                    .Status
+                    .UNDER_REVIEW
+                ),
+                actor=manager,
+            )
+        )
+
+        CaseWorkflowService.apply_extension(
+            request=request,
+            reason="Extensión válida",
+            actor=manager,
+        )
+
+        request.refresh_from_db()
+
+        clarification = (
+            CaseWorkflowService
+            .request_clarification(
+                request=request,
+                message="Aclare.",
+                actor=manager,
+            )
+        )
+
+        request.refresh_from_db()
+
+        self.assertEqual(
+            request.status,
+            RightsRequest
+            .Status
+            .AWAITING_INFORMATION,
+        )
+
+        CaseWorkflowService.receive_clarification(
+            clarification=clarification,
+            response_message="Respuesta.",
+            actor=manager,
+        )
+
+        request.refresh_from_db()
+
+        self.assertEqual(
+            request.status,
+            RightsRequest
+            .Status
+            .EXTENDED,
+        )
+
+    def test_extension_failure_rolls_back_case_status(self):
+        manager = self.create_user_with_role(
+            email="manager-extension-failure@example.com",
+            role_code=Role.Code.RESPONSABLE,
+        )
+
+        request = (
+            CaseWorkflowService
+            .create_request(
+                data_subject=self.subject,
+                right=self.right,
+                request_details="Prueba",
+            )
+        )
+
+        request = (
+            CaseWorkflowService
+            .transition(
+                request=request,
+                target_status=(
+                    RightsRequest
+                    .Status
+                    .UNDER_REVIEW
+                ),
+                actor=manager,
+            )
+        )
+
+        with self.assertRaises(
+            ActiveDeadlineRequiredError
+        ):
+            CaseWorkflowService.apply_extension(
+                request=request,
+                reason="Sin plazo inicial",
+                actor=manager,
+            )
+
+        request.refresh_from_db()
+
+        self.assertEqual(
+            request.status,
+            RightsRequest
+            .Status
+            .UNDER_REVIEW,
+        )
+        self.assertFalse(
+            request.extension_applied
+        )
+
+    def test_clarification_failure_does_not_change_case_status(self):
+        manager = self.create_user_with_role(
+            email="manager-clarify-failure@example.com",
+            role_code=Role.Code.RESPONSABLE,
+        )
+
+        self.rule.clarification_effect = (
+            RightRule
+            .ClarificationEffect
+            .PAUSE
+        )
+        self.rule.save(
+            update_fields=[
+                "clarification_effect",
+            ]
+        )
+
+        request = (
+            CaseWorkflowService
+            .create_request(
+                data_subject=self.subject,
+                right=self.right,
+                request_details="Prueba",
+            )
+        )
+
+        DeadlineService.initialize_initial(
+            request=request
+        )
+
+        request = (
+            CaseWorkflowService
+            .transition(
+                request=request,
+                target_status=(
+                    RightsRequest
+                    .Status
+                    .UNDER_REVIEW
+                ),
+                actor=manager,
+            )
+        )
+
+        with self.assertRaises(
+            ClarificationLegalBasisError
+        ):
+            (
+                CaseWorkflowService
+                .request_clarification(
+                    request=request,
+                    message="Aclare.",
+                    actor=manager,
+                )
+            )
+
+        request.refresh_from_db()
+
+        self.assertEqual(
+            request.status,
+            RightsRequest
+            .Status
+            .UNDER_REVIEW,
+        )
+
+        self.assertEqual(
+            RequestClarification.objects
+            .filter(request=request)
+            .count(),
+            0,
         )
 
