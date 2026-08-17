@@ -1,5 +1,6 @@
 import base64
 
+from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
 
 from apps.subjects.models import (
@@ -9,6 +10,8 @@ from apps.subjects.models import (
 from apps.subjects.services.subjects import (
     RepresentativeAlreadyExistsError,
     RepresentativeService,
+    RepresentativeVerificationActorError,
+    RepresentativeVerificationStateError,
     SubjectService,
 )
 
@@ -45,6 +48,35 @@ class RepresentativeServiceTests(TestCase):
             document_number=document_number,
             full_name="Titular Prueba",
             email=email,
+        )
+
+    def create_actor(
+        self,
+        email="operator@example.com",
+        is_active=True,
+    ):
+        user_model = get_user_model()
+
+        return user_model.objects.create_user(
+            email=email,
+            password="TestPassword123!",
+            full_name="Operador Prueba",
+            is_active=is_active,
+        )
+
+    def create_representative(
+        self,
+        subject=None,
+    ):
+        if subject is None:
+            subject = self.create_subject()
+
+        return RepresentativeService.create(
+            data_subject=subject,
+            representative_name="Representante Prueba",
+            representative_document_type="CEDULA",
+            representative_document_number="0912345678",
+            representative_email="rep@example.com",
         )
 
     def test_create_and_decrypt_round_trip(self):
@@ -235,4 +267,127 @@ class RepresentativeServiceTests(TestCase):
         self.assertEqual(
             SubjectRepresentative.objects.count(),
             2,
+        )
+
+    def test_pending_representative_can_be_verified(self):
+        representative = self.create_representative()
+        actor = self.create_actor()
+
+        result = RepresentativeService.verify(
+            representative=representative,
+            actor=actor,
+        )
+
+        result.refresh_from_db()
+
+        self.assertEqual(
+            result.verification_status,
+            SubjectRepresentative.VerificationStatus.VERIFIED,
+        )
+        self.assertEqual(
+            result.verified_by_id,
+            actor.id,
+        )
+        self.assertIsNotNone(
+            result.verified_at
+        )
+
+    def test_pending_representative_can_be_rejected(self):
+        representative = self.create_representative()
+        actor = self.create_actor()
+
+        result = RepresentativeService.reject(
+            representative=representative,
+            actor=actor,
+        )
+
+        result.refresh_from_db()
+
+        self.assertEqual(
+            result.verification_status,
+            SubjectRepresentative.VerificationStatus.REJECTED,
+        )
+        self.assertEqual(
+            result.verified_by_id,
+            actor.id,
+        )
+        self.assertIsNotNone(
+            result.verified_at
+        )
+
+    def test_verified_representative_cannot_be_rejected(self):
+        representative = self.create_representative()
+        actor = self.create_actor()
+
+        RepresentativeService.verify(
+            representative=representative,
+            actor=actor,
+        )
+
+        with self.assertRaises(
+            RepresentativeVerificationStateError
+        ):
+            RepresentativeService.reject(
+                representative=representative,
+                actor=actor,
+            )
+
+        representative.refresh_from_db()
+
+        self.assertEqual(
+            representative.verification_status,
+            SubjectRepresentative.VerificationStatus.VERIFIED,
+        )
+
+    def test_rejected_representative_cannot_be_verified(self):
+        representative = self.create_representative()
+        actor = self.create_actor()
+
+        RepresentativeService.reject(
+            representative=representative,
+            actor=actor,
+        )
+
+        with self.assertRaises(
+            RepresentativeVerificationStateError
+        ):
+            RepresentativeService.verify(
+                representative=representative,
+                actor=actor,
+            )
+
+        representative.refresh_from_db()
+
+        self.assertEqual(
+            representative.verification_status,
+            SubjectRepresentative.VerificationStatus.REJECTED,
+        )
+
+    def test_inactive_actor_cannot_verify_representative(self):
+        representative = self.create_representative()
+
+        actor = self.create_actor(
+            email="inactive@example.com",
+            is_active=False,
+        )
+
+        with self.assertRaises(
+            RepresentativeVerificationActorError
+        ):
+            RepresentativeService.verify(
+                representative=representative,
+                actor=actor,
+            )
+
+        representative.refresh_from_db()
+
+        self.assertEqual(
+            representative.verification_status,
+            SubjectRepresentative.VerificationStatus.PENDING,
+        )
+        self.assertIsNone(
+            representative.verified_by
+        )
+        self.assertIsNone(
+            representative.verified_at
         )

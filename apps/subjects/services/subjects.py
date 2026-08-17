@@ -2,7 +2,9 @@ import uuid
 from dataclasses import dataclass
 
 from django.conf import settings
+from django.contrib.auth import get_user_model
 from django.db import IntegrityError, transaction
+from django.utils import timezone
 
 from apps.core.services.crypto import CryptoService
 from apps.subjects.models import (
@@ -15,6 +17,7 @@ from apps.subjects.services.normalization import (
     normalize_full_name,
     normalize_phone,
 )
+
 
 class SubjectServiceError(Exception):
     pass
@@ -41,6 +44,38 @@ class RepresentativeAlreadyExistsError(
         super().__init__(
             f"Representative already exists: "
             f"{representative_id}"
+        )
+
+
+class RepresentativeVerificationStateError(
+    SubjectServiceError
+):
+    def __init__(
+        self,
+        representative_id,
+        current_status,
+        target_status,
+    ):
+        self.representative_id = representative_id
+        self.current_status = current_status
+        self.target_status = target_status
+
+        super().__init__(
+            f"Invalid representative verification transition "
+            f"for {representative_id}: "
+            f"{current_status} -> {target_status}"
+        )
+
+
+class RepresentativeVerificationActorError(
+    SubjectServiceError
+):
+    def __init__(self, actor_id=None):
+        self.actor_id = actor_id
+
+        super().__init__(
+            "Representative verification requires "
+            "an active persisted user."
         )
 
 
@@ -685,7 +720,6 @@ class RepresentativeService:
 
             raise
 
-
     @classmethod
     def decrypt(
         cls,
@@ -743,3 +777,146 @@ class RepresentativeService:
                 representative.verification_status
             ),
         )
+
+    @classmethod
+    def _validate_verification_actor(
+        cls,
+        actor,
+    ) -> None:
+        actor_id = getattr(
+            actor,
+            "pk",
+            None,
+        )
+
+        if actor_id is None:
+            raise RepresentativeVerificationActorError()
+
+        user_model = get_user_model()
+
+        actor_is_active = (
+            user_model.objects
+            .filter(
+                pk=actor_id,
+                is_active=True,
+            )
+            .exists()
+        )
+
+        if not actor_is_active:
+            raise RepresentativeVerificationActorError(
+                actor_id
+            )
+
+    @classmethod
+    def _set_verification_status(
+        cls,
+        *,
+        representative: SubjectRepresentative,
+        actor,
+        target_status: str,
+    ) -> SubjectRepresentative:
+        cls._validate_verification_actor(
+            actor
+        )
+
+        allowed_targets = {
+            SubjectRepresentative
+            .VerificationStatus
+            .VERIFIED,
+
+            SubjectRepresentative
+            .VerificationStatus
+            .REJECTED,
+        }
+
+        if target_status not in allowed_targets:
+            raise ValueError(
+                f"Invalid representative "
+                f"verification target: "
+                f"{target_status}"
+            )
+
+        with transaction.atomic():
+            locked_representative = (
+                SubjectRepresentative.objects
+                .select_for_update()
+                .get(
+                    pk=representative.pk
+                )
+            )
+
+            current_status = (
+                locked_representative
+                .verification_status
+            )
+
+            if (
+                current_status
+                != SubjectRepresentative
+                .VerificationStatus
+                .PENDING
+            ):
+                raise (
+                    RepresentativeVerificationStateError(
+                        locked_representative.id,
+                        current_status,
+                        target_status,
+                    )
+                )
+
+            locked_representative.verification_status = (
+                target_status
+            )
+
+            locked_representative.verified_by = (
+                actor
+            )
+
+            locked_representative.verified_at = (
+                timezone.now()
+            )
+
+            locked_representative.save(
+                update_fields=[
+                    "verification_status",
+                    "verified_by",
+                    "verified_at",
+                ]
+            )
+
+            return locked_representative
+
+    @classmethod
+    def verify(
+        cls,
+        *,
+        representative: SubjectRepresentative,
+        actor,
+    ) -> SubjectRepresentative:
+        return cls._set_verification_status(
+            representative=representative,
+            actor=actor,
+            target_status=(
+                SubjectRepresentative
+                .VerificationStatus
+                .VERIFIED
+            ),
+        )
+
+    @classmethod
+    def reject(
+        cls,
+        *,
+        representative: SubjectRepresentative,
+        actor,
+    ) -> SubjectRepresentative:
+        return cls._set_verification_status(
+            representative=representative,
+            actor=actor,
+            target_status=(
+                SubjectRepresentative
+                .VerificationStatus
+                .REJECTED
+            ),
+        )    
