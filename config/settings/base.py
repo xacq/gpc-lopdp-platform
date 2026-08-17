@@ -20,6 +20,35 @@ if ENV_FILE.exists():
     environ.Env.read_env(ENV_FILE)
 
 
+# ============================================================
+# APPLICATION CRYPTOGRAPHY
+# ============================================================
+
+PII_ENCRYPTION_ACTIVE_VERSION = env.int(
+    "PII_ENCRYPTION_ACTIVE_VERSION",
+    default=1,
+)
+
+LOOKUP_HMAC_ACTIVE_VERSION = env.int(
+    "LOOKUP_HMAC_ACTIVE_VERSION",
+    default=1,
+)
+
+PII_ENCRYPTION_KEYS = {
+    1: env(
+        "PII_ENCRYPTION_KEY_V1",
+        default="",
+    ),
+}
+
+LOOKUP_HMAC_KEYS = {
+    1: env(
+        "LOOKUP_HMAC_KEY_V1",
+        default="",
+    ),
+}
+
+
 # ---------------------------------------------------------------------
 # Core
 # ---------------------------------------------------------------------

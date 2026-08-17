@@ -1,3 +1,4 @@
 Django==5.2.16
 psycopg[binary]>=3.2,<4
 django-environ>=0.12,<1
+cryptography==49.0.0
