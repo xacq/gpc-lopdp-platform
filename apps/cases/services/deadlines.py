@@ -1751,3 +1751,119 @@ class DeadlineService:
             ),
         )
 
+    @classmethod
+    def complete_current(
+        cls,
+        *,
+        request: RightsRequest,
+        actor,
+        correlation_id: (
+            uuid.UUID | None
+        ) = None,
+    ) -> list[RequestDeadline]:
+        actor = cls._validate_actor(
+            actor
+        )
+
+        if correlation_id is None:
+            correlation_id = uuid.uuid4()
+        elif not isinstance(
+            correlation_id,
+            uuid.UUID,
+        ):
+            correlation_id = uuid.UUID(
+                str(correlation_id)
+            )
+
+        with transaction.atomic():
+            locked_request = (
+                RightsRequest.objects
+                .select_for_update()
+                .get(pk=request.pk)
+            )
+
+            deadlines = list(
+                RequestDeadline.objects
+                .select_for_update()
+                .filter(
+                    request=locked_request,
+                    status__in=[
+                        RequestDeadline
+                        .Status
+                        .ACTIVE,
+                        RequestDeadline
+                        .Status
+                        .PAUSED,
+                    ],
+                )
+                .order_by(
+                    "created_at",
+                    "id",
+                )
+            )
+
+            db_now = cls._database_now()
+
+            for deadline in deadlines:
+                deadline.status = (
+                    RequestDeadline
+                    .Status
+                    .COMPLETED
+                )
+                deadline.completed_at = (
+                    db_now
+                )
+                deadline.save(
+                    update_fields=[
+                        "status",
+                        "completed_at",
+                    ]
+                )
+
+            locked_request.current_due_at = (
+                None
+            )
+            locked_request.updated_at = db_now
+            locked_request.save(
+                update_fields=[
+                    "current_due_at",
+                    "updated_at",
+                ]
+            )
+
+            if deadlines:
+                AuditService.write(
+                    actor_type=(
+                        AuditLog.ActorType.USER
+                    ),
+                    actor=actor,
+                    source=AuditLog.Source.WEB,
+                    correlation_id=(
+                        correlation_id
+                    ),
+                    action=(
+                        "REQUEST_DEADLINE_COMPLETED"
+                    ),
+                    entity_type=(
+                        "RIGHTS_REQUEST"
+                    ),
+                    entity_pk=(
+                        locked_request.id
+                    ),
+                    description=(
+                        "Open request deadline "
+                        "completed."
+                    ),
+                    metadata={
+                        "reference_number": (
+                            locked_request
+                            .reference_number
+                        ),
+                        "completed_count": (
+                            len(deadlines)
+                        ),
+                    },
+                )
+
+            return deadlines
+
