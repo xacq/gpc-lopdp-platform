@@ -48,10 +48,18 @@ DJANGO_APPS = [
     "django.contrib.postgres",
 ]
 
+
 LOCAL_APPS = [
     "apps.core.apps.CoreConfig",
     "apps.accounts.apps.AccountsConfig",
     "apps.organization.apps.OrganizationConfig",
+    "apps.legal_content.apps.LegalContentConfig",
+    "apps.subjects.apps.SubjectsConfig",
+    "apps.cases.apps.CasesConfig",
+    "apps.evidence.apps.EvidenceConfig",
+    "apps.communications.apps.CommunicationsConfig",
+    "apps.retention.apps.RetentionConfig",
+    "apps.audit.apps.AuditConfig",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + LOCAL_APPS
