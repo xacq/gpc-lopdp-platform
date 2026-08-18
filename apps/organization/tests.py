@@ -211,6 +211,12 @@ class SystemSettingsHttpTests(SystemSettingsBase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.setting.legal_name)
+        self.assertContains(
+            response,
+            "/static/vendor/bootstrap/bootstrap.min.css",
+        )
+        self.assertContains(response, "Configuración institucional")
+        self.assertNotContains(response, "{%")
 
     def test_admin_can_update_configuration(self):
         force_mfa_login(self.client, self.admin)

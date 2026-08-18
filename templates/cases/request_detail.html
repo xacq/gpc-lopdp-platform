@@ -1,75 +1,35 @@
-<!doctype html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <title>{{ case.reference_number }}</title>
-</head>
-<body>
-<main>
-    <p><a href="{% url 'cases:request_list' %}">Volver a solicitudes</a></p>
-    <h1>{{ case.reference_number }}</h1>
+{% extends "base.html" %}
+{% block title %}{{ case.reference_number }}{% endblock %}
+{% block content %}
+<div class="page-heading">
+    <a class="small text-decoration-none" href="{% url 'cases:request_list' %}">← Volver a solicitudes</a>
+    <div class="d-flex flex-column flex-md-row align-items-md-end justify-content-between gap-3 mt-3">
+        <div><p class="page-kicker">Expediente</p><h1 class="h2 mb-0">{{ case.reference_number }}</h1></div>
+        {% if can_assign %}<a class="btn btn-outline-primary" href="{% url 'cases:request_assign' case.id %}">Asignar o reasignar</a>{% endif %}
+    </div>
+</div>
 
-    <dl>
-        <dt>Derecho</dt><dd>{{ case.right.name }}</dd>
-        <dt>Estado</dt><dd>{{ case.get_status_display }}</dd>
-        <dt>Identidad</dt><dd>{{ case.get_identity_status_display }}</dd>
-        <dt>Asignado</dt><dd>{% if case.assigned_to %}{{ case.assigned_to.full_name }}{% else %}Sin asignar{% endif %}</dd>
-        <dt>Recibida</dt><dd>{{ case.received_at }}</dd>
-        <dt>Vencimiento</dt><dd>{% if case.current_due_at %}{{ case.current_due_at }}{% else %}—{% endif %}</dd>
-    </dl>
+<div class="row g-4">
+    <div class="col-lg-8">
+        <section class="card app-card mb-4"><div class="card-body p-4">
+            <h2 class="h5 mb-4">Resumen</h2>
+            <dl class="data-list"><dt>Derecho</dt><dd>{{ case.right.name }}</dd><dt>Estado</dt><dd><span class="badge text-bg-light border">{{ case.get_status_display }}</span></dd><dt>Identidad</dt><dd>{{ case.get_identity_status_display }}</dd><dt>Asignado</dt><dd>{% if case.assigned_to %}{{ case.assigned_to.full_name }}{% else %}Sin asignar{% endif %}</dd><dt>Recibida</dt><dd>{{ case.received_at }}</dd><dt>Vencimiento</dt><dd>{% if case.current_due_at %}{{ case.current_due_at }}{% else %}—{% endif %}</dd></dl>
+        </div></section>
 
-    {% if sensitive_data %}
-        <section>
-            <h2>Titular</h2>
-            <dl>
-                <dt>Nombre</dt><dd>{{ subject_snapshot.full_name }}</dd>
-                <dt>Tipo de titular</dt><dd>{{ subject_snapshot.subject_type }}</dd>
-                <dt>Documento</dt><dd>{{ subject_snapshot.document_type }} {{ subject_snapshot.document_number }}</dd>
-                <dt>Correo</dt><dd>{{ subject_snapshot.email }}</dd>
-                <dt>Teléfono</dt><dd>{% if subject_snapshot.phone %}{{ subject_snapshot.phone }}{% else %}—{% endif %}</dd>
-            </dl>
-        </section>
-
-        {% if representative_pii %}
-            <section>
-                <h2>Representante</h2>
-                <dl>
-                    <dt>Nombre</dt><dd>{{ representative_pii.representative_name }}</dd>
-                    <dt>Documento</dt><dd>{{ representative_pii.representative_document_type }} {{ representative_pii.representative_document_number }}</dd>
-                    <dt>Estado</dt><dd>{{ representative_pii.verification_status }}</dd>
-                </dl>
-            </section>
+        {% if sensitive_data %}
+            <section class="card app-card mb-4"><div class="card-body p-4"><h2 class="h5 mb-4">Titular</h2><dl class="data-list"><dt>Nombre</dt><dd>{{ subject_snapshot.full_name }}</dd><dt>Tipo de titular</dt><dd>{{ subject_snapshot.subject_type }}</dd><dt>Documento</dt><dd>{{ subject_snapshot.document_type }} {{ subject_snapshot.document_number }}</dd><dt>Correo</dt><dd>{{ subject_snapshot.email }}</dd><dt>Teléfono</dt><dd>{% if subject_snapshot.phone %}{{ subject_snapshot.phone }}{% else %}—{% endif %}</dd></dl></div></section>
+            {% if representative_pii %}<section class="card app-card mb-4"><div class="card-body p-4"><h2 class="h5 mb-4">Representante</h2><dl class="data-list"><dt>Nombre</dt><dd>{{ representative_pii.representative_name }}</dd><dt>Documento</dt><dd>{{ representative_pii.representative_document_type }} {{ representative_pii.representative_document_number }}</dd><dt>Estado</dt><dd>{{ representative_pii.verification_status }}</dd></dl></div></section>{% endif %}
+            <section class="card app-card mb-4"><div class="card-body p-4"><h2 class="h5">Descripción de la solicitud</h2><p class="mb-0 text-break">{{ request_details }}</p></div></section>
+        {% else %}
+            <div class="alert alert-info">Los datos personales del expediente no están disponibles para este perfil.</div>
         {% endif %}
-
-        <section>
-            <h2>Descripción de la solicitud</h2>
-            <p>{{ request_details }}</p>
-        </section>
-    {% else %}
-        <p>Los datos personales del expediente no están disponibles para este perfil.</p>
-    {% endif %}
-
-    <section>
-        <h2>Historial de estados</h2>
-        <ul>
-        {% for item in case.status_history.all %}
-            <li>{{ item.changed_at }}: {{ item.previous_status|default:"—" }} → {{ item.new_status }}</li>
-        {% empty %}
-            <li>Sin historial.</li>
-        {% endfor %}
-        </ul>
-    </section>
-
-    {% if can_assign %}
-        <p><a href="{% url 'cases:request_assign' case.id %}">Asignar o reasignar</a></p>
-    {% endif %}
-
-    {% if can_start_review %}
-        <form method="post" action="{% url 'cases:request_start_review' case.id %}">
-            {% csrf_token %}
-            <button type="submit">Iniciar revisión</button>
-        </form>
-    {% endif %}
-</main>
-</body>
-</html>
+    </div>
+    <div class="col-lg-4">
+        <section class="card app-card mb-4"><div class="card-body p-4">
+            <h2 class="h5 mb-3">Historial de estados</h2>
+            <ul class="list-group list-group-flush">{% for item in case.status_history.all %}<li class="list-group-item px-0"><div class="small text-body-secondary">{{ item.changed_at }}</div><div>{{ item.previous_status|default:"—" }} → {{ item.new_status }}</div></li>{% empty %}<li class="list-group-item px-0 text-body-secondary">Sin historial.</li>{% endfor %}</ul>
+        </div></section>
+        {% if can_start_review %}<form method="post" action="{% url 'cases:request_start_review' case.id %}">{% csrf_token %}<button class="btn btn-primary w-100" type="submit">Iniciar revisión</button></form>{% endif %}
+    </div>
+</div>
+{% endblock %}

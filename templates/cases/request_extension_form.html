@@ -1,27 +1,8 @@
-<!doctype html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <title>Aplicar extensión</title>
-</head>
-<body>
-    <main>
-        <h1>Aplicar extensión</h1>
-        <p>Expediente: {{ case.reference_number }}</p>
-        <p>Estado actual: {{ case.get_status_display }}</p>
-
-        <form method="post">
-            {% csrf_token %}
-            {{ form.non_field_errors }}
-            {{ form.as_p }}
-            <button type="submit">Aplicar extensión</button>
-        </form>
-
-        <p>
-            <a href="{% url 'cases:request_detail' request_id=case.id %}">
-                Volver al expediente
-            </a>
-        </p>
-    </main>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Aplicar extensión{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-8">
+    <div class="page-heading"><a class="small text-decoration-none" href="{% url 'cases:request_detail' request_id=case.id %}">← Volver al expediente</a><p class="page-kicker mt-3">{{ case.reference_number }} · {{ case.get_status_display }}</p><h1 class="h2">Aplicar extensión</h1></div>
+    <section class="card app-card"><div class="card-body p-4 p-md-5"><form method="post" novalidate>{% csrf_token %}{% include "includes/form_fields.html" %}<div class="d-flex justify-content-end"><button class="btn btn-primary" type="submit">Aplicar extensión</button></div></form></div></section>
+</div></div>
+{% endblock %}

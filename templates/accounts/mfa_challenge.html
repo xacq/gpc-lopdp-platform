@@ -1,22 +1,11 @@
-<!doctype html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Verificación en dos pasos</title>
-</head>
-<body>
-    <main>
-        <h1>Verificación en dos pasos</h1>
-        <form method="post" novalidate>
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Completar acceso</button>
-        </form>
-        <form method="post" action="{% url 'accounts:logout' %}">
-            {% csrf_token %}
-            <button type="submit">Cancelar acceso</button>
-        </form>
-    </main>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Verificación en dos pasos{% endblock %}
+{% block content %}
+<div class="auth-shell">
+    <div class="page-heading text-center"><p class="page-kicker">Segundo factor</p><h1 class="h2">Verificación en dos pasos</h1><p class="text-body-secondary mb-0">Usa tu aplicación de autenticación o un código de recuperación.</p></div>
+    <section class="card app-card"><div class="card-body p-4 p-md-5">
+        <form method="post" novalidate>{% csrf_token %}{% include "includes/form_fields.html" %}<button class="btn btn-primary w-100" type="submit">Completar acceso</button></form>
+        <form class="mt-3" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button class="btn btn-link text-secondary w-100" type="submit">Cancelar acceso</button></form>
+    </div></section>
+</div>
+{% endblock %}

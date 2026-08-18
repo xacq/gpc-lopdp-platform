@@ -1,19 +1,8 @@
-<!doctype html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <title>Asignar {{ case.reference_number }}</title>
-</head>
-<body>
-<main>
-    <p><a href="{% url 'cases:request_detail' case.id %}">Volver al expediente</a></p>
-    <h1>Asignar {{ case.reference_number }}</h1>
-    <form method="post">
-        {% csrf_token %}
-        {{ form.non_field_errors }}
-        <p>{{ form.assignee.label_tag }} {{ form.assignee }} {{ form.assignee.errors }}</p>
-        <button type="submit">Guardar asignación</button>
-    </form>
-</main>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Asignar {{ case.reference_number }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-7">
+    <div class="page-heading"><a class="small text-decoration-none" href="{% url 'cases:request_detail' case.id %}">← Volver al expediente</a><p class="page-kicker mt-3">Flujo operativo</p><h1 class="h2">Asignar {{ case.reference_number }}</h1></div>
+    <section class="card app-card"><div class="card-body p-4 p-md-5"><form method="post" novalidate>{% csrf_token %}{% include "includes/form_fields.html" %}<div class="d-flex justify-content-end"><button class="btn btn-primary" type="submit">Guardar asignación</button></div></form></div></section>
+</div></div>
+{% endblock %}

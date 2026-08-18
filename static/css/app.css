@@ -1,0 +1,93 @@
+:root {
+    --app-navy: #12314b;
+    --app-blue: #176b87;
+    --app-surface: #f4f7f9;
+}
+
+body {
+    min-height: 100vh;
+    background: var(--app-surface);
+    color: #20313f;
+}
+
+.app-navbar {
+    background: linear-gradient(110deg, var(--app-navy), var(--app-blue));
+    box-shadow: 0 0.15rem 0.6rem rgb(18 49 75 / 18%);
+}
+
+.brand-mark {
+    display: inline-grid;
+    place-items: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    margin-right: 0.35rem;
+    border-radius: 0.65rem;
+    background: rgb(255 255 255 / 16%);
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+}
+
+.page-heading {
+    margin-bottom: 1.5rem;
+}
+
+.page-kicker {
+    margin-bottom: 0.35rem;
+    color: var(--app-blue);
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.app-card {
+    border: 0;
+    border-radius: 1rem;
+    box-shadow: 0 0.4rem 1.5rem rgb(18 49 75 / 8%);
+}
+
+.auth-shell {
+    max-width: 31rem;
+    margin-inline: auto;
+}
+
+.table thead th {
+    color: #536675;
+    font-size: 0.75rem;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.data-list {
+    display: grid;
+    grid-template-columns: minmax(8rem, 0.4fr) 1fr;
+    gap: 0.7rem 1rem;
+}
+
+.data-list dt,
+.data-list dd {
+    margin: 0;
+    padding-bottom: 0.7rem;
+    border-bottom: 1px solid #e8edf0;
+}
+
+.recovery-code {
+    padding: 0.65rem 0.8rem;
+    border: 1px dashed #aebdc8;
+    border-radius: 0.5rem;
+    background: #fff;
+    font-size: 1rem;
+}
+
+@media (max-width: 575.98px) {
+    .data-list {
+        grid-template-columns: 1fr;
+        gap: 0.15rem;
+    }
+
+    .data-list dt {
+        padding-bottom: 0;
+        border-bottom: 0;
+    }
+}

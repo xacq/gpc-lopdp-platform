@@ -1,19 +1,8 @@
-<!doctype html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Crear usuario</title>
-</head>
-<body>
-    <main>
-        <h1>Crear usuario</h1>
-        <form method="post" novalidate>
-            {% csrf_token %}
-            {{ form.as_p }}
-            <button type="submit">Crear usuario</button>
-        </form>
-        <p><a href="{% url 'accounts:user_list' %}">Cancelar</a></p>
-    </main>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Crear usuario{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-8 col-xl-7">
+    <div class="page-heading"><p class="page-kicker">Administración</p><h1 class="h2">Crear usuario</h1><p class="text-body-secondary mb-0">Registra una cuenta y asigna su rol operativo.</p></div>
+    <section class="card app-card"><div class="card-body p-4 p-md-5"><form method="post" novalidate>{% csrf_token %}{% include "includes/form_fields.html" %}<div class="d-flex flex-column flex-sm-row gap-2 justify-content-end"><a class="btn btn-outline-secondary" href="{% url 'accounts:user_list' %}">Cancelar</a><button class="btn btn-primary" type="submit">Crear usuario</button></div></form></div></section>
+</div></div>
+{% endblock %}

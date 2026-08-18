@@ -1,20 +1,12 @@
-<!doctype html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Códigos de recuperación</title>
-</head>
-<body>
-    <main>
-        <h1>Guarda tus códigos de recuperación</h1>
-        <p>Cada código puede usarse una sola vez. No volverán a mostrarse.</p>
-        <ul>
-            {% for code in recovery_codes %}
-                <li><code>{{ code }}</code></li>
-            {% endfor %}
-        </ul>
-        <p><a href="{{ next_url }}">Continuar</a></p>
-    </main>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Códigos de recuperación{% endblock %}
+{% block content %}
+<div class="auth-shell">
+    <div class="page-heading text-center"><p class="page-kicker">Último paso</p><h1 class="h2">Guarda tus códigos de recuperación</h1><p class="text-body-secondary mb-0">Cada código puede usarse una sola vez. No volverán a mostrarse.</p></div>
+    <section class="card app-card"><div class="card-body p-4 p-md-5">
+        <div class="alert alert-warning" role="alert">Guárdalos en un lugar seguro antes de continuar.</div>
+        <ul class="list-unstyled row g-2 mb-4">{% for code in recovery_codes %}<li class="col-12 col-sm-6"><div class="recovery-code text-center"><code>{{ code }}</code></div></li>{% endfor %}</ul>
+        <a class="btn btn-primary w-100" href="{{ next_url }}">Continuar</a>
+    </div></section>
+</div>
+{% endblock %}

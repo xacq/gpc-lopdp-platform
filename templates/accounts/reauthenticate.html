@@ -1,20 +1,10 @@
-<!doctype html>
-<html lang="es">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Confirmar operación sensible</title>
-</head>
-<body>
-    <main>
-        <h1>Confirma tu identidad</h1>
-        <p>Esta operación requiere una verificación reciente.</p>
-        <form method="post" novalidate>
-            {% csrf_token %}
-            <input type="hidden" name="next" value="{{ next_url }}">
-            {{ form.as_p }}
-            <button type="submit">Verificar</button>
-        </form>
-    </main>
-</body>
-</html>
+{% extends "base.html" %}
+{% block title %}Confirmar operación sensible{% endblock %}
+{% block content %}
+<div class="auth-shell">
+    <div class="page-heading text-center"><p class="page-kicker">Operación sensible</p><h1 class="h2">Confirma tu identidad</h1><p class="text-body-secondary mb-0">Esta operación requiere una verificación reciente.</p></div>
+    <section class="card app-card"><div class="card-body p-4 p-md-5">
+        <form method="post" novalidate>{% csrf_token %}<input type="hidden" name="next" value="{{ next_url }}">{% include "includes/form_fields.html" %}<button class="btn btn-primary w-100" type="submit">Verificar</button></form>
+    </div></section>
+</div>
+{% endblock %}

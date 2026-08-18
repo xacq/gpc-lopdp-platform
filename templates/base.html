@@ -1,0 +1,62 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Plataforma de gestión de solicitudes LOPDP">
+    <title>{% block title %}GPC LOPDP{% endblock %} | VINESA</title>
+    <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    <nav class="navbar navbar-expand-lg navbar-dark app-navbar" aria-label="Navegación principal">
+        <div class="container">
+            <a class="navbar-brand fw-semibold" href="{% if nav_can_access_cases %}{% url 'cases:request_list' %}{% else %}{% url 'accounts:login' %}{% endif %}">
+                <span class="brand-mark" aria-hidden="true">GPC</span>
+                <span>LOPDP</span>
+            </a>
+            {% if user.is_authenticated %}
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavigation" aria-controls="mainNavigation" aria-expanded="false" aria-label="Mostrar navegación">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="mainNavigation">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        {% if nav_can_access_cases %}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'cases:request_list' %}">Solicitudes</a></li>
+                        {% endif %}
+                        {% if nav_can_manage_users %}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'accounts:user_list' %}">Usuarios</a></li>
+                        {% endif %}
+                        {% if nav_can_manage_settings %}
+                            <li class="nav-item"><a class="nav-link" href="{% url 'organization:system_settings' %}">Configuración</a></li>
+                        {% endif %}
+                    </ul>
+                    <div class="d-lg-flex align-items-lg-center gap-3">
+                        <span class="navbar-text small">{{ user.full_name|default:user.email }}</span>
+                        <form method="post" action="{% url 'accounts:logout' %}">
+                            {% csrf_token %}
+                            <button class="btn btn-sm btn-outline-light" type="submit">Cerrar sesión</button>
+                        </form>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    <main class="container py-4 py-lg-5">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="status">
+                {{ message }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+            </div>
+        {% endfor %}
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="container pb-4 text-center text-body-secondary small">
+        Gestión responsable de solicitudes de derechos de datos personales
+    </footer>
+    <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>
