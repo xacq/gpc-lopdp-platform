@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Administración de usuarios</title>
+</head>
+<body>
+    <main>
+        <h1>Administración de usuarios</h1>
+        <p><a href="{% url 'accounts:user_create' %}">Crear usuario</a></p>
+        <table>
+            <thead>
+                <tr>
+                    <th>Correo</th>
+                    <th>Nombre</th>
+                    <th>Rol</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for managed_user in users %}
+                    <tr>
+                        <td>{{ managed_user.email }}</td>
+                        <td>{{ managed_user.full_name }}</td>
+                        <td>
+                            {% for assignment in managed_user.active_role_assignments %}
+                                {{ assignment.role.get_code_display }}{% if not forloop.last %}, {% endif %}
+                            {% empty %}
+                                Sin rol activo
+                            {% endfor %}
+                        </td>
+                        <td>{% if managed_user.is_active %}Activo{% else %}Inactivo{% endif %}</td>
+                        <td>
+                            <a href="{% url 'accounts:user_change_role' managed_user.pk %}">Cambiar rol</a>
+                            <a href="{% url 'accounts:user_reset_password' managed_user.pk %}">Restablecer contraseña</a>
+                            <form method="post" action="{% url 'accounts:user_unlock' managed_user.pk %}">
+                                {% csrf_token %}
+                                <button type="submit">Desbloquear</button>
+                            </form>
+                            {% if managed_user.is_active %}
+                                <form method="post" action="{% url 'accounts:user_deactivate' managed_user.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit">Desactivar</button>
+                                </form>
+                            {% else %}
+                                <form method="post" action="{% url 'accounts:user_activate' managed_user.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit">Activar</button>
+                                </form>
+                            {% endif %}
+                        </td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="5">No existen usuarios.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </main>
+</body>
+</html>
