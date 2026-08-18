@@ -104,6 +104,7 @@ MIDDLEWARE = [
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "apps.accounts.middleware.SessionSecurityMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
@@ -183,6 +184,45 @@ AUTH_PASSWORD_VALIDATORS = [
         ),
     },
 ]
+
+LOGIN_URL = "/accounts/login/"
+LOGIN_REDIRECT_URL = "/cases/"
+LOGOUT_REDIRECT_URL = "/accounts/login/"
+
+# Five failures is the frozen architecture requirement. The lock period
+# remains configuration-driven so it can be adjusted without a schema
+# change. Current default: 15 minutes.
+ACCOUNT_LOGIN_MAX_FAILURES = env.int(
+    "ACCOUNT_LOGIN_MAX_FAILURES",
+    default=5,
+)
+ACCOUNT_LOGIN_LOCK_SECONDS = env.int(
+    "ACCOUNT_LOGIN_LOCK_SECONDS",
+    default=15 * 60,
+)
+
+# Password -> MFA transitional state. No email, password, OTP, secret or
+# other PII is stored in this session state.
+AUTH_PENDING_MFA_TTL_SECONDS = env.int(
+    "AUTH_PENDING_MFA_TTL_SECONDS",
+    default=5 * 60,
+)
+
+# Frozen session requirements: maximum 8 hours, 30 minutes inactivity.
+AUTH_SESSION_ABSOLUTE_SECONDS = env.int(
+    "AUTH_SESSION_ABSOLUTE_SECONDS",
+    default=8 * 60 * 60,
+)
+AUTH_SESSION_IDLE_SECONDS = env.int(
+    "AUTH_SESSION_IDLE_SECONDS",
+    default=30 * 60,
+)
+
+SESSION_COOKIE_AGE = AUTH_SESSION_ABSOLUTE_SECONDS
+SESSION_COOKIE_HTTPONLY = True
+SESSION_COOKIE_SAMESITE = "Lax"
+CSRF_COOKIE_HTTPONLY = True
+CSRF_COOKIE_SAMESITE = "Lax"
 
 
 # ---------------------------------------------------------------------

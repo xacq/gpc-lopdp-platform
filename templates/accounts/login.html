@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Acceso administrativo</title>
+</head>
+<body>
+    <main>
+        <h1>Acceso administrativo</h1>
+
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form.next }}
+
+            {% if form.non_field_errors %}
+                <div role="alert">
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <p>
+                {{ form.email.label_tag }}<br>
+                {{ form.email }}
+                {% for error in form.email.errors %}
+                    <br><span>{{ error }}</span>
+                {% endfor %}
+            </p>
+
+            <p>
+                {{ form.password.label_tag }}<br>
+                {{ form.password }}
+                {% for error in form.password.errors %}
+                    <br><span>{{ error }}</span>
+                {% endfor %}
+            </p>
+
+            <button type="submit">Continuar</button>
+        </form>
+    </main>
+</body>
+</html>

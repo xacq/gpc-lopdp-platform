@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Verificación en dos pasos</title>
+</head>
+<body>
+    <main>
+        <h1>Verificación en dos pasos</h1>
+        <p>Se requiere un segundo factor para completar el acceso administrativo.</p>
+        <p>La sesión todavía no está autenticada.</p>
+
+        <form method="post" action="{% url 'accounts:logout' %}">
+            {% csrf_token %}
+            <button type="submit">Cancelar acceso</button>
+        </form>
+    </main>
+</body>
+</html>
