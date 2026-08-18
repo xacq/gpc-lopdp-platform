@@ -551,6 +551,7 @@ class NotificationService:
                     "SENT",
                     "DELIVERED",
                     "CANCELLED",
+                    "PROCESSING",
                 }
             ):
                 return communication

@@ -1,6 +1,7 @@
 import base64
 import threading
 import uuid
+from unittest.mock import patch
 
 from django.db import close_old_connections
 from django.test import (
@@ -224,3 +225,158 @@ class NotificationConcurrencyTests(
             .count(),
             1,
         )
+
+    def test_concurrent_processing_sends_email_only_once(self):
+        communication = (
+            NotificationService
+            .queue_email(
+                request=self.request,
+                communication_type=(
+                    "ACKNOWLEDGEMENT"
+                ),
+                recipient=(
+                    "subject@example.com"
+                ),
+                subject=(
+                    "Solicitud recibida"
+                ),
+                body=(
+                    "Su solicitud fue recibida."
+                ),
+                visible_to_subject=True,
+                idempotency_key=(
+                    uuid.uuid4()
+                ),
+            )
+        )
+
+        send_started = threading.Event()
+        release_send = threading.Event()
+        send_counter_lock = threading.Lock()
+        send_counter = {
+            "count": 0,
+        }
+        results = []
+        errors = []
+
+        def fake_send(
+            _message,
+            *,
+            fail_silently=False,
+        ):
+            with send_counter_lock:
+                send_counter["count"] += 1
+
+            send_started.set()
+
+            if not release_send.wait(
+                timeout=10
+            ):
+                raise RuntimeError(
+                    "Test send release timed out."
+                )
+
+            return 1
+
+        def process():
+            close_old_connections()
+
+            try:
+                result = (
+                    NotificationService
+                    .process_email(
+                        communication.id
+                    )
+                )
+                results.append(
+                    result.delivery_status
+                )
+            except Exception as exc:
+                errors.append(exc)
+            finally:
+                close_old_connections()
+
+        with patch(
+            "apps.communications.services."
+            "notifications.EmailMessage.send",
+            new=fake_send,
+        ):
+            first = threading.Thread(
+                target=process
+            )
+            first.start()
+
+            self.assertTrue(
+                send_started.wait(
+                    timeout=10
+                )
+            )
+
+            second = threading.Thread(
+                target=process
+            )
+            second.start()
+
+            second.join(
+                timeout=10
+            )
+
+            self.assertFalse(
+                second.is_alive()
+            )
+
+            release_send.set()
+
+            first.join(
+                timeout=10
+            )
+
+        self.assertFalse(
+            first.is_alive()
+        )
+
+        self.assertEqual(
+            errors,
+            [],
+        )
+
+        communication.refresh_from_db()
+
+        self.assertEqual(
+            communication.delivery_status,
+            "SENT",
+        )
+
+        self.assertEqual(
+            communication.attempt_count,
+            1,
+        )
+
+        self.assertEqual(
+            send_counter["count"],
+            1,
+        )
+
+        self.assertEqual(
+            RequestCommunication.objects
+            .filter(
+                pk=communication.id
+            )
+            .count(),
+            1,
+        )
+
+        self.assertEqual(
+            AuditLog.objects
+            .filter(
+                action=(
+                    "REQUEST_COMMUNICATION_SENT"
+                ),
+                entity_pk=str(
+                    communication.id
+                ),
+            )
+            .count(),
+            1,
+        )
+
