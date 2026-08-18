@@ -8,9 +8,11 @@
 <body>
     <main>
         <h1>Verificación en dos pasos</h1>
-        <p>Se requiere un segundo factor para completar el acceso administrativo.</p>
-        <p>La sesión todavía no está autenticada.</p>
-
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Completar acceso</button>
+        </form>
         <form method="post" action="{% url 'accounts:logout' %}">
             {% csrf_token %}
             <button type="submit">Cancelar acceso</button>

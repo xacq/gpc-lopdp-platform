@@ -207,6 +207,19 @@ AUTH_PENDING_MFA_TTL_SECONDS = env.int(
     "AUTH_PENDING_MFA_TTL_SECONDS",
     default=5 * 60,
 )
+AUTH_PENDING_MFA_MAX_FAILURES = env.int(
+    "AUTH_PENDING_MFA_MAX_FAILURES",
+    default=5,
+)
+
+MFA_TOTP_ISSUER = env(
+    "MFA_TOTP_ISSUER",
+    default="VINESA",
+)
+MFA_RECOVERY_CODE_COUNT = env.int(
+    "MFA_RECOVERY_CODE_COUNT",
+    default=10,
+)
 
 # Frozen session requirements: maximum 8 hours, 30 minutes inactivity.
 AUTH_SESSION_ABSOLUTE_SECONDS = env.int(

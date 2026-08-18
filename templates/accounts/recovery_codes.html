@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Códigos de recuperación</title>
+</head>
+<body>
+    <main>
+        <h1>Guarda tus códigos de recuperación</h1>
+        <p>Cada código puede usarse una sola vez. No volverán a mostrarse.</p>
+        <ul>
+            {% for code in recovery_codes %}
+                <li><code>{{ code }}</code></li>
+            {% endfor %}
+        </ul>
+        <p><a href="{{ next_url }}">Continuar</a></p>
+    </main>
+</body>
+</html>

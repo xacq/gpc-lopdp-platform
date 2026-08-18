@@ -4,7 +4,8 @@ from dataclasses import dataclass
 from datetime import timedelta
 
 from django.conf import settings
-from django.contrib.auth import get_user_model, logout as django_logout
+from django.contrib.auth import get_user_model, login as django_login
+from django.contrib.auth import logout as django_logout
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import transaction
 from django.utils import timezone
@@ -20,6 +21,7 @@ _DUMMY_PASSWORD_HASH = make_password(
 _PENDING_USER_KEY = "_gpc_pending_auth_user_id"
 _PENDING_STARTED_KEY = "_gpc_pending_auth_started_at"
 _PENDING_NEXT_KEY = "_gpc_pending_auth_next"
+_PENDING_FAILURES_KEY = "_gpc_pending_mfa_failures"
 
 _AUTH_STARTED_KEY = "_gpc_auth_started_at"
 _AUTH_LAST_ACTIVITY_KEY = "_gpc_auth_last_activity_at"
@@ -339,8 +341,62 @@ class AuthenticationSessionService:
             _PENDING_USER_KEY,
             _PENDING_STARTED_KEY,
             _PENDING_NEXT_KEY,
+            _PENDING_FAILURES_KEY,
         ):
             request.session.pop(key, None)
+
+    @classmethod
+    def record_pending_mfa_failure(cls, request) -> bool:
+        """Record an MFA failure and expire pending state at the limit."""
+        failures = request.session.get(
+            _PENDING_FAILURES_KEY,
+            0,
+        )
+        if not isinstance(failures, int) or failures < 0:
+            failures = 0
+        failures += 1
+        maximum = int(
+            getattr(
+                settings,
+                "AUTH_PENDING_MFA_MAX_FAILURES",
+                5,
+            )
+        )
+        if maximum <= 0:
+            raise ValueError(
+                "AUTH_PENDING_MFA_MAX_FAILURES must be positive."
+            )
+        if failures >= maximum:
+            cls.clear_pending_mfa(request)
+            return False
+        request.session[_PENDING_FAILURES_KEY] = failures
+        return True
+
+    @classmethod
+    def complete_mfa(cls, *, request, user) -> str:
+        pending = cls.get_pending_mfa(request)
+        if pending is None or pending.user_id != str(user.pk):
+            raise AuthenticationRejected(
+                "Pending authentication is invalid."
+            )
+
+        next_url = (
+            pending.next_url
+            or settings.LOGIN_REDIRECT_URL
+        )
+        cls.clear_pending_mfa(request)
+        django_login(
+            request,
+            user,
+            backend=(
+                "django.contrib.auth.backends."
+                "ModelBackend"
+            ),
+        )
+        SessionSecurityService.initialize_authenticated_session(
+            request
+        )
+        return next_url
 
     @classmethod
     def get_pending_mfa(
@@ -388,6 +444,21 @@ class AuthenticationSessionService:
             next_url=request.session.get(
                 _PENDING_NEXT_KEY
             ),
+        )
+
+    @classmethod
+    def get_pending_user(cls, request):
+        pending = cls.get_pending_mfa(request)
+        if pending is None:
+            return None
+        return (
+            get_user_model()
+            .objects
+            .filter(
+                pk=pending.user_id,
+                is_active=True,
+            )
+            .first()
         )
 
 

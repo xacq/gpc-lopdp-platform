@@ -5,17 +5,18 @@ from django.contrib.auth import logout as django_logout
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
-from django.views.decorators.http import (
-    require_GET,
-    require_http_methods,
-    require_POST,
-)
+from django.views.decorators.http import require_http_methods, require_POST
 
-from apps.accounts.forms import LoginForm
+from apps.accounts.forms import LoginForm, MFAChallengeForm, TOTPForm
 from apps.accounts.services.authentication import (
     AuthenticationRejected,
     AuthenticationService,
     AuthenticationSessionService,
+)
+from apps.accounts.services.mfa import (
+    MFAEnrollmentRequired,
+    MFARejected,
+    MFAService,
 )
 
 
@@ -111,7 +112,7 @@ def login_view(request):
     )
 
 
-@require_GET
+@require_http_methods(["GET", "POST"])
 def mfa_pending(request):
     pending = (
         AuthenticationSessionService
@@ -123,10 +124,120 @@ def mfa_pending(request):
             reverse("accounts:login")
         )
 
+    user = (
+        AuthenticationSessionService
+        .get_pending_user(request)
+    )
+    if user is None:
+        return redirect(
+            reverse("accounts:login")
+        )
+
+    if MFAService.has_confirmed_totp(user=user):
+        form = MFAChallengeForm(
+            request.POST or None
+        )
+        if (
+            request.method == "POST"
+            and form.is_valid()
+        ):
+            code = form.cleaned_data["code"]
+            try:
+                if (
+                    len(code.strip()) == 6
+                    and code.strip().isascii()
+                    and code.strip().isdigit()
+                ):
+                    MFAService.verify_totp(
+                        user=user,
+                        code=code,
+                    )
+                else:
+                    MFAService.consume_recovery_code(
+                        user=user,
+                        code=code,
+                    )
+            except (
+                MFARejected,
+                MFAEnrollmentRequired,
+            ):
+                (
+                    AuthenticationSessionService
+                    .record_pending_mfa_failure(request)
+                )
+                form.add_error(
+                    None,
+                    "No fue posible verificar "
+                    "el segundo factor.",
+                )
+            else:
+                next_url = (
+                    AuthenticationSessionService
+                    .complete_mfa(
+                        request=request,
+                        user=user,
+                    )
+                )
+                return redirect(next_url)
+
+        return render(
+            request,
+            "accounts/mfa_challenge.html",
+            {"form": form},
+        )
+
+    enrollment = MFAService.begin_totp_enrollment(
+        user=user
+    )
+    form = TOTPForm(request.POST or None)
+    if request.method == "POST" and form.is_valid():
+        try:
+            confirmation = MFAService.confirm_totp(
+                user=user,
+                device_id=enrollment.device.pk,
+                code=form.cleaned_data["code"],
+            )
+        except MFARejected:
+            (
+                AuthenticationSessionService
+                .record_pending_mfa_failure(request)
+            )
+            form.add_error(
+                None,
+                "No fue posible verificar "
+                "el segundo factor.",
+            )
+        else:
+            next_url = (
+                AuthenticationSessionService
+                .complete_mfa(
+                    request=request,
+                    user=user,
+                )
+            )
+            return render(
+                request,
+                "accounts/recovery_codes.html",
+                {
+                    "recovery_codes": (
+                        confirmation
+                        .recovery_codes
+                    ),
+                    "next_url": next_url,
+                },
+            )
+
     return render(
         request,
-        "accounts/mfa_pending.html",
-        {},
+        "accounts/mfa_enroll.html",
+        {
+            "form": form,
+            "secret": enrollment.secret,
+            "provisioning_uri": (
+                enrollment.provisioning_uri
+            ),
+            "qr_data_uri": enrollment.qr_data_uri,
+        },
     )
 
 
