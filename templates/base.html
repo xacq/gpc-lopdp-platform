@@ -41,7 +41,10 @@
                     </div>
                 </div>
             {% else %}
-                <a class="btn btn-sm btn-outline-light" href="{% url 'accounts:login' %}">Acceso institucional</a>
+                <div class="d-flex gap-2">
+                    <a class="btn btn-sm btn-light" href="{% url 'cases:public_request_create' %}">Presentar solicitud</a>
+                    <a class="btn btn-sm btn-outline-light" href="{% url 'accounts:login' %}">Acceso institucional</a>
+                </div>
             {% endif %}
         </div>
     </nav>

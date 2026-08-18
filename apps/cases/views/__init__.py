@@ -14,6 +14,9 @@ from .requests import (
 from .public import (
     public_download,
     public_download_form,
+    public_email_verification,
+    public_request_create,
+    public_request_received,
     public_tracking,
 )
 
@@ -31,5 +34,8 @@ __all__ = [
     "request_start_review",
     "public_download",
     "public_download_form",
+    "public_email_verification",
+    "public_request_create",
+    "public_request_received",
     "public_tracking",
 ]

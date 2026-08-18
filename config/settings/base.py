@@ -240,6 +240,17 @@ AUTH_SENSITIVE_REAUTH_MAX_FAILURES = env.int(
     default=5,
 )
 
+# Public portal access codes. Codes are HMAC-protected at rest and delivered
+# only through encrypted communication records.
+PUBLIC_EMAIL_VERIFICATION_TTL_SECONDS = env.int(
+    "PUBLIC_EMAIL_VERIFICATION_TTL_SECONDS",
+    default=24 * 60 * 60,
+)
+PUBLIC_TRACKING_TTL_SECONDS = env.int(
+    "PUBLIC_TRACKING_TTL_SECONDS",
+    default=90 * 24 * 60 * 60,
+)
+
 SESSION_COOKIE_AGE = AUTH_SESSION_ABSOLUTE_SECONDS
 SESSION_COOKIE_HTTPONLY = True
 SESSION_COOKIE_SAMESITE = "Lax"

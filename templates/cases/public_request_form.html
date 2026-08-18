@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Presentar solicitud{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-9 col-xl-8">
+    <div class="page-heading text-center">
+        <p class="page-kicker">Ejercicio de derechos</p>
+        <h1 class="h2">Presentar una solicitud</h1>
+        <p class="text-body-secondary mb-0">Completa tus datos y describe el derecho que deseas ejercer.</p>
+    </div>
+    <div class="alert alert-info" role="note">Al enviar, recibirás por correo los códigos para verificar tu dirección y consultar el estado. No compartas esos códigos.</div>
+    <section class="card app-card"><div class="card-body p-4 p-md-5">
+        <form method="post" action="{% url 'cases:public_request_create' %}" novalidate>
+            {% csrf_token %}
+            {% include "includes/form_fields.html" %}
+            <button class="btn btn-primary w-100" type="submit">Enviar solicitud</button>
+        </form>
+        <div class="text-center mt-3"><a class="small" href="{% url 'cases:public_tracking' %}">Ya tengo una solicitud</a></div>
+    </div></section>
+</div></div>
+{% endblock %}

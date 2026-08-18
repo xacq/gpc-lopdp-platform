@@ -3,6 +3,9 @@ from django.urls import path
 from apps.cases.views import (
     public_download,
     public_download_form,
+    public_email_verification,
+    public_request_create,
+    public_request_received,
     public_tracking,
     request_assign,
     request_clarification_create,
@@ -22,6 +25,21 @@ app_name = "cases"
 
 
 urlpatterns = [
+    path(
+        "public/request/",
+        public_request_create,
+        name="public_request_create",
+    ),
+    path(
+        "public/request/received/",
+        public_request_received,
+        name="public_request_received",
+    ),
+    path(
+        "public/verify-email/",
+        public_email_verification,
+        name="public_email_verification",
+    ),
     path(
         "public/tracking/",
         public_tracking,

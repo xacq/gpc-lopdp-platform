@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Verificar correo electrónico{% endblock %}
+{% block content %}
+<div class="auth-shell">
+    <div class="page-heading text-center">
+        <p class="page-kicker">Portal de privacidad</p>
+        <h1 class="h2">Verificar correo electrónico</h1>
+        <p class="text-body-secondary mb-0">Ingresa la referencia y el código enviados a tu correo.</p>
+    </div>
+    <section class="card app-card"><div class="card-body p-4 p-md-5">
+        {% if verified %}
+            <div class="alert alert-success" role="status">El correo electrónico fue verificado correctamente.</div>
+            <a class="btn btn-primary w-100" href="{% url 'cases:public_tracking' %}">Consultar solicitud</a>
+        {% else %}
+            {% if access_error %}<div class="alert alert-danger" role="alert">{{ access_error }}</div>{% endif %}
+            <form method="post" action="{% url 'cases:public_email_verification' %}" novalidate>
+                {% csrf_token %}
+                {% include "includes/form_fields.html" %}
+                <button class="btn btn-primary w-100" type="submit">Verificar correo</button>
+            </form>
+        {% endif %}
+        <div class="text-center mt-3"><a class="small" href="{% url 'cases:public_tracking' %}">Volver al seguimiento</a></div>
+    </div></section>
+</div>
+{% endblock %}

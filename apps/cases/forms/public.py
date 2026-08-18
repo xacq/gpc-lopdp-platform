@@ -1,5 +1,33 @@
 from django import forms
 
+from apps.cases.forms.requests import RequestCreateForm
+
+
+class PublicRequestForm(RequestCreateForm):
+    privacy_acknowledgement = forms.BooleanField(
+        label=(
+            "Confirmo que los datos proporcionados son correctos y que "
+            "puedo recibir comunicaciones sobre esta solicitud."
+        ),
+        required=True,
+    )
+    website = forms.CharField(
+        required=False,
+        widget=forms.HiddenInput(),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields.pop("source_channel")
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get("website"):
+            raise forms.ValidationError(
+                "No fue posible procesar la solicitud."
+            )
+        return cleaned
+
 
 class PublicTrackingForm(forms.Form):
     reference_number = forms.CharField(
@@ -50,6 +78,32 @@ class PublicDownloadForm(forms.Form):
     )
     token = forms.CharField(
         label="Código de descarga",
+        max_length=255,
+        strip=True,
+        widget=forms.PasswordInput(
+            render_value=False,
+            attrs={
+                "autocomplete": "off",
+                "spellcheck": "false",
+            },
+        ),
+    )
+
+
+class PublicEmailVerificationForm(forms.Form):
+    reference_number = forms.CharField(
+        label="Número de referencia",
+        max_length=50,
+        widget=forms.TextInput(
+            attrs={
+                "autocomplete": "off",
+                "autocapitalize": "characters",
+                "spellcheck": "false",
+            }
+        ),
+    )
+    token = forms.CharField(
+        label="Código de verificación",
         max_length=255,
         strip=True,
         widget=forms.PasswordInput(

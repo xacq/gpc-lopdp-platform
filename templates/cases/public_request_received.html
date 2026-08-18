@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Solicitud recibida{% endblock %}
+{% block content %}
+<div class="auth-shell text-center">
+    <section class="card app-card"><div class="card-body p-4 p-md-5">
+        <div class="display-6 text-success mb-3" aria-hidden="true">✓</div>
+        <p class="page-kicker">Envío procesado</p>
+        <h1 class="h3">Revisa tu correo electrónico</h1>
+        <p class="text-body-secondary">Si los datos fueron aceptados, recibirás la referencia y los códigos necesarios para verificar el correo y consultar la solicitud.</p>
+        <p class="small text-body-secondary">Por seguridad, esta pantalla no confirma si una persona ya consta en nuestros registros.</p>
+        <a class="btn btn-outline-primary" href="{% url 'cases:public_tracking' %}">Ir al seguimiento</a>
+    </div></section>
+</div>
+{% endblock %}

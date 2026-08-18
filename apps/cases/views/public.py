@@ -4,11 +4,19 @@ import uuid
 
 from django.http import HttpResponse
 from django.shortcuts import render
+from django.urls import reverse
 from django.utils.http import content_disposition_header
 from django.views.decorators.http import require_http_methods, require_POST
 
-from apps.cases.forms import PublicDownloadForm, PublicTrackingForm
+from apps.cases.forms import (
+    PublicDownloadForm,
+    PublicEmailVerificationForm,
+    PublicRequestForm,
+    PublicTrackingForm,
+)
 from apps.cases.models import RightsRequest
+from apps.cases.services.cases import CaseWorkflowError
+from apps.cases.services.intake import CaseIntakeError
 from apps.cases.services.public_downloads import (
     PublicDownloadAccessError,
     PublicDownloadService,
@@ -17,9 +25,17 @@ from apps.cases.services.public_tracking import (
     PublicTrackingAccessError,
     PublicTrackingService,
 )
+from apps.cases.services.public_intake import (
+    PublicEmailVerificationAccessError,
+    PublicEmailVerificationService,
+    PublicIntakeError,
+    PublicIntakeService,
+)
+from apps.communications.services.notifications import NotificationServiceError
 from apps.core.services.crypto import CryptoError
 from apps.core.services.storage import PrivateStorageError
 from apps.evidence.services.attachments import AttachmentIntegrityError
+from apps.subjects.services.subjects import SubjectServiceError
 
 
 GENERIC_TRACKING_ERROR = (
@@ -28,6 +44,9 @@ GENERIC_TRACKING_ERROR = (
 )
 GENERIC_DOWNLOAD_ERROR = (
     "No fue posible descargar el documento. Verifica los datos de acceso."
+)
+GENERIC_VERIFICATION_ERROR = (
+    "No fue posible verificar el correo. Revisa la referencia y el código."
 )
 
 
@@ -44,6 +63,106 @@ def _status_label(value: str) -> str:
         return RightsRequest.Status(value).label
     except ValueError:
         return value
+
+
+@require_http_methods(["GET", "POST"])
+def public_request_create(request):
+    if request.method == "POST":
+        form = PublicRequestForm(request.POST)
+        if form.is_valid():
+            cleaned = form.cleaned_data
+            try:
+                PublicIntakeService.submit(
+                    subject_type=cleaned["subject_type"],
+                    document_type=cleaned["document_type"],
+                    document_number=cleaned["document_number"],
+                    full_name=cleaned["full_name"],
+                    email=cleaned["email"],
+                    phone=cleaned.get("phone"),
+                    right=cleaned["right"],
+                    request_details=cleaned["request_details"],
+                    representative_name=cleaned.get("representative_name"),
+                    representative_document_type=cleaned.get(
+                        "representative_document_type"
+                    ),
+                    representative_document_number=cleaned.get(
+                        "representative_document_number"
+                    ),
+                    representative_email=cleaned.get("representative_email"),
+                    correlation_id=uuid.uuid4(),
+                )
+            except (
+                PublicIntakeError,
+                CaseIntakeError,
+                CaseWorkflowError,
+                SubjectServiceError,
+                NotificationServiceError,
+                ValueError,
+            ):
+                # The same confirmation prevents disclosure of existing
+                # subject or representative records.
+                pass
+            return _private_response(
+                HttpResponse(
+                    status=303,
+                    headers={
+                        "Location": reverse("cases:public_request_received"),
+                    },
+                )
+            )
+    else:
+        form = PublicRequestForm()
+
+    response = render(
+        request,
+        "cases/public_request_form.html",
+        {"form": form},
+    )
+    return _private_response(response)
+
+
+@require_http_methods(["GET"])
+def public_request_received(request):
+    response = render(request, "cases/public_request_received.html")
+    return _private_response(response)
+
+
+@require_http_methods(["GET", "POST"])
+def public_email_verification(request):
+    verified = False
+    access_error = None
+
+    if request.method == "POST":
+        submitted_form = PublicEmailVerificationForm(request.POST)
+        if submitted_form.is_valid():
+            try:
+                PublicEmailVerificationService.verify(
+                    reference_number=(
+                        submitted_form.cleaned_data["reference_number"]
+                    ),
+                    token=submitted_form.cleaned_data["token"],
+                    correlation_id=uuid.uuid4(),
+                )
+            except PublicEmailVerificationAccessError:
+                access_error = GENERIC_VERIFICATION_ERROR
+            else:
+                verified = True
+        else:
+            access_error = GENERIC_VERIFICATION_ERROR
+        form = PublicEmailVerificationForm()
+    else:
+        form = PublicEmailVerificationForm()
+
+    response = render(
+        request,
+        "cases/public_email_verification.html",
+        {
+            "form": form,
+            "verified": verified,
+            "access_error": access_error,
+        },
+    )
+    return _private_response(response)
 
 
 @require_http_methods(["GET", "POST"])
