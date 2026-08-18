@@ -7,7 +7,7 @@ from typing import Callable
 
 from django.conf import settings
 from django.core.mail import EmailMessage
-from django.db import connection, transaction
+from django.db import IntegrityError, connection, transaction
 
 from apps.audit.models import AuditLog
 from apps.audit.services.audit import AuditService
@@ -403,38 +403,55 @@ class NotificationService:
         )
 
         with transaction.atomic():
-            communication = (
-                RequestCommunication.objects
-                .create(
-                    id=communication_id,
-                    request=request,
-                    direction="OUTBOUND",
-                    channel="EMAIL",
-                    communication_type=(
-                        communication_type
-                    ),
-                    visible_to_subject=(
-                        visible_to_subject
-                    ),
-                    recipient_encrypted=(
-                        recipient_encrypted
-                    ),
-                    subject_encrypted=(
-                        subject_encrypted
-                    ),
-                    body_encrypted=(
-                        body_encrypted
-                    ),
-                    encryption_key_version=(
-                        key_version
-                    ),
-                    idempotency_key=(
-                        idempotency_key
-                    ),
-                    delivery_status="PENDING",
-                    attempt_count=0,
+            try:
+                with transaction.atomic():
+                    communication = (
+                        RequestCommunication.objects
+                        .create(
+                            id=communication_id,
+                            request=request,
+                            direction="OUTBOUND",
+                            channel="EMAIL",
+                            communication_type=(
+                                communication_type
+                            ),
+                            visible_to_subject=(
+                                visible_to_subject
+                            ),
+                            recipient_encrypted=(
+                                recipient_encrypted
+                            ),
+                            subject_encrypted=(
+                                subject_encrypted
+                            ),
+                            body_encrypted=(
+                                body_encrypted
+                            ),
+                            encryption_key_version=(
+                                key_version
+                            ),
+                            idempotency_key=(
+                                idempotency_key
+                            ),
+                            delivery_status="PENDING",
+                            attempt_count=0,
+                        )
+                    )
+            except IntegrityError:
+                existing = (
+                    RequestCommunication.objects
+                    .filter(
+                        idempotency_key=(
+                            idempotency_key
+                        )
+                    )
+                    .first()
                 )
-            )
+
+                if existing is None:
+                    raise
+
+                return existing
 
             cls._audit(
                 action=(
