@@ -342,3 +342,14 @@ class RequestClarificationReceiveForm(
             }
         ),
     )
+
+
+class RequestExtensionForm(forms.Form):
+    reason = forms.CharField(
+        label="Motivo de la extensión",
+        widget=forms.Textarea(
+            attrs={
+                "rows": 6,
+            }
+        ),
+    )

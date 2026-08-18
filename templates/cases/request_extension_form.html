@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>Aplicar extensión</title>
+</head>
+<body>
+    <main>
+        <h1>Aplicar extensión</h1>
+        <p>Expediente: {{ case.reference_number }}</p>
+        <p>Estado actual: {{ case.get_status_display }}</p>
+
+        <form method="post">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {{ form.as_p }}
+            <button type="submit">Aplicar extensión</button>
+        </form>
+
+        <p>
+            <a href="{% url 'cases:request_detail' request_id=case.id %}">
+                Volver al expediente
+            </a>
+        </p>
+    </main>
+</body>
+</html>

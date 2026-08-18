@@ -4,6 +4,7 @@ from .requests import (
     request_clarification_receive,
     request_create,
     request_detail,
+    request_extension,
     request_list,
     request_start_review,
 )
@@ -14,6 +15,7 @@ __all__ = [
     "request_clarification_receive",
     "request_create",
     "request_detail",
+    "request_extension",
     "request_list",
     "request_start_review",
 ]

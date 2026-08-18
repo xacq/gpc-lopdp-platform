@@ -25,6 +25,7 @@ from apps.cases.forms.requests import (
     RequestClarificationForm,
     RequestClarificationReceiveForm,
     RequestCreateForm,
+    RequestExtensionForm,
 )
 from apps.cases.models import (
     RequestClarification,
@@ -598,6 +599,82 @@ def request_clarification_receive(
         {
             "case": case,
             "clarification": clarification,
+            "form": form,
+        },
+    )
+
+
+@login_required
+@require_http_methods(
+    ["GET", "POST"]
+)
+def request_extension(
+    request,
+    request_id,
+):
+    # La matriz baseline permite extensiones a los
+    # mismos roles administrativos que pueden asignar:
+    # ADMIN, DPD y RESPONSABLE. La validación de dominio
+    # se mantiene además dentro de CaseWorkflowService.
+    if not can_assign_case(
+        request.user
+    ):
+        raise PermissionDenied
+
+    case = _visible_case_or_404(
+        user=request.user,
+        request_id=request_id,
+    )
+
+    if request.method == "POST":
+        form = RequestExtensionForm(
+            request.POST
+        )
+
+        if form.is_valid():
+            try:
+                (
+                    CaseWorkflowService
+                    .apply_extension(
+                        request=case,
+                        reason=(
+                            form.cleaned_data[
+                                "reason"
+                            ]
+                        ),
+                        actor=request.user,
+                    )
+                )
+            except CasePermissionError:
+                raise PermissionDenied
+            except (
+                CaseWorkflowError,
+                DeadlineServiceError,
+                ValueError,
+            ):
+                form.add_error(
+                    None,
+                    (
+                        "No fue posible aplicar "
+                        "la extensión. Verifique "
+                        "el estado del expediente, "
+                        "la regla del derecho y "
+                        "el plazo activo."
+                    ),
+                )
+            else:
+                return redirect(
+                    "cases:request_detail",
+                    request_id=case.pk,
+                )
+    else:
+        form = RequestExtensionForm()
+
+    return render(
+        request,
+        "cases/request_extension_form.html",
+        {
+            "case": case,
             "form": form,
         },
     )

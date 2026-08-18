@@ -6,6 +6,7 @@ from apps.cases.views import (
     request_clarification_receive,
     request_create,
     request_detail,
+    request_extension,
     request_list,
     request_start_review,
 )
@@ -42,6 +43,14 @@ urlpatterns = [
         ),
         request_start_review,
         name="request_start_review",
+    ),
+    path(
+        (
+            "<uuid:request_id>/"
+            "extension/"
+        ),
+        request_extension,
+        name="request_extension",
     ),
     path(
         (
