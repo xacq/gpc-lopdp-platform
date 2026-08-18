@@ -8,6 +8,9 @@ from apps.cases.views import (
     request_detail,
     request_extension,
     request_list,
+    request_mark_responded,
+    request_resolution,
+    request_close,
     request_start_review,
 )
 
@@ -74,4 +77,29 @@ urlpatterns = [
             "request_clarification_receive"
         ),
     ),
+    path(
+        (
+            "<uuid:request_id>/"
+            "resolution/"
+        ),
+        request_resolution,
+        name="request_resolution",
+    ),
+    path(
+        (
+            "<uuid:request_id>/"
+            "mark-responded/"
+        ),
+        request_mark_responded,
+        name="request_mark_responded",
+    ),
+    path(
+        (
+            "<uuid:request_id>/"
+            "close/"
+        ),
+        request_close,
+        name="request_close",
+    ),
+
 ]

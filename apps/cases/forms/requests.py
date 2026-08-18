@@ -5,6 +5,8 @@ from django.contrib.auth import (
 from django.db.models import Q
 
 from apps.cases.models import (
+    CaseOutcomeReason,
+    RequestResolution,
     RightsRequest,
 )
 from apps.cases.services.cases import (
@@ -353,3 +355,67 @@ class RequestExtensionForm(forms.Form):
             }
         ),
     )
+
+
+class RequestResolutionForm(forms.Form):
+    resolution_type = forms.ChoiceField(
+        label="Tipo de resolución",
+        choices=(
+            RequestResolution
+            .ResolutionType
+            .choices
+        ),
+    )
+
+    details = forms.CharField(
+        label="Detalle de la resolución",
+        widget=forms.Textarea(
+            attrs={
+                "rows": 8,
+            }
+        ),
+    )
+
+    outcome_reason = (
+        forms.ModelChoiceField(
+            label="Causal",
+            queryset=(
+                CaseOutcomeReason.objects.none()
+            ),
+            required=False,
+            empty_label=(
+                "Seleccione una causal"
+            ),
+        )
+    )
+
+    legal_basis = forms.CharField(
+        label="Base jurídica",
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "rows": 4,
+            }
+        ),
+    )
+
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        super().__init__(
+            *args,
+            **kwargs,
+        )
+
+        self.fields[
+            "outcome_reason"
+        ].queryset = (
+            CaseOutcomeReason.objects
+            .filter(is_active=True)
+            .order_by(
+                "reason_type",
+                "code",
+            )
+        )

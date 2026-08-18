@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>Resolver expediente</title>
+</head>
+<body>
+    <main>
+        <h1>Resolver expediente</h1>
+        <p>{{ case.reference_number }}</p>
+
+        <form method="post">
+            {% csrf_token %}
+            {{ form.non_field_errors }}
+            {{ form.as_p }}
+            <button type="submit">Registrar resolución</button>
+        </form>
+
+        <p>
+            <a href="{% url 'cases:request_detail' request_id=case.id %}">
+                Volver al expediente
+            </a>
+        </p>
+    </main>
+</body>
+</html>

@@ -26,6 +26,7 @@ from apps.cases.forms.requests import (
     RequestClarificationReceiveForm,
     RequestCreateForm,
     RequestExtensionForm,
+    RequestResolutionForm,
 )
 from apps.cases.models import (
     RequestClarification,
@@ -50,6 +51,10 @@ from apps.cases.services.deadlines import (
 from apps.cases.services.intake import (
     CaseIntakeError,
     CaseIntakeService,
+)
+from apps.cases.services.resolutions import (
+    ResolutionService,
+    ResolutionServiceError,
 )
 from apps.subjects.services.subjects import (
     RepresentativeService,
@@ -677,4 +682,177 @@ def request_extension(
             "case": case,
             "form": form,
         },
+    )
+
+
+@login_required
+@require_http_methods(
+    ["GET", "POST"]
+)
+def request_resolution(
+    request,
+    request_id,
+):
+    # Resolución es una acción administrativa sensible.
+    # La reautenticación MFA reciente se incorporará
+    # en la fase de autenticación; por ahora se aplica
+    # la matriz de roles y la validación del Service.
+    if not can_assign_case(
+        request.user
+    ):
+        raise PermissionDenied
+
+    case = _visible_case_or_404(
+        user=request.user,
+        request_id=request_id,
+    )
+
+    if request.method == "POST":
+        form = RequestResolutionForm(
+            request.POST
+        )
+
+        if form.is_valid():
+            try:
+                ResolutionService.resolve(
+                    request=case,
+                    resolution_type=(
+                        form.cleaned_data[
+                            "resolution_type"
+                        ]
+                    ),
+                    details=(
+                        form.cleaned_data[
+                            "details"
+                        ]
+                    ),
+                    outcome_reason=(
+                        form.cleaned_data.get(
+                            "outcome_reason"
+                        )
+                    ),
+                    legal_basis=(
+                        form.cleaned_data.get(
+                            "legal_basis"
+                        )
+                    ),
+                    actor=request.user,
+                )
+            except CasePermissionError:
+                raise PermissionDenied
+            except (
+                ResolutionServiceError,
+                CaseWorkflowError,
+                DeadlineServiceError,
+                ValueError,
+            ):
+                form.add_error(
+                    None,
+                    (
+                        "No fue posible registrar "
+                        "la resolución. Verifique "
+                        "el estado del expediente, "
+                        "el tipo de resolución y "
+                        "la causal seleccionada."
+                    ),
+                )
+            else:
+                return redirect(
+                    "cases:request_detail",
+                    request_id=case.pk,
+                )
+    else:
+        form = RequestResolutionForm()
+
+    return render(
+        request,
+        "cases/request_resolution_form.html",
+        {
+            "case": case,
+            "form": form,
+        },
+    )
+
+
+@login_required
+@require_POST
+def request_mark_responded(
+    request,
+    request_id,
+):
+    if not can_assign_case(
+        request.user
+    ):
+        raise PermissionDenied
+
+    case = _visible_case_or_404(
+        user=request.user,
+        request_id=request_id,
+    )
+
+    try:
+        ResolutionService.mark_responded(
+            request=case,
+            actor=request.user,
+        )
+    except CasePermissionError:
+        raise PermissionDenied
+    except (
+        ResolutionServiceError,
+        CaseWorkflowError,
+        DeadlineServiceError,
+        ValueError,
+    ):
+        return HttpResponseBadRequest(
+            (
+                "No fue posible marcar "
+                "el expediente como respondido."
+            )
+        )
+
+    return redirect(
+        "cases:request_detail",
+        request_id=case.pk,
+    )
+
+
+@login_required
+@require_POST
+def request_close(
+    request,
+    request_id,
+):
+    if not can_assign_case(
+        request.user
+    ):
+        raise PermissionDenied
+
+    case = _visible_case_or_404(
+        user=request.user,
+        request_id=request_id,
+    )
+
+    try:
+        ResolutionService.close(
+            request=case,
+            actor=request.user,
+        )
+    except CasePermissionError:
+        raise PermissionDenied
+    except (
+        ResolutionServiceError,
+        CaseWorkflowError,
+        DeadlineServiceError,
+        ValueError,
+    ):
+        return HttpResponseBadRequest(
+            (
+                "No fue posible cerrar "
+                "el expediente."
+            )
+        )
+
+    return redirect(
+        "cases:request_detail",
+        request_id=case.pk,
     )
