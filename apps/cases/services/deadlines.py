@@ -1804,21 +1804,42 @@ class DeadlineService:
 
             db_now = cls._database_now()
 
+            completed_count = 0
+            cancelled_count = 0
+
             for deadline in deadlines:
-                deadline.status = (
-                    RequestDeadline
-                    .Status
-                    .COMPLETED
-                )
-                deadline.completed_at = (
-                    db_now
-                )
-                deadline.save(
-                    update_fields=[
-                        "status",
-                        "completed_at",
-                    ]
-                )
+                if deadline.starts_at <= db_now:
+                    deadline.status = (
+                        RequestDeadline
+                        .Status
+                        .COMPLETED
+                    )
+                    deadline.completed_at = (
+                        db_now
+                    )
+                    deadline.save(
+                        update_fields=[
+                            "status",
+                            "completed_at",
+                        ]
+                    )
+                    completed_count += 1
+                else:
+                    deadline.status = (
+                        RequestDeadline
+                        .Status
+                        .CANCELLED
+                    )
+                    deadline.completed_at = (
+                        None
+                    )
+                    deadline.save(
+                        update_fields=[
+                            "status",
+                            "completed_at",
+                        ]
+                    )
+                    cancelled_count += 1
 
             locked_request.current_due_at = (
                 None
@@ -1860,7 +1881,10 @@ class DeadlineService:
                             .reference_number
                         ),
                         "completed_count": (
-                            len(deadlines)
+                            completed_count
+                        ),
+                        "cancelled_count": (
+                            cancelled_count
                         ),
                     },
                 )
