@@ -19,6 +19,12 @@ SENSITIVE_READ_ROLE_CODES = {
     Role.Code.RESPONSABLE,
 }
 
+MANAGER_ROLE_CODES = {
+    Role.Code.ADMIN,
+    Role.Code.DPD,
+    Role.Code.RESPONSABLE,
+}
+
 PANEL_ROLE_CODES = {
     Role.Code.ADMIN,
     Role.Code.DPD,
@@ -31,27 +37,49 @@ PANEL_ROLE_CODES = {
 def active_role_codes(user) -> set[str]:
     if (
         user is None
-        or not getattr(user, "is_authenticated", False)
-        or not getattr(user, "is_active", False)
+        or not getattr(
+            user,
+            "is_authenticated",
+            False,
+        )
+        or not getattr(
+            user,
+            "is_active",
+            False,
+        )
     ):
         return set()
 
     return set(
-        user.role_assignments.filter(
+        user.role_assignments
+        .filter(
             revoked_at__isnull=True,
             role__is_active=True,
-        ).values_list(
+        )
+        .values_list(
             "role__code",
             flat=True,
         )
     )
 
 
+def _is_active_superuser(user) -> bool:
+    return bool(
+        getattr(
+            user,
+            "is_active",
+            False,
+        )
+        and getattr(
+            user,
+            "is_superuser",
+            False,
+        )
+    )
+
+
 def can_access_case_panel(user) -> bool:
-    if (
-        getattr(user, "is_active", False)
-        and getattr(user, "is_superuser", False)
-    ):
+    if _is_active_superuser(user):
         return True
 
     return bool(
@@ -65,20 +93,24 @@ def visible_requests_for(
     queryset: QuerySet | None = None,
 ) -> QuerySet:
     if queryset is None:
-        queryset = RightsRequest.objects.all()
+        queryset = (
+            RightsRequest.objects.all()
+        )
 
-    if (
-        getattr(user, "is_active", False)
-        and getattr(user, "is_superuser", False)
-    ):
+    if _is_active_superuser(user):
         return queryset
 
-    role_codes = active_role_codes(user)
+    role_codes = active_role_codes(
+        user
+    )
 
     if role_codes & FULL_READ_ROLE_CODES:
         return queryset
 
-    if Role.Code.OPERADOR in role_codes:
+    if (
+        Role.Code.OPERADOR
+        in role_codes
+    ):
         return queryset.filter(
             assigned_to_id=user.pk
         )
@@ -90,60 +122,58 @@ def can_view_sensitive_case_data(
     user,
     request: RightsRequest,
 ) -> bool:
-    if (
-        getattr(user, "is_active", False)
-        and getattr(user, "is_superuser", False)
-    ):
+    if _is_active_superuser(user):
         return True
 
-    role_codes = active_role_codes(user)
+    role_codes = active_role_codes(
+        user
+    )
 
-    if role_codes & SENSITIVE_READ_ROLE_CODES:
+    if (
+        role_codes
+        & SENSITIVE_READ_ROLE_CODES
+    ):
         return True
 
     return (
-        Role.Code.OPERADOR in role_codes
-        and request.assigned_to_id == user.pk
+        Role.Code.OPERADOR
+        in role_codes
+        and request.assigned_to_id
+        == user.pk
     )
 
 
-def can_assign_case(user) -> bool:
-    if (
-        getattr(user, "is_active", False)
-        and getattr(user, "is_superuser", False)
-    ):
+def can_create_case(user) -> bool:
+    if _is_active_superuser(user):
         return True
 
     return bool(
         active_role_codes(user)
-        & {
-            Role.Code.ADMIN,
-            Role.Code.DPD,
-            Role.Code.RESPONSABLE,
-        }
+        & MANAGER_ROLE_CODES
     )
+
+
+def can_assign_case(user) -> bool:
+    return can_create_case(user)
 
 
 def can_start_review(
     user,
     request: RightsRequest,
 ) -> bool:
-    if (
-        getattr(user, "is_active", False)
-        and getattr(user, "is_superuser", False)
-    ):
+    if _is_active_superuser(user):
         return True
 
-    role_codes = active_role_codes(user)
+    role_codes = active_role_codes(
+        user
+    )
 
-    if role_codes & {
-        Role.Code.ADMIN,
-        Role.Code.DPD,
-        Role.Code.RESPONSABLE,
-    }:
+    if role_codes & MANAGER_ROLE_CODES:
         return True
 
     return (
-        Role.Code.OPERADOR in role_codes
-        and request.assigned_to_id == user.pk
+        Role.Code.OPERADOR
+        in role_codes
+        and request.assigned_to_id
+        == user.pk
     )
