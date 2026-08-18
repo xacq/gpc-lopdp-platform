@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>Solicitudes</title>
+</head>
+<body>
+<main>
+    <h1>Solicitudes</h1>
+    <table>
+        <thead>
+        <tr>
+            <th>Referencia</th>
+            <th>Derecho</th>
+            <th>Estado</th>
+            <th>Identidad</th>
+            <th>Asignado</th>
+            <th>Recibida</th>
+            <th>Vencimiento</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for case in cases %}
+            <tr>
+                <td><a href="{% url 'cases:request_detail' case.id %}">{{ case.reference_number }}</a></td>
+                <td>{{ case.right.name }}</td>
+                <td>{{ case.get_status_display }}</td>
+                <td>{{ case.get_identity_status_display }}</td>
+                <td>{% if case.assigned_to %}{{ case.assigned_to.full_name }}{% else %}Sin asignar{% endif %}</td>
+                <td>{{ case.received_at }}</td>
+                <td>{% if case.current_due_at %}{{ case.current_due_at }}{% else %}—{% endif %}</td>
+            </tr>
+        {% empty %}
+            <tr><td colspan="7">No hay expedientes disponibles.</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</main>
+</body>
+</html>

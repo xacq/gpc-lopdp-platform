@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>Asignar {{ case.reference_number }}</title>
+</head>
+<body>
+<main>
+    <p><a href="{% url 'cases:request_detail' case.id %}">Volver al expediente</a></p>
+    <h1>Asignar {{ case.reference_number }}</h1>
+    <form method="post">
+        {% csrf_token %}
+        {{ form.non_field_errors }}
+        <p>{{ form.assignee.label_tag }} {{ form.assignee }} {{ form.assignee.errors }}</p>
+        <button type="submit">Guardar asignación</button>
+    </form>
+</main>
+</body>
+</html>

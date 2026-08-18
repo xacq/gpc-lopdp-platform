@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <title>{{ case.reference_number }}</title>
+</head>
+<body>
+<main>
+    <p><a href="{% url 'cases:request_list' %}">Volver a solicitudes</a></p>
+    <h1>{{ case.reference_number }}</h1>
+
+    <dl>
+        <dt>Derecho</dt><dd>{{ case.right.name }}</dd>
+        <dt>Estado</dt><dd>{{ case.get_status_display }}</dd>
+        <dt>Identidad</dt><dd>{{ case.get_identity_status_display }}</dd>
+        <dt>Asignado</dt><dd>{% if case.assigned_to %}{{ case.assigned_to.full_name }}{% else %}Sin asignar{% endif %}</dd>
+        <dt>Recibida</dt><dd>{{ case.received_at }}</dd>
+        <dt>Vencimiento</dt><dd>{% if case.current_due_at %}{{ case.current_due_at }}{% else %}—{% endif %}</dd>
+    </dl>
+
+    {% if sensitive_data %}
+        <section>
+            <h2>Titular</h2>
+            <dl>
+                <dt>Nombre</dt><dd>{{ subject_snapshot.full_name }}</dd>
+                <dt>Tipo de titular</dt><dd>{{ subject_snapshot.subject_type }}</dd>
+                <dt>Documento</dt><dd>{{ subject_snapshot.document_type }} {{ subject_snapshot.document_number }}</dd>
+                <dt>Correo</dt><dd>{{ subject_snapshot.email }}</dd>
+                <dt>Teléfono</dt><dd>{% if subject_snapshot.phone %}{{ subject_snapshot.phone }}{% else %}—{% endif %}</dd>
+            </dl>
+        </section>
+
+        {% if representative_pii %}
+            <section>
+                <h2>Representante</h2>
+                <dl>
+                    <dt>Nombre</dt><dd>{{ representative_pii.representative_name }}</dd>
+                    <dt>Documento</dt><dd>{{ representative_pii.representative_document_type }} {{ representative_pii.representative_document_number }}</dd>
+                    <dt>Estado</dt><dd>{{ representative_pii.verification_status }}</dd>
+                </dl>
+            </section>
+        {% endif %}
+
+        <section>
+            <h2>Descripción de la solicitud</h2>
+            <p>{{ request_details }}</p>
+        </section>
+    {% else %}
+        <p>Los datos personales del expediente no están disponibles para este perfil.</p>
+    {% endif %}
+
+    <section>
+        <h2>Historial de estados</h2>
+        <ul>
+        {% for item in case.status_history.all %}
+            <li>{{ item.changed_at }}: {{ item.previous_status|default:"—" }} → {{ item.new_status }}</li>
+        {% empty %}
+            <li>Sin historial.</li>
+        {% endfor %}
+        </ul>
+    </section>
+
+    {% if can_assign %}
+        <p><a href="{% url 'cases:request_assign' case.id %}">Asignar o reasignar</a></p>
+    {% endif %}
+
+    {% if can_start_review %}
+        <form method="post" action="{% url 'cases:request_start_review' case.id %}">
+            {% csrf_token %}
+            <button type="submit">Iniciar revisión</button>
+        </form>
+    {% endif %}
+</main>
+</body>
+</html>
