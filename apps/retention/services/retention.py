@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import hashlib
+import json
 import uuid
 from datetime import timedelta
 
@@ -408,6 +410,244 @@ class RetentionService:
             cls._audit(
                 action=(
                     "DATA_DISPOSAL_EVENT_APPROVED"
+                ),
+                event=locked,
+                actor=actor,
+                correlation_id=(
+                    correlation_id
+                ),
+            )
+
+            return locked
+
+
+    @classmethod
+    def _execution_evidence_hash(
+        cls,
+        *,
+        event: DataDisposalEvent,
+        actor,
+        executed_at,
+    ) -> str:
+        payload = {
+            "event_id": str(event.id),
+            "entity_type": event.entity_type,
+            "entity_pk": event.entity_pk,
+            "action": event.action,
+            "executed_by_id": str(
+                actor.id
+            ),
+            "executed_at": (
+                executed_at.isoformat()
+            ),
+        }
+
+        canonical = json.dumps(
+            payload,
+            sort_keys=True,
+            separators=(",", ":"),
+            ensure_ascii=False,
+        ).encode("utf-8")
+
+        return hashlib.sha256(
+            canonical
+        ).hexdigest()
+
+    @classmethod
+    def execute(
+        cls,
+        *,
+        event: DataDisposalEvent,
+        actor,
+        executor,
+        correlation_id=None,
+    ) -> DataDisposalEvent:
+        actor = cls._validate_manager(
+            actor
+        )
+
+        if not callable(executor):
+            raise RetentionServiceError(
+                "A callable retention executor "
+                "is required."
+            )
+
+        with transaction.atomic():
+            locked = (
+                DataDisposalEvent.objects
+                .select_for_update()
+                .get(pk=event.pk)
+            )
+
+            if (
+                locked.status
+                == DataDisposalEvent
+                .Status
+                .EXECUTED
+            ):
+                return locked
+
+            if (
+                locked.status
+                != DataDisposalEvent
+                .Status
+                .APPROVED
+            ):
+                raise RetentionEventStateError(
+                    "Only APPROVED retention "
+                    "events can be executed."
+                )
+
+            try:
+                executor(
+                    entity_type=(
+                        locked.entity_type
+                    ),
+                    entity_pk=(
+                        locked.entity_pk
+                    ),
+                    action=locked.action,
+                )
+            except Exception as exc:
+                locked.status = (
+                    DataDisposalEvent
+                    .Status
+                    .FAILED
+                )
+                locked.error_code = (
+                    "RETENTION_EXECUTION_FAILED"
+                )
+                locked.error_message = (
+                    exc.__class__.__name__[
+                        :500
+                    ]
+                )
+                locked.executed_by = None
+                locked.executed_at = None
+                locked.evidence_sha256 = None
+
+                locked.save(
+                    update_fields=[
+                        "status",
+                        "error_code",
+                        "error_message",
+                        "executed_by",
+                        "executed_at",
+                        "evidence_sha256",
+                    ]
+                )
+
+                cls._audit(
+                    action=(
+                        "DATA_DISPOSAL_EVENT_FAILED"
+                    ),
+                    event=locked,
+                    actor=actor,
+                    correlation_id=(
+                        correlation_id
+                    ),
+                )
+
+                return locked
+
+            db_now = cls._database_now()
+
+            locked.status = (
+                DataDisposalEvent
+                .Status
+                .EXECUTED
+            )
+            locked.executed_by = actor
+            locked.executed_at = db_now
+            locked.evidence_sha256 = (
+                cls._execution_evidence_hash(
+                    event=locked,
+                    actor=actor,
+                    executed_at=db_now,
+                )
+            )
+            locked.error_code = None
+            locked.error_message = None
+
+            locked.save(
+                update_fields=[
+                    "status",
+                    "executed_by",
+                    "executed_at",
+                    "evidence_sha256",
+                    "error_code",
+                    "error_message",
+                ]
+            )
+
+            cls._audit(
+                action=(
+                    "DATA_DISPOSAL_EVENT_EXECUTED"
+                ),
+                event=locked,
+                actor=actor,
+                correlation_id=(
+                    correlation_id
+                ),
+            )
+
+            return locked
+
+    @classmethod
+    def retry_failed(
+        cls,
+        *,
+        event: DataDisposalEvent,
+        actor,
+        correlation_id=None,
+    ) -> DataDisposalEvent:
+        actor = cls._validate_manager(
+            actor
+        )
+
+        with transaction.atomic():
+            locked = (
+                DataDisposalEvent.objects
+                .select_for_update()
+                .get(pk=event.pk)
+            )
+
+            if (
+                locked.status
+                != DataDisposalEvent
+                .Status
+                .FAILED
+            ):
+                raise RetentionEventStateError(
+                    "Only FAILED retention "
+                    "events can be retried."
+                )
+
+            if locked.approved_at is None:
+                raise RetentionEventStateError(
+                    "Failed event has no "
+                    "approval timestamp."
+                )
+
+            locked.status = (
+                DataDisposalEvent
+                .Status
+                .APPROVED
+            )
+            locked.error_code = None
+            locked.error_message = None
+
+            locked.save(
+                update_fields=[
+                    "status",
+                    "error_code",
+                    "error_message",
+                ]
+            )
+
+            cls._audit(
+                action=(
+                    "DATA_DISPOSAL_EVENT_RETRY_READY"
                 ),
                 event=locked,
                 actor=actor,
