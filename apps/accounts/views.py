@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from django.conf import settings
+from django.contrib.auth.decorators import login_required
 from django.contrib.auth import logout as django_logout
 from django.shortcuts import redirect, render
 from django.urls import reverse
@@ -12,6 +13,7 @@ from apps.accounts.services.authentication import (
     AuthenticationRejected,
     AuthenticationService,
     AuthenticationSessionService,
+    SessionSecurityService,
 )
 from apps.accounts.services.mfa import (
     MFAEnrollmentRequired,
@@ -237,6 +239,68 @@ def mfa_pending(request):
                 enrollment.provisioning_uri
             ),
             "qr_data_uri": enrollment.qr_data_uri,
+        },
+    )
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def sensitive_reauthentication(request):
+    next_url = _safe_next_url(
+        request,
+        request.POST.get("next")
+        if request.method == "POST"
+        else request.GET.get("next"),
+    ) or settings.LOGIN_REDIRECT_URL
+    form = MFAChallengeForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        code = form.cleaned_data["code"]
+        try:
+            if (
+                len(code.strip()) == 6
+                and code.strip().isascii()
+                and code.strip().isdigit()
+            ):
+                MFAService.verify_totp(
+                    user=request.user,
+                    code=code,
+                )
+            else:
+                MFAService.consume_recovery_code(
+                    user=request.user,
+                    code=code,
+                )
+        except (
+            MFARejected,
+            MFAEnrollmentRequired,
+        ):
+            (
+                SessionSecurityService
+                .record_sensitive_reauthentication_failure(
+                    request
+                )
+            )
+            form.add_error(
+                None,
+                "No fue posible verificar "
+                "el segundo factor.",
+            )
+        else:
+            (
+                SessionSecurityService
+                .mark_sensitive_reauthentication(
+                    request
+                )
+            )
+            return redirect(next_url)
+
+    return render(
+        request,
+        "accounts/reauthenticate.html",
+        {
+            "form": form,
+            "next_url": next_url,
         },
     )
 

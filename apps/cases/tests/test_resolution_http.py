@@ -5,6 +5,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from apps.accounts.models import Role, UserRole
+from apps.accounts.tests_helpers import force_mfa_login
 from apps.cases.models import (
     CaseOutcomeReason,
     RequestDeadline,
@@ -220,6 +221,44 @@ class ResolutionHttpTests(TestCase):
             response["Location"],
         )
 
+    def test_resolution_requires_recent_sensitive_reauthentication(self):
+        case = self.create_request()
+        force_mfa_login(
+            self.client,
+            self.manager,
+            sensitive=False,
+        )
+        response = self.client.get(
+            reverse(
+                "cases:request_resolution",
+                kwargs={"request_id": case.id},
+            )
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(
+            reverse("accounts:reauth"),
+            response["Location"],
+        )
+
+    def test_close_requires_recent_sensitive_reauthentication(self):
+        case = self.create_request()
+        force_mfa_login(
+            self.client,
+            self.manager,
+            sensitive=False,
+        )
+        response = self.client.post(
+            reverse(
+                "cases:request_close",
+                kwargs={"request_id": case.id},
+            )
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertIn(
+            reverse("accounts:reauth"),
+            response["Location"],
+        )
+
     def test_operator_cannot_resolve(self):
         case = self.create_request()
         case = CaseWorkflowService.assign(
@@ -227,7 +266,7 @@ class ResolutionHttpTests(TestCase):
             assignee=self.operator,
             actor=self.manager,
         )
-        self.client.force_login(self.operator)
+        force_mfa_login(self.client, self.operator)
         response = self.client.post(
             reverse(
                 "cases:request_resolution",
@@ -249,7 +288,7 @@ class ResolutionHttpTests(TestCase):
 
     def test_auditor_cannot_resolve(self):
         case = self.create_request()
-        self.client.force_login(self.auditor)
+        force_mfa_login(self.client, self.auditor)
         response = self.client.get(
             reverse(
                 "cases:request_resolution",
@@ -262,7 +301,7 @@ class ResolutionHttpTests(TestCase):
 
     def test_resolution_get_does_not_mutate(self):
         case = self.create_request()
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
         response = self.client.get(
             reverse(
                 "cases:request_resolution",
@@ -285,7 +324,7 @@ class ResolutionHttpTests(TestCase):
 
     def test_resolution_form_exposes_only_active_reasons(self):
         case = self.create_request()
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
         response = self.client.get(
             reverse(
                 "cases:request_resolution",
@@ -311,7 +350,7 @@ class ResolutionHttpTests(TestCase):
     def test_manager_can_approve(self):
         case = self.create_request()
         details = "Resolución favorable reservada."
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
         response = self.client.post(
             reverse(
                 "cases:request_resolution",
@@ -350,7 +389,7 @@ class ResolutionHttpTests(TestCase):
 
     def test_partial_approval_changes_status(self):
         case = self.create_request()
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
         response = self.client.post(
             reverse(
                 "cases:request_resolution",
@@ -376,7 +415,7 @@ class ResolutionHttpTests(TestCase):
 
     def test_rejection_requires_matching_reason(self):
         case = self.create_request()
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
         response = self.client.post(
             reverse(
                 "cases:request_resolution",
@@ -406,7 +445,7 @@ class ResolutionHttpTests(TestCase):
 
     def test_rejection_closes_active_deadline(self):
         case = self.create_request()
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
         response = self.client.post(
             reverse(
                 "cases:request_resolution",
@@ -441,7 +480,7 @@ class ResolutionHttpTests(TestCase):
         case = self.create_request(
             start_review=False,
         )
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
         response = self.client.post(
             reverse(
                 "cases:request_resolution",
@@ -471,7 +510,7 @@ class ResolutionHttpTests(TestCase):
             details="Primera resolución.",
             actor=self.manager,
         )
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
         response = self.client.post(
             reverse(
                 "cases:request_resolution",
@@ -499,7 +538,7 @@ class ResolutionHttpTests(TestCase):
             details="Aprobada.",
             actor=self.manager,
         )
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
         response = self.client.get(
             reverse(
                 "cases:request_mark_responded",
@@ -522,7 +561,7 @@ class ResolutionHttpTests(TestCase):
             details="Aprobada.",
             actor=self.manager,
         )
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
         response = self.client.post(
             reverse(
                 "cases:request_mark_responded",
@@ -542,7 +581,7 @@ class ResolutionHttpTests(TestCase):
 
     def test_mark_responded_without_resolution_is_bad_request(self):
         case = self.create_request()
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
         response = self.client.post(
             reverse(
                 "cases:request_mark_responded",
@@ -570,7 +609,7 @@ class ResolutionHttpTests(TestCase):
             assignee=self.operator,
             actor=self.manager,
         )
-        self.client.force_login(self.operator)
+        force_mfa_login(self.client, self.operator)
         response = self.client.post(
             reverse(
                 "cases:request_mark_responded",
@@ -597,7 +636,7 @@ class ResolutionHttpTests(TestCase):
             request=case,
             actor=self.manager,
         )
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
         response = self.client.get(
             reverse(
                 "cases:request_close",
@@ -624,7 +663,7 @@ class ResolutionHttpTests(TestCase):
             request=case,
             actor=self.manager,
         )
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
         response = self.client.post(
             reverse(
                 "cases:request_close",
@@ -649,7 +688,7 @@ class ResolutionHttpTests(TestCase):
             outcome_reason=self.rejection_reason,
             actor=self.manager,
         )
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
         response = self.client.post(
             reverse(
                 "cases:request_close",
@@ -667,7 +706,7 @@ class ResolutionHttpTests(TestCase):
 
     def test_close_without_resolution_is_bad_request(self):
         case = self.create_request()
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
         response = self.client.post(
             reverse(
                 "cases:request_close",

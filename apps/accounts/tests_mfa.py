@@ -263,6 +263,73 @@ class MFAHttpTests(TestCase):
         self.assertTemplateUsed(response, "accounts/mfa_challenge.html")
         self.assertNotIn(SESSION_KEY, self.client.session)
 
+    def test_authenticated_session_without_mfa_gate_is_terminated(self):
+        self.client.force_login(self.user)
+        response = self.client.get(
+            reverse("accounts:reauth")
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertNotIn(SESSION_KEY, self.client.session)
+
+    def test_mfa_gate_is_bound_to_authenticated_user(self):
+        self._enroll()
+        session = self.client.session
+        session["_gpc_mfa_user_id"] = "00000000-0000-0000-0000-000000000000"
+        session.save()
+        response = self.client.get(
+            reverse("accounts:reauth")
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertNotIn(SESSION_KEY, self.client.session)
+
+    def test_sensitive_reauthentication_refreshes_timestamp(self):
+        self._enroll()
+        device = MFADevice.objects.get(
+            user=self.user,
+            device_type=MFADevice.DeviceType.TOTP,
+        )
+        device.last_used_at = None
+        device.save(update_fields=["last_used_at"])
+        session = self.client.session
+        stale = int(timezone.now().timestamp()) - 901
+        session["_gpc_sensitive_verified_at"] = stale
+        session.save()
+        secret = MFAService._decrypt(device).decode("ascii")
+        response = self.client.post(
+            reverse("accounts:reauth"),
+            {
+                "code": MFAService.generate_totp_code(secret),
+                "next": "/cases/",
+            },
+        )
+        self.assertRedirects(
+            response,
+            "/cases/",
+            fetch_redirect_response=False,
+        )
+        self.assertGreater(
+            self.client.session["_gpc_sensitive_verified_at"],
+            stale,
+        )
+
+    def test_five_sensitive_reauthentication_failures_logout(self):
+        self._enroll()
+        device = MFADevice.objects.get(
+            user=self.user,
+            device_type=MFADevice.DeviceType.TOTP,
+        )
+        secret = MFAService._decrypt(device).decode("ascii")
+        valid = MFAService.generate_totp_code(secret)
+        invalid = valid[:-1] + (
+            "0" if valid[-1] != "0" else "1"
+        )
+        for _ in range(5):
+            self.client.post(
+                reverse("accounts:reauth"),
+                {"code": invalid, "next": "/cases/"},
+            )
+        self.assertNotIn(SESSION_KEY, self.client.session)
+
     def test_valid_totp_challenge_completes_login(self):
         enrollment_response = self._enroll()
         device = MFADevice.objects.get(

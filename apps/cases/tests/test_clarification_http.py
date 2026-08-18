@@ -5,6 +5,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from apps.accounts.models import Role, UserRole
+from apps.accounts.tests_helpers import force_mfa_login
 from apps.cases.models import (
     RequestClarification,
     RightsRequest,
@@ -217,7 +218,7 @@ class ClarificationHttpTests(TestCase):
         )
 
     def test_request_get_does_not_mutate_case(self):
-        self.client.force_login(self.operator)
+        force_mfa_login(self.client, self.operator)
 
         response = self.client.get(
             reverse(
@@ -242,7 +243,7 @@ class ClarificationHttpTests(TestCase):
         )
 
     def test_manager_can_request_clarification(self):
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
 
         response = self.client.post(
             reverse(
@@ -277,7 +278,7 @@ class ClarificationHttpTests(TestCase):
         )
 
     def test_assigned_operator_can_request_clarification(self):
-        self.client.force_login(self.operator)
+        force_mfa_login(self.client, self.operator)
 
         response = self.client.post(
             reverse(
@@ -301,7 +302,7 @@ class ClarificationHttpTests(TestCase):
         )
 
     def test_auditor_cannot_request_clarification(self):
-        self.client.force_login(self.auditor)
+        force_mfa_login(self.client, self.auditor)
 
         response = self.client.post(
             reverse(
@@ -328,7 +329,7 @@ class ClarificationHttpTests(TestCase):
         )
 
     def test_unassigned_operator_cannot_access_case(self):
-        self.client.force_login(self.operator)
+        force_mfa_login(self.client, self.operator)
 
         response = self.client.post(
             reverse(
@@ -352,7 +353,7 @@ class ClarificationHttpTests(TestCase):
         )
 
     def test_empty_message_does_not_mutate_case(self):
-        self.client.force_login(self.operator)
+        force_mfa_login(self.client, self.operator)
 
         response = self.client.post(
             reverse(
@@ -380,7 +381,7 @@ class ClarificationHttpTests(TestCase):
 
     def test_receive_get_does_not_mutate_clarification(self):
         clarification = self.create_clarification()
-        self.client.force_login(self.operator)
+        force_mfa_login(self.client, self.operator)
 
         response = self.client.get(
             reverse(
@@ -410,7 +411,7 @@ class ClarificationHttpTests(TestCase):
 
     def test_assigned_operator_can_receive_clarification(self):
         clarification = self.create_clarification()
-        self.client.force_login(self.operator)
+        force_mfa_login(self.client, self.operator)
 
         response = self.client.post(
             reverse(
@@ -452,7 +453,7 @@ class ClarificationHttpTests(TestCase):
                 actor=self.manager,
             )
         )
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
 
         response = self.client.post(
             reverse(
@@ -478,7 +479,7 @@ class ClarificationHttpTests(TestCase):
 
     def test_duplicate_receive_is_rejected_without_second_mutation(self):
         clarification = self.create_clarification()
-        self.client.force_login(self.operator)
+        force_mfa_login(self.client, self.operator)
         url = reverse(
             "cases:request_clarification_receive",
             kwargs={

@@ -5,6 +5,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from apps.accounts.models import Role, UserRole
+from apps.accounts.tests_helpers import force_mfa_login
 from apps.cases.models import RightsRequest
 from apps.cases.services.cases import CaseWorkflowService
 from apps.legal_content.models import RightCatalog
@@ -109,21 +110,21 @@ class RequestHttpTests(TestCase):
         self.assertIn("/accounts/login/", response["Location"])
 
     def test_manager_sees_all_cases(self):
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
         response = self.client.get(reverse("cases:request_list"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.request_one.reference_number)
         self.assertContains(response, self.request_two.reference_number)
 
     def test_operator_only_sees_assigned_cases(self):
-        self.client.force_login(self.operator)
+        force_mfa_login(self.client, self.operator)
         response = self.client.get(reverse("cases:request_list"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.request_one.reference_number)
         self.assertNotContains(response, self.request_two.reference_number)
 
     def test_operator_cannot_open_unassigned_case(self):
-        self.client.force_login(self.operator)
+        force_mfa_login(self.client, self.operator)
         response = self.client.get(
             reverse(
                 "cases:request_detail",
@@ -133,7 +134,7 @@ class RequestHttpTests(TestCase):
         self.assertEqual(response.status_code, 404)
 
     def test_auditor_detail_hides_sensitive_data(self):
-        self.client.force_login(self.auditor)
+        force_mfa_login(self.client, self.auditor)
         response = self.client.get(
             reverse(
                 "cases:request_detail",
@@ -147,7 +148,7 @@ class RequestHttpTests(TestCase):
         self.assertNotContains(response, "subject@example.com")
 
     def test_manager_detail_decrypts_through_service(self):
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
         response = self.client.get(
             reverse(
                 "cases:request_detail",
@@ -160,7 +161,7 @@ class RequestHttpTests(TestCase):
         self.assertContains(response, "Solicitud reservada uno")
 
     def test_operator_cannot_assign_case(self):
-        self.client.force_login(self.operator)
+        force_mfa_login(self.client, self.operator)
         response = self.client.post(
             reverse(
                 "cases:request_assign",
@@ -173,7 +174,7 @@ class RequestHttpTests(TestCase):
         self.assertEqual(self.request_one.assigned_to_id, self.operator.id)
 
     def test_manager_can_assign_case(self):
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
         response = self.client.post(
             reverse(
                 "cases:request_assign",
@@ -189,7 +190,7 @@ class RequestHttpTests(TestCase):
         )
 
     def test_start_review_does_not_accept_get(self):
-        self.client.force_login(self.operator)
+        force_mfa_login(self.client, self.operator)
         response = self.client.get(
             reverse(
                 "cases:request_start_review",
@@ -201,7 +202,7 @@ class RequestHttpTests(TestCase):
         self.assertEqual(self.request_one.status, RightsRequest.Status.RECEIVED)
 
     def test_assigned_operator_can_start_review(self):
-        self.client.force_login(self.operator)
+        force_mfa_login(self.client, self.operator)
         response = self.client.post(
             reverse(
                 "cases:request_start_review",

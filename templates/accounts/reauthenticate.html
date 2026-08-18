@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Confirmar operación sensible</title>
+</head>
+<body>
+    <main>
+        <h1>Confirma tu identidad</h1>
+        <p>Esta operación requiere una verificación reciente.</p>
+        <form method="post" novalidate>
+            {% csrf_token %}
+            <input type="hidden" name="next" value="{{ next_url }}">
+            {{ form.as_p }}
+            <button type="submit">Verificar</button>
+        </form>
+    </main>
+</body>
+</html>

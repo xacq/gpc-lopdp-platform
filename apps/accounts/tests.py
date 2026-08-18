@@ -8,6 +8,7 @@ from django.urls import reverse
 from django.utils import timezone
 
 from apps.audit.models import AuditLog
+from apps.accounts.tests_helpers import force_mfa_login
 
 
 @override_settings(
@@ -266,7 +267,7 @@ class AuthenticationHttpTests(TestCase):
         )
 
     def test_idle_authenticated_session_is_terminated(self):
-        self.client.force_login(self.user)
+        force_mfa_login(self.client, self.user)
         now_epoch = int(
             timezone.now().timestamp()
         )
@@ -290,7 +291,7 @@ class AuthenticationHttpTests(TestCase):
         )
 
     def test_absolute_authenticated_session_is_terminated(self):
-        self.client.force_login(self.user)
+        force_mfa_login(self.client, self.user)
         now_epoch = int(
             timezone.now().timestamp()
         )
@@ -314,7 +315,7 @@ class AuthenticationHttpTests(TestCase):
         )
 
     def test_active_authenticated_session_is_kept(self):
-        self.client.force_login(self.user)
+        force_mfa_login(self.client, self.user)
         now_epoch = int(
             timezone.now().timestamp()
         )

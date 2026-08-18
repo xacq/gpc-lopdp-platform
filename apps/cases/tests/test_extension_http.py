@@ -5,6 +5,7 @@ from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from apps.accounts.models import Role, UserRole
+from apps.accounts.tests_helpers import force_mfa_login
 from apps.cases.models import (
     RequestDeadline,
     RightsRequest,
@@ -179,7 +180,7 @@ class ExtensionHttpTests(TestCase):
         )
 
     def test_get_does_not_mutate_case(self):
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
 
         response = self.client.get(
             self.extension_url()
@@ -210,7 +211,7 @@ class ExtensionHttpTests(TestCase):
         )
 
     def test_manager_can_extend_under_review_case(self):
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
         initial_due_at = self.case.current_due_at
 
         response = self.client.post(
@@ -273,7 +274,7 @@ class ExtensionHttpTests(TestCase):
             .AWAITING_INFORMATION,
         )
 
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
         response = self.client.post(
             self.extension_url(),
             {
@@ -308,7 +309,7 @@ class ExtensionHttpTests(TestCase):
         )
 
     def test_operator_cannot_access_extension(self):
-        self.client.force_login(self.operator)
+        force_mfa_login(self.client, self.operator)
 
         response = self.client.post(
             self.extension_url(),
@@ -327,7 +328,7 @@ class ExtensionHttpTests(TestCase):
         )
 
     def test_auditor_cannot_access_extension(self):
-        self.client.force_login(self.auditor)
+        force_mfa_login(self.client, self.auditor)
 
         response = self.client.get(
             self.extension_url()
@@ -343,7 +344,7 @@ class ExtensionHttpTests(TestCase):
         )
 
     def test_empty_reason_does_not_mutate_case(self):
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
 
         response = self.client.post(
             self.extension_url(),
@@ -374,7 +375,7 @@ class ExtensionHttpTests(TestCase):
                 "extension_days",
             ]
         )
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
 
         response = self.client.post(
             self.extension_url(),
@@ -408,7 +409,7 @@ class ExtensionHttpTests(TestCase):
         )
 
     def test_second_extension_is_rejected_without_duplicate(self):
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
         url = self.extension_url()
 
         first = self.client.post(
@@ -450,7 +451,7 @@ class ExtensionHttpTests(TestCase):
         case = self.create_review_case(
             initialize_deadline=False,
         )
-        self.client.force_login(self.manager)
+        force_mfa_login(self.client, self.manager)
 
         response = self.client.post(
             self.extension_url(case),

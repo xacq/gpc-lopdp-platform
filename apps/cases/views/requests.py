@@ -20,6 +20,9 @@ from django.views.decorators.http import (
     require_POST,
 )
 
+from apps.accounts.decorators import (
+    sensitive_reauthentication_required,
+)
 from apps.cases.forms.requests import (
     RequestAssignForm,
     RequestClarificationForm,
@@ -686,6 +689,7 @@ def request_extension(
 
 
 @login_required
+@sensitive_reauthentication_required
 @require_http_methods(
     ["GET", "POST"]
 )
@@ -694,9 +698,6 @@ def request_resolution(
     request_id,
 ):
     # Resolución es una acción administrativa sensible.
-    # La reautenticación MFA reciente se incorporará
-    # en la fase de autenticación; por ahora se aplica
-    # la matriz de roles y la validación del Service.
     if not can_assign_case(
         request.user
     ):
@@ -817,6 +818,7 @@ def request_mark_responded(
 
 
 @login_required
+@sensitive_reauthentication_required
 @require_POST
 def request_close(
     request,

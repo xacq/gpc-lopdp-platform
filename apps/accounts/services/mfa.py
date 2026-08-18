@@ -329,7 +329,18 @@ class MFAService:
             raise MFARejected("MFA verification failed.")
 
         secret = cls._decrypt(device).decode("ascii")
-        counter = cls._matching_counter(secret, code, now=now)
+        try:
+            counter = cls._matching_counter(
+                secret,
+                code,
+                now=now,
+            )
+        except MFARejected:
+            cls._audit_rejected(
+                user=user,
+                method="TOTP_ENROLLMENT",
+            )
+            raise
         if counter is None:
             cls._audit_rejected(user=user, method="TOTP_ENROLLMENT")
             raise MFARejected("MFA verification failed.")
@@ -370,7 +381,15 @@ class MFAService:
             raise MFAEnrollmentRequired("TOTP enrollment is required.")
 
         secret = cls._decrypt(device).decode("ascii")
-        counter = cls._matching_counter(secret, code, now=now)
+        try:
+            counter = cls._matching_counter(
+                secret,
+                code,
+                now=now,
+            )
+        except MFARejected:
+            cls._audit_rejected(user=user, method="TOTP")
+            raise
         last_counter = (
             int(device.last_used_at.timestamp())
             // cls.TOTP_PERIOD_SECONDS
@@ -399,7 +418,14 @@ class MFAService:
         now=None,
     ) -> MFADevice:
         now = now or timezone.now()
-        normalized = cls._normalize_recovery_code(code)
+        try:
+            normalized = cls._normalize_recovery_code(code)
+        except MFARejected:
+            cls._audit_rejected(
+                user=user,
+                method="RECOVERY_CODE",
+            )
+            raise
         device = (
             MFADevice.objects.select_for_update()
             .filter(

@@ -13,6 +13,7 @@ from apps.accounts.models import (
     Role,
     UserRole,
 )
+from apps.accounts.tests_helpers import force_mfa_login
 from apps.cases.models import (
     RightsRequest,
 )
@@ -190,7 +191,7 @@ class RequestCreateHttpTests(
         )
 
     def test_operator_cannot_open_create_form(self):
-        self.client.force_login(
+        force_mfa_login(self.client,
             self.operator
         )
 
@@ -206,7 +207,7 @@ class RequestCreateHttpTests(
         )
 
     def test_create_form_lists_only_active_rights(self):
-        self.client.force_login(
+        force_mfa_login(self.client,
             self.manager
         )
 
@@ -245,7 +246,7 @@ class RequestCreateHttpTests(
         )
 
     def test_manager_can_create_request(self):
-        self.client.force_login(
+        force_mfa_login(self.client,
             self.manager
         )
 
@@ -289,7 +290,7 @@ class RequestCreateHttpTests(
         )
 
     def test_incomplete_representative_is_rejected_by_form(self):
-        self.client.force_login(
+        force_mfa_login(self.client,
             self.manager
         )
 
@@ -350,7 +351,7 @@ class RequestCreateHttpTests(
             ),
         )
 
-        self.client.force_login(
+        force_mfa_login(self.client,
             self.manager
         )
 

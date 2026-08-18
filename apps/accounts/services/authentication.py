@@ -25,6 +25,10 @@ _PENDING_FAILURES_KEY = "_gpc_pending_mfa_failures"
 
 _AUTH_STARTED_KEY = "_gpc_auth_started_at"
 _AUTH_LAST_ACTIVITY_KEY = "_gpc_auth_last_activity_at"
+_MFA_VERIFIED_KEY = "_gpc_mfa_verified_at"
+_MFA_USER_KEY = "_gpc_mfa_user_id"
+_SENSITIVE_VERIFIED_KEY = "_gpc_sensitive_verified_at"
+_SENSITIVE_FAILURES_KEY = "_gpc_sensitive_reauth_failures"
 
 
 class AuthenticationError(Exception):
@@ -496,6 +500,21 @@ class SessionSecurityService:
         return value
 
     @classmethod
+    def _sensitive_seconds(cls) -> int:
+        value = int(
+            getattr(
+                settings,
+                "AUTH_SENSITIVE_REAUTH_SECONDS",
+                15 * 60,
+            )
+        )
+        if value <= 0:
+            raise ValueError(
+                "AUTH_SENSITIVE_REAUTH_SECONDS must be positive."
+            )
+        return value
+
+    @classmethod
     def initialize_authenticated_session(
         cls,
         request,
@@ -509,12 +528,78 @@ class SessionSecurityService:
         request.session[_AUTH_LAST_ACTIVITY_KEY] = (
             now_epoch
         )
+        request.session[_MFA_VERIFIED_KEY] = now_epoch
+        request.session[_MFA_USER_KEY] = str(
+            request.user.pk
+        )
+        request.session[_SENSITIVE_VERIFIED_KEY] = (
+            now_epoch
+        )
         request.session.set_expiry(
             min(
                 cls._absolute_seconds(),
                 cls._idle_seconds(),
             )
         )
+
+    @classmethod
+    def mark_sensitive_reauthentication(cls, request) -> None:
+        if not request.user.is_authenticated:
+            raise AuthenticationRejected(
+                "Authenticated session is required."
+            )
+        request.session[_SENSITIVE_VERIFIED_KEY] = int(
+            timezone.now().timestamp()
+        )
+        request.session.pop(
+            _SENSITIVE_FAILURES_KEY,
+            None,
+        )
+
+    @classmethod
+    def record_sensitive_reauthentication_failure(
+        cls,
+        request,
+    ) -> bool:
+        failures = request.session.get(
+            _SENSITIVE_FAILURES_KEY,
+            0,
+        )
+        if not isinstance(failures, int) or failures < 0:
+            failures = 0
+        failures += 1
+        maximum = int(
+            getattr(
+                settings,
+                "AUTH_SENSITIVE_REAUTH_MAX_FAILURES",
+                5,
+            )
+        )
+        if maximum <= 0:
+            raise ValueError(
+                "AUTH_SENSITIVE_REAUTH_MAX_FAILURES "
+                "must be positive."
+            )
+        if failures >= maximum:
+            django_logout(request)
+            return False
+        request.session[_SENSITIVE_FAILURES_KEY] = failures
+        return True
+
+    @classmethod
+    def has_recent_sensitive_reauthentication(
+        cls,
+        request,
+    ) -> bool:
+        if not request.user.is_authenticated:
+            return False
+        verified_at = request.session.get(
+            _SENSITIVE_VERIFIED_KEY
+        )
+        if not isinstance(verified_at, int):
+            return False
+        age = int(timezone.now().timestamp()) - verified_at
+        return 0 <= age < cls._sensitive_seconds()
 
     @classmethod
     def enforce(cls, request) -> bool:
@@ -530,19 +615,25 @@ class SessionSecurityService:
         last_activity = request.session.get(
             _AUTH_LAST_ACTIVITY_KEY
         )
+        mfa_verified_at = request.session.get(
+            _MFA_VERIFIED_KEY
+        )
+        mfa_user_id = request.session.get(
+            _MFA_USER_KEY
+        )
 
-        # Existing development/test sessions created before this layer
-        # are initialized on their first authenticated request. A
-        # production rollout should invalidate legacy sessions once MFA
-        # gating is enabled in Phase 2A.3.
-        if not isinstance(started_at, int) or not isinstance(
-            last_activity,
-            int,
+        if (
+            not isinstance(started_at, int)
+            or not isinstance(last_activity, int)
+            or not isinstance(mfa_verified_at, int)
+            or mfa_user_id != str(request.user.pk)
+            or mfa_verified_at < started_at
+            or started_at > now_epoch
+            or last_activity > now_epoch
+            or mfa_verified_at > now_epoch
         ):
-            cls.initialize_authenticated_session(
-                request
-            )
-            return True
+            django_logout(request)
+            return False
 
         absolute_age = now_epoch - started_at
         idle_age = now_epoch - last_activity
