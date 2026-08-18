@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Configuración institucional</title>
+</head>
+<body>
+    <main>
+        <h1>Configuración institucional</h1>
+        {% if saved %}
+            <p role="status">La configuración fue guardada correctamente.</p>
+        {% endif %}
+        <form method="post" novalidate>
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Guardar configuración</button>
+        </form>
+    </main>
+</body>
+</html>
