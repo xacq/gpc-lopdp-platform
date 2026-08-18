@@ -22,9 +22,12 @@ from django.views.decorators.http import (
 
 from apps.cases.forms.requests import (
     RequestAssignForm,
+    RequestClarificationForm,
+    RequestClarificationReceiveForm,
     RequestCreateForm,
 )
 from apps.cases.models import (
+    RequestClarification,
     RightsRequest,
 )
 from apps.cases.policies import (
@@ -36,8 +39,12 @@ from apps.cases.policies import (
     visible_requests_for,
 )
 from apps.cases.services.cases import (
+    CasePermissionError,
     CaseWorkflowError,
     CaseWorkflowService,
+)
+from apps.cases.services.deadlines import (
+    DeadlineServiceError,
 )
 from apps.cases.services.intake import (
     CaseIntakeError,
@@ -427,4 +434,170 @@ def request_start_review(
     return redirect(
         "cases:request_detail",
         request_id=case.pk,
+    )
+
+
+@login_required
+@require_http_methods(
+    ["GET", "POST"]
+)
+def request_clarification_create(
+    request,
+    request_id,
+):
+    case = _visible_case_or_404(
+        user=request.user,
+        request_id=request_id,
+    )
+
+    if request.method == "POST":
+        form = RequestClarificationForm(
+            request.POST
+        )
+
+        if form.is_valid():
+            try:
+                (
+                    CaseWorkflowService
+                    .request_clarification(
+                        request=case,
+                        message=(
+                            form.cleaned_data[
+                                "message"
+                            ]
+                        ),
+                        clarification_due_at=(
+                            form.cleaned_data.get(
+                                "clarification_due_at"
+                            )
+                        ),
+                        legal_basis=(
+                            form.cleaned_data.get(
+                                "legal_basis"
+                            )
+                        ),
+                        actor=request.user,
+                    )
+                )
+            except CasePermissionError:
+                raise PermissionDenied
+            except (
+                CaseWorkflowError,
+                DeadlineServiceError,
+                ValueError,
+            ):
+                form.add_error(
+                    None,
+                    (
+                        "No fue posible solicitar "
+                        "la aclaración. Verifique "
+                        "el estado del expediente, "
+                        "el plazo y la base jurídica."
+                    ),
+                )
+            else:
+                return redirect(
+                    "cases:request_detail",
+                    request_id=case.pk,
+                )
+    else:
+        form = RequestClarificationForm()
+
+    return render(
+        request,
+        (
+            "cases/"
+            "request_clarification_form.html"
+        ),
+        {
+            "case": case,
+            "form": form,
+        },
+    )
+
+
+@login_required
+@require_http_methods(
+    ["GET", "POST"]
+)
+def request_clarification_receive(
+    request,
+    request_id,
+    clarification_id,
+):
+    case = _visible_case_or_404(
+        user=request.user,
+        request_id=request_id,
+    )
+
+    clarification = get_object_or_404(
+        (
+            RequestClarification
+            .objects
+            .select_related("request")
+        ),
+        pk=clarification_id,
+        request_id=case.pk,
+    )
+
+    if request.method == "POST":
+        form = (
+            RequestClarificationReceiveForm(
+                request.POST
+            )
+        )
+
+        if form.is_valid():
+            try:
+                (
+                    CaseWorkflowService
+                    .receive_clarification(
+                        clarification=(
+                            clarification
+                        ),
+                        response_message=(
+                            form.cleaned_data[
+                                "response_message"
+                            ]
+                        ),
+                        actor=request.user,
+                    )
+                )
+            except CasePermissionError:
+                raise PermissionDenied
+            except (
+                CaseWorkflowError,
+                DeadlineServiceError,
+                ValueError,
+            ):
+                form.add_error(
+                    None,
+                    (
+                        "No fue posible registrar "
+                        "la respuesta de la "
+                        "aclaración. Verifique "
+                        "el estado actual."
+                    ),
+                )
+            else:
+                return redirect(
+                    "cases:request_detail",
+                    request_id=case.pk,
+                )
+    else:
+        form = (
+            RequestClarificationReceiveForm()
+        )
+
+    return render(
+        request,
+        (
+            "cases/"
+            "request_clarification_receive.html"
+        ),
+        {
+            "case": case,
+            "clarification": clarification,
+            "form": form,
+        },
     )

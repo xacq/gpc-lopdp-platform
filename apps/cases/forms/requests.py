@@ -286,3 +286,59 @@ class RequestAssignForm(forms.Form):
                 "email",
             )
         )
+
+
+class RequestClarificationForm(forms.Form):
+    message = forms.CharField(
+        label=(
+            "Solicitud de aclaración"
+        ),
+        widget=forms.Textarea(
+            attrs={
+                "rows": 6,
+            }
+        ),
+    )
+
+    clarification_due_at = (
+        forms.DateTimeField(
+            label=(
+                "Fecha límite para responder"
+            ),
+            required=False,
+            input_formats=[
+                "%Y-%m-%dT%H:%M",
+            ],
+            widget=forms.DateTimeInput(
+                format=(
+                    "%Y-%m-%dT%H:%M"
+                ),
+                attrs={
+                    "type": "datetime-local",
+                },
+            ),
+        )
+    )
+
+    legal_basis = forms.CharField(
+        label="Base jurídica",
+        required=False,
+        widget=forms.Textarea(
+            attrs={
+                "rows": 3,
+            }
+        ),
+    )
+
+
+class RequestClarificationReceiveForm(
+    forms.Form
+):
+    response_message = forms.CharField(
+        label="Respuesta recibida",
+        widget=forms.Textarea(
+            attrs={
+                "rows": 6,
+            }
+        ),
+    )

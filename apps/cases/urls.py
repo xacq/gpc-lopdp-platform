@@ -2,6 +2,8 @@ from django.urls import path
 
 from apps.cases.views import (
     request_assign,
+    request_clarification_create,
+    request_clarification_receive,
     request_create,
     request_detail,
     request_list,
@@ -40,5 +42,27 @@ urlpatterns = [
         ),
         request_start_review,
         name="request_start_review",
+    ),
+    path(
+        (
+            "<uuid:request_id>/"
+            "clarifications/new/"
+        ),
+        request_clarification_create,
+        name=(
+            "request_clarification_create"
+        ),
+    ),
+    path(
+        (
+            "<uuid:request_id>/"
+            "clarifications/"
+            "<uuid:clarification_id>/"
+            "receive/"
+        ),
+        request_clarification_receive,
+        name=(
+            "request_clarification_receive"
+        ),
     ),
 ]

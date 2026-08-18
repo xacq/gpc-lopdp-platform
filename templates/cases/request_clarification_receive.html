@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Registrar aclaración recibida</title>
+</head>
+<body>
+    <main>
+        <h1>Registrar aclaración recibida</h1>
+        <p>Expediente: {{ case.reference_number }}</p>
+        <p>Estado: {{ clarification.get_status_display }}</p>
+
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <button type="submit">Registrar respuesta</button>
+        </form>
+
+        <p>
+            <a href="{% url 'cases:request_detail' request_id=case.id %}">
+                Volver al expediente
+            </a>
+        </p>
+    </main>
+</body>
+</html>
