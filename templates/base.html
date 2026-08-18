@@ -12,7 +12,7 @@
 <body class="{% block body_class %}{% endblock %}">
     <nav class="navbar navbar-expand-lg navbar-dark app-navbar" aria-label="Navegación principal">
         <div class="container">
-            <a class="navbar-brand fw-semibold" href="{% if nav_can_access_cases %}{% url 'cases:request_list' %}{% else %}{% url 'accounts:login' %}{% endif %}">
+            <a class="navbar-brand fw-semibold" href="{% if nav_can_access_cases %}{% url 'cases:request_list' %}{% else %}{% url 'cases:public_tracking' %}{% endif %}">
                 <span class="brand-mark" aria-hidden="true">GPC</span>
                 <span>LOPDP</span>
             </a>
@@ -40,6 +40,8 @@
                         </form>
                     </div>
                 </div>
+            {% else %}
+                <a class="btn btn-sm btn-outline-light" href="{% url 'accounts:login' %}">Acceso institucional</a>
             {% endif %}
         </div>
     </nav>

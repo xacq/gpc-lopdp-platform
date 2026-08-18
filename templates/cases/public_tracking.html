@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block title %}Consultar solicitud{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-9 col-xl-8">
+        <div class="page-heading text-center">
+            <p class="page-kicker">Portal de privacidad</p>
+            <h1 class="h2">Consulta tu solicitud</h1>
+            <p class="text-body-secondary mb-0">Ingresa la referencia y el código de seguimiento que recibiste.</p>
+        </div>
+
+        <section class="card app-card mb-4">
+            <div class="card-body p-4 p-md-5">
+                {% if access_error %}<div class="alert alert-danger" role="alert">{{ access_error }}</div>{% endif %}
+                <form method="post" action="{% url 'cases:public_tracking' %}" novalidate>
+                    {% csrf_token %}
+                    {% include "includes/form_fields.html" %}
+                    <button class="btn btn-primary w-100" type="submit">Consultar estado</button>
+                </form>
+                <div class="text-center mt-3"><a class="small" href="{% url 'cases:public_download_form' %}">Descargar un documento recibido</a></div>
+            </div>
+        </section>
+
+        {% if result %}
+            <section class="card app-card" aria-live="polite">
+                <div class="card-body p-4 p-md-5">
+                    <div class="d-flex flex-column flex-sm-row justify-content-between gap-2 mb-4">
+                        <div><p class="page-kicker">Resultado</p><h2 class="h4 mb-0">{{ result.reference_number }}</h2></div>
+                        <div><span class="badge text-bg-primary fs-6">{{ status_label }}</span></div>
+                    </div>
+                    <dl class="data-list mb-4">
+                        <dt>Recibida</dt><dd>{{ result.received_at }}</dd>
+                        <dt>Vencimiento actual</dt><dd>{% if result.current_due_at %}{{ result.current_due_at }}{% else %}Por determinar{% endif %}</dd>
+                        {% if result.responded_at %}<dt>Respondida</dt><dd>{{ result.responded_at }}</dd>{% endif %}
+                        {% if result.closed_at %}<dt>Cerrada</dt><dd>{{ result.closed_at }}</dd>{% endif %}
+                    </dl>
+                    <h3 class="h6">Historial</h3>
+                    <ul class="list-group list-group-flush">
+                        {% for item in history %}<li class="list-group-item px-0 d-flex justify-content-between gap-3"><span>{{ item.label }}</span><span class="small text-body-secondary text-end">{{ item.changed_at }}</span></li>{% empty %}<li class="list-group-item px-0 text-body-secondary">Sin movimientos registrados.</li>{% endfor %}
+                    </ul>
+                </div>
+            </section>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

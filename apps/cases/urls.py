@@ -1,6 +1,9 @@
 from django.urls import path
 
 from apps.cases.views import (
+    public_download,
+    public_download_form,
+    public_tracking,
     request_assign,
     request_clarification_create,
     request_clarification_receive,
@@ -19,6 +22,21 @@ app_name = "cases"
 
 
 urlpatterns = [
+    path(
+        "public/tracking/",
+        public_tracking,
+        name="public_tracking",
+    ),
+    path(
+        "public/download/",
+        public_download_form,
+        name="public_download_form",
+    ),
+    path(
+        "public/download/file/",
+        public_download,
+        name="public_download",
+    ),
     path(
         "",
         request_list,

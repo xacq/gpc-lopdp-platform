@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Descargar documento{% endblock %}
+{% block content %}
+<div class="auth-shell">
+    <div class="page-heading text-center">
+        <p class="page-kicker">Portal de privacidad</p>
+        <h1 class="h2">Descargar documento</h1>
+        <p class="text-body-secondary mb-0">Usa los datos de descarga enviados por la institución.</p>
+    </div>
+    <section class="card app-card">
+        <div class="card-body p-4 p-md-5">
+            {% if access_error %}<div class="alert alert-danger" role="alert">{{ access_error }}</div>{% endif %}
+            <form method="post" action="{% url 'cases:public_download' %}" novalidate>
+                {% csrf_token %}
+                {% include "includes/form_fields.html" %}
+                <button class="btn btn-primary w-100" type="submit">Descargar documento</button>
+            </form>
+            <div class="text-center mt-3"><a class="small" href="{% url 'cases:public_tracking' %}">Volver al seguimiento</a></div>
+        </div>
+    </section>
+</div>
+{% endblock %}
