@@ -63,3 +63,15 @@ class InboundCommunicationForm(forms.Form):
     body = forms.CharField()
     visible_to_subject = forms.BooleanField(required=False)
     idempotency_key = forms.UUIDField(required=False)
+
+
+class PortabilityGenerateForm(forms.Form):
+    request_id = forms.UUIDField()
+    export_format = forms.ChoiceField(
+        choices=(("JSON", "JSON"), ("CSV", "CSV"))
+    )
+
+
+class PortabilityDownloadForm(forms.Form):
+    export_id = forms.UUIDField()
+    token = forms.CharField(max_length=512)

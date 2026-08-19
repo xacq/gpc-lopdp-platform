@@ -322,3 +322,48 @@ class PortabilityService:
                 )
         except TokenInvalidOrExpiredError as exc:
             raise PortabilityAccessError("Portability export is unavailable.") from exc
+
+    @classmethod
+    def revoke(
+        cls,
+        *,
+        export: PortabilityExport,
+        actor,
+        correlation_id=None,
+    ) -> PortabilityExport:
+        cls._require_generation_permission(actor)
+        correlation_id = (
+            uuid.UUID(str(correlation_id)) if correlation_id else uuid.uuid4()
+        )
+        with transaction.atomic():
+            persisted = PortabilityExport.objects.select_for_update().get(
+                pk=export.pk
+            )
+            if persisted.revoked_at is not None:
+                return persisted
+            if persisted.downloaded_at is not None:
+                raise PortabilityAccessError(
+                    "A downloaded portability export cannot be revoked."
+                )
+            persisted.revoked_at = CaseWorkflowService._database_now()
+            persisted.save(update_fields=["revoked_at"])
+            RequestAccessToken.objects.filter(
+                resource_type=RequestAccessToken.ResourceType.PORTABILITY_EXPORT,
+                resource_id=persisted.id,
+                revoked_at__isnull=True,
+            ).update(revoked_at=persisted.revoked_at)
+            AuditService.write(
+                actor_type=AuditLog.ActorType.USER,
+                actor=actor,
+                source=AuditLog.Source.WEB,
+                correlation_id=correlation_id,
+                action="PORTABILITY_EXPORT_REVOKED",
+                entity_type="PORTABILITY_EXPORT",
+                entity_pk=persisted.id,
+                description="Portability export revoked.",
+                metadata={
+                    "request_id": str(persisted.request_id),
+                    "export_format": persisted.export_format,
+                },
+            )
+            return persisted

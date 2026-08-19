@@ -2,13 +2,15 @@ import json
 
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.http import Http404, JsonResponse
+from django.http import Http404, HttpResponse, JsonResponse
+from django.utils.http import content_disposition_header
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST
 
 from apps.cases.models import RightsRequest
 from apps.cases.policies import (
     can_access_case_panel,
+    can_assign_case,
     can_start_review,
     visible_requests_for,
 )
@@ -16,8 +18,10 @@ from apps.communications.forms import (
     CommunicationFilterForm,
     InboundCommunicationForm,
     OutboundCommunicationForm,
+    PortabilityDownloadForm,
+    PortabilityGenerateForm,
 )
-from apps.communications.models import RequestCommunication
+from apps.communications.models import PortabilityExport, RequestCommunication
 from apps.communications.services.notifications import (
     NotificationService,
     NotificationServiceError,
@@ -25,6 +29,10 @@ from apps.communications.services.notifications import (
 from apps.communications.services.query import (
     CommunicationPermissionError,
     CommunicationQueryService,
+)
+from apps.communications.services.portability import (
+    PortabilityService,
+    PortabilityServiceError,
 )
 
 
@@ -162,3 +170,111 @@ def communication_create_inbound(request):
             {"error": "No fue posible registrar la comunicación."}, status=400
         )
     return JsonResponse({"id": str(communication.id)}, status=201)
+
+
+def _portability_payload(item):
+    return {
+        "id": str(item.id),
+        "request_id": str(item.request_id),
+        "reference_number": item.request.reference_number,
+        "export_format": item.export_format,
+        "generated_at": item.generated_at,
+        "expires_at": item.expires_at,
+        "downloaded_at": item.downloaded_at,
+        "revoked_at": item.revoked_at,
+        "available": (
+            item.revoked_at is None and item.downloaded_at is None
+        ),
+    }
+
+
+@never_cache
+@login_required
+@require_GET
+def portability_export_list(request):
+    _require_panel(request.user)
+    queryset = PortabilityExport.objects.filter(
+        request__in=visible_requests_for(request.user)
+    ).select_related("request").order_by("-generated_at", "-id")
+    return JsonResponse(
+        {"results": [_portability_payload(item) for item in queryset]},
+        json_dumps_params={"ensure_ascii": False},
+    )
+
+
+@never_cache
+@login_required
+@require_POST
+def portability_generate(request):
+    if not can_assign_case(request.user):
+        raise PermissionDenied
+    data, error = _json_form(PortabilityGenerateForm, request)
+    if error:
+        return error
+    case = _manageable_case(request.user, data["request_id"])
+    try:
+        generated = PortabilityService.generate(
+            request=case,
+            export_format=data["export_format"],
+            actor=request.user,
+        )
+    except (PortabilityServiceError, ValueError):
+        return JsonResponse(
+            {"error": "No fue posible generar la exportación de portabilidad."},
+            status=409,
+        )
+    payload = _portability_payload(generated.export)
+    payload["download_token"] = generated.download_token
+    return JsonResponse(payload, status=201)
+
+
+@never_cache
+@require_POST
+def portability_download(request):
+    form = PortabilityDownloadForm(request.POST)
+    if not form.is_valid():
+        return JsonResponse(
+            {"error": "La exportación o el código no son válidos."}, status=400
+        )
+    export = PortabilityExport.objects.filter(
+        pk=form.cleaned_data["export_id"]
+    ).first()
+    if export is None:
+        raise Http404
+    try:
+        download = PortabilityService.download(
+            export=export, token=form.cleaned_data["token"]
+        )
+    except PortabilityServiceError:
+        raise Http404
+    response = HttpResponse(download.content, content_type=download.content_type)
+    response["Content-Disposition"] = content_disposition_header(
+        True, download.filename
+    )
+    response["Cache-Control"] = "no-store, max-age=0"
+    response["Pragma"] = "no-cache"
+    response["Referrer-Policy"] = "no-referrer"
+    response["X-Content-Type-Options"] = "nosniff"
+    return response
+
+
+@never_cache
+@login_required
+@require_POST
+def portability_revoke(request, export_id):
+    if not can_assign_case(request.user):
+        raise PermissionDenied
+    export = PortabilityExport.objects.filter(
+        pk=export_id,
+        request__in=visible_requests_for(request.user),
+    ).first()
+    if export is None:
+        raise Http404
+    try:
+        export = PortabilityService.revoke(export=export, actor=request.user)
+    except PortabilityServiceError:
+        return JsonResponse(
+            {"error": "La exportación no puede revocarse."}, status=409
+        )
+    export = PortabilityExport.objects.select_related("request").get(pk=export.pk)
+    return JsonResponse(_portability_payload(export))
