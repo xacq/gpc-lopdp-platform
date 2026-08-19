@@ -1,9 +1,23 @@
-from django.http import Http404
-from django.shortcuts import render
-from django.views.decorators.http import require_GET
+import json
 
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
+from django.http import Http404, JsonResponse
+from django.shortcuts import render
+from django.views.decorators.cache import never_cache
+from django.views.decorators.http import require_GET, require_POST
+
+from apps.accounts.models import Role
+from apps.cases.policies import active_role_codes
+from apps.legal_content.forms import (
+    LegalDocumentCreateForm,
+    LegalDocumentFilterForm,
+)
 from apps.legal_content.models import LegalDocument
-from apps.legal_content.services.documents import LegalDocumentService
+from apps.legal_content.services.documents import (
+    LegalDocumentError,
+    LegalDocumentService,
+)
 from apps.organization.defaults import VINESA_PRIVACY_POLICY_URL
 
 
@@ -196,6 +210,124 @@ PUBLIC_DOCUMENT_TYPES = {
     item["key"]: item["type"] for item in PUBLIC_DOCUMENTS
 }
 PUBLIC_DOCUMENT_CONFIG = {item["key"]: item for item in PUBLIC_DOCUMENTS}
+
+
+def _can_manage_legal(user):
+    return bool(
+        getattr(user, "is_active", False)
+        and (
+            getattr(user, "is_superuser", False)
+            or active_role_codes(user) & {Role.Code.ADMIN, Role.Code.DPD}
+        )
+    )
+
+
+def _legal_payload(document):
+    return {
+        "id": str(document.id),
+        "document_type": {
+            "code": document.document_type,
+            "label": document.get_document_type_display(),
+        },
+        "title": document.title,
+        "slug": document.slug,
+        "version": document.version,
+        "content_html": document.content_html,
+        "content_sha256": document.content_sha256,
+        "effective_from": document.effective_from,
+        "effective_to": document.effective_to,
+        "is_published": document.is_published,
+        "created_by": (
+            {"id": str(document.created_by_id), "name": document.created_by.full_name}
+            if document.created_by_id
+            else None
+        ),
+        "created_at": document.created_at,
+    }
+
+
+@never_cache
+@login_required
+@require_GET
+def legal_document_list(request):
+    if not _can_manage_legal(request.user):
+        raise PermissionDenied
+    form = LegalDocumentFilterForm(request.GET)
+    if not form.is_valid():
+        return JsonResponse(
+            {"errors": form.errors.get_json_data()}, status=400
+        )
+    queryset = LegalDocument.objects.select_related("created_by")
+    if form.cleaned_data.get("document_type"):
+        queryset = queryset.filter(
+            document_type=form.cleaned_data["document_type"]
+        )
+    if form.cleaned_data.get("published") is not None:
+        queryset = queryset.filter(is_published=form.cleaned_data["published"])
+    return JsonResponse(
+        {"results": [_legal_payload(item) for item in queryset]},
+        json_dumps_params={"ensure_ascii": False},
+    )
+
+
+@never_cache
+@login_required
+@require_POST
+def legal_document_create(request):
+    if not _can_manage_legal(request.user):
+        raise PermissionDenied
+    try:
+        data = json.loads(request.body or b"{}")
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({"error": "El cuerpo JSON no es válido."}, status=400)
+    if not isinstance(data, dict):
+        return JsonResponse(
+            {"error": "El cuerpo JSON debe ser un objeto."}, status=400
+        )
+    form = LegalDocumentCreateForm(data)
+    if not form.is_valid():
+        return JsonResponse(
+            {"errors": form.errors.get_json_data()}, status=400
+        )
+    cleaned = form.cleaned_data
+    try:
+        document = LegalDocumentService.create_draft(
+            document_type=cleaned["document_type"],
+            title=cleaned["title"],
+            slug=cleaned.get("slug"),
+            version=cleaned["version"],
+            content_html=cleaned["content_html"],
+            effective_from=cleaned["effective_from"],
+            actor=request.user,
+        )
+    except (LegalDocumentError, ValueError):
+        return JsonResponse(
+            {"error": "No fue posible crear el borrador legal."}, status=409
+        )
+    document = LegalDocument.objects.select_related("created_by").get(pk=document.pk)
+    return JsonResponse(_legal_payload(document), status=201)
+
+
+@never_cache
+@login_required
+@require_POST
+def legal_document_publish(request, document_id):
+    if not _can_manage_legal(request.user):
+        raise PermissionDenied
+    document = LegalDocument.objects.filter(pk=document_id).first()
+    if document is None:
+        raise Http404
+    try:
+        document = LegalDocumentService.publish(
+            document=document, actor=request.user
+        )
+    except LegalDocumentError:
+        return JsonResponse(
+            {"error": "La versión legal no puede publicarse en su estado actual."},
+            status=409,
+        )
+    document = LegalDocument.objects.select_related("created_by").get(pk=document.pk)
+    return JsonResponse(_legal_payload(document))
 
 
 @require_GET
