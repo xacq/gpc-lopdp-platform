@@ -1,25 +1,33 @@
 {% extends "public_base.html" %}
 {% block title %}Verificar correo electrónico{% endblock %}
+{% block body_class %}public-access-page{% endblock %}
 {% block content %}
-<div class="portal-page"><div class="public-container portal-narrow"><div class="auth-shell">
-    <div class="page-heading text-center">
-        <p class="page-kicker">Portal de privacidad</p>
-        <h1 class="h2">Verificar correo electrónico</h1>
-        <p class="text-body-secondary mb-0">Ingresa la referencia y el código enviados a tu correo.</p>
+<div class="portal-page portal-access">
+    <div class="public-container portal-narrow">
+        <div class="portal-heading portal-heading--centered">
+            <div>
+                <p class="section-kicker">Portal de privacidad</p>
+                <h1>Verificar correo electrónico</h1>
+                <p>Ingresa la referencia y el código de verificación enviados a tu correo.</p>
+            </div>
+        </div>
+        <section class="portal-panel portal-access-card">
+            <div class="portal-access-card__icon" aria-hidden="true">✓</div>
+            {% if verified %}
+                <div class="portal-alert portal-alert--success" role="status"><p>El correo electrónico fue verificado correctamente.</p></div>
+                <a class="button button--primary portal-access-card__submit" href="{% url 'cases:public_tracking' %}">Consultar solicitud <span aria-hidden="true">→</span></a>
+            {% else %}
+                {% if access_error %}<div class="portal-alert portal-alert--danger" role="alert"><p>{{ access_error }}</p></div>{% endif %}
+                <form class="portal-access-form" method="post" action="{% url 'cases:public_email_verification' %}">
+                    {% csrf_token %}
+                    {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+                    {% if form.non_field_errors %}<div class="portal-alert portal-alert--danger" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+                    {% for field in form.visible_fields %}{% include "includes/public_field.html" with field=field %}{% endfor %}
+                    <button class="button button--primary portal-access-card__submit" type="submit">Verificar correo</button>
+                </form>
+            {% endif %}
+            <a class="portal-access-card__back" href="{% url 'cases:public_tracking' %}">← Volver al seguimiento</a>
+        </section>
     </div>
-    <section class="card app-card"><div class="card-body p-4 p-md-5">
-        {% if verified %}
-            <div class="alert alert-success" role="status">El correo electrónico fue verificado correctamente.</div>
-            <a class="btn btn-primary w-100" href="{% url 'cases:public_tracking' %}">Consultar solicitud</a>
-        {% else %}
-            {% if access_error %}<div class="alert alert-danger" role="alert">{{ access_error }}</div>{% endif %}
-            <form method="post" action="{% url 'cases:public_email_verification' %}" novalidate>
-                {% csrf_token %}
-                {% include "includes/form_fields.html" %}
-                <button class="btn btn-primary w-100" type="submit">Verificar correo</button>
-            </form>
-        {% endif %}
-        <div class="text-center mt-3"><a class="small" href="{% url 'cases:public_tracking' %}">Volver al seguimiento</a></div>
-    </div></section>
-</div></div></div>
+</div>
 {% endblock %}
