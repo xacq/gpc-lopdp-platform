@@ -1484,7 +1484,7 @@ class DeadlineService:
                     "response_days"
                 ] = remaining_days
 
-                new_due_at = (
+                calculated_due_at = (
                     cls._due_from_snapshot(
                         starts_at=db_now,
                         snapshot=(
@@ -1493,6 +1493,10 @@ class DeadlineService:
                         timezone=timezone,
                         holidays=holidays,
                     )
+                )
+                new_due_at = max(
+                    calculated_due_at,
+                    paused_deadline.due_at,
                 )
 
                 new_warning_at = (
