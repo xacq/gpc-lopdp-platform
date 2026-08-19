@@ -34,6 +34,14 @@ class PublicRequestForm(RequestCreateForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.fields.pop("source_channel")
+        self.fields["subject_type"].choices = [
+            ("", "Seleccione un tipo de titular"),
+            *self.fields["subject_type"].choices,
+        ]
+        self.fields["document_type"].choices = [
+            ("", "Seleccione un tipo de documento"),
+            *self.fields["document_type"].choices,
+        ]
 
     def clean(self):
         cleaned = super().clean()

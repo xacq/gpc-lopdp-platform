@@ -226,6 +226,36 @@ class PublicIntakeHttpTests(TestCase):
         self.assertContains(response, "Presentar una solicitud")
         self.assertNotContains(response, 'name="source_channel"')
         self.assertContains(response, 'name="website"', html=False)
+        self.assertNotContains(response, "novalidate")
+        html = response.content.decode()
+        for field_name in (
+            "subject_type",
+            "document_type",
+            "document_number",
+            "full_name",
+            "email",
+            "right",
+            "request_details",
+            "privacy_acknowledgement",
+        ):
+            self.assertRegex(
+                html,
+                rf'<(?:input|select|textarea)[^>]*name="{field_name}"[^>]*required',
+            )
+        for field_name in (
+            "phone",
+            "representative_name",
+            "representative_document_type",
+            "representative_document_number",
+            "representative_email",
+            "identity_document",
+            "authority_document",
+            "supporting_document",
+        ):
+            self.assertNotRegex(
+                html,
+                rf'<(?:input|select|textarea)[^>]*name="{field_name}"[^>]*required',
+            )
         self.assert_private_headers(response)
 
     def test_valid_submission_uses_prg_and_queues_encrypted_email(self):
@@ -254,6 +284,28 @@ class PublicIntakeHttpTests(TestCase):
         )
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Este campo es obligatorio")
+        self.assertFalse(RightsRequest.objects.exists())
+
+    def test_missing_basic_request_data_shows_field_errors(self):
+        data = dict(self.post_data)
+        for field_name in (
+            "subject_type",
+            "document_type",
+            "document_number",
+            "full_name",
+            "email",
+            "right",
+            "request_details",
+            "privacy_acknowledgement",
+        ):
+            data[field_name] = ""
+
+        response = self.client.post(
+            reverse("cases:public_request_create"), data
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Este campo es obligatorio", count=8)
         self.assertFalse(RightsRequest.objects.exists())
 
     def test_existing_subject_mismatch_uses_same_generic_confirmation(self):
@@ -326,3 +378,20 @@ class PublicIntakeHttpTests(TestCase):
         )
         self.assertEqual(intake_response.status_code, 403)
         self.assertEqual(verify_response.status_code, 403)
+
+    def test_public_intake_accepts_csrf_from_http_application_origin(self):
+        client = Client(enforce_csrf_checks=True)
+        url = reverse("cases:public_request_create")
+        client.get(url)
+        data = {
+            **self.post_data,
+            "csrfmiddlewaretoken": client.cookies["csrftoken"].value,
+        }
+
+        response = client.post(
+            url,
+            data,
+            HTTP_ORIGIN="http://testserver",
+        )
+
+        self.assertEqual(response.status_code, 303)

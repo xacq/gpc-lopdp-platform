@@ -14,7 +14,7 @@
                 <h2>Seguimiento público</h2>
                 <p>Los datos de acceso son personales. No los compartas con terceros.</p>
                 {% if access_error %}<div class="alert alert-danger" role="alert">{{ access_error }}</div>{% endif %}
-                <form method="post" action="{% url 'cases:public_tracking' %}" novalidate>
+                <form method="post" action="{% url 'cases:public_tracking' %}">
                     {% csrf_token %}
                     {% include "includes/public_field.html" with field=form.reference_number %}
                     {% include "includes/public_field.html" with field=form.token %}

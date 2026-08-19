@@ -133,6 +133,7 @@ class PublicCaseHttpTests(TestCase):
         self.assertEqual(tracking_response.status_code, 200)
         self.assertEqual(download_response.status_code, 200)
         self.assertContains(tracking_response, "Consulta tu solicitud")
+        self.assertNotContains(tracking_response, "novalidate")
         self.assertContains(download_response, "Descargar documento")
         self.assert_private_headers(tracking_response)
         self.assert_private_headers(download_response)
@@ -155,15 +156,22 @@ class PublicCaseHttpTests(TestCase):
 
         invalid = self.tracking_post(token=invalid_token)
         unknown = self.tracking_post(reference_number=unknown_reference)
-        malformed = self.tracking_post(reference_number="", token="")
-
-        for response in (invalid, unknown, malformed):
+        for response in (invalid, unknown):
             self.assertEqual(response.status_code, 200)
             self.assertContains(response, "No fue posible consultar")
             self.assertNotContains(response, invalid_token)
             self.assertNotContains(response, unknown_reference)
             self.assertNotContains(response, self.tracking.token)
             self.assert_private_headers(response)
+
+    def test_tracking_requires_reference_and_tracking_code(self):
+        response = self.tracking_post(reference_number="", token="")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Este campo es obligatorio", count=2)
+        self.assertNotContains(response, "No fue posible consultar la solicitud")
+        self.assertNotContains(response, self.tracking.token)
+        self.assert_private_headers(response)
 
     def test_tracking_post_requires_csrf(self):
         client = Client(enforce_csrf_checks=True)
@@ -175,6 +183,24 @@ class PublicCaseHttpTests(TestCase):
             },
         )
         self.assertEqual(response.status_code, 403)
+
+    def test_tracking_accepts_csrf_from_http_application_origin(self):
+        client = Client(enforce_csrf_checks=True)
+        url = reverse("cases:public_tracking")
+        client.get(url)
+
+        response = client.post(
+            url,
+            {
+                "reference_number": self.case.reference_number,
+                "token": self.tracking.token,
+                "csrfmiddlewaretoken": client.cookies["csrftoken"].value,
+            },
+            HTTP_ORIGIN="http://testserver",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.case.reference_number)
 
     def test_download_is_post_only_and_returns_safe_attachment(self):
         get_response = self.client.get(reverse("cases:public_download"))

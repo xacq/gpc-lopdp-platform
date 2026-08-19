@@ -261,6 +261,7 @@ def public_tracking(request):
     result = None
     history = ()
     access_error = None
+    form = PublicTrackingForm()
 
     if request.method == "POST":
         submitted_form = PublicTrackingForm(request.POST)
@@ -284,12 +285,23 @@ def public_tracking(request):
                     for item in result.history
                 )
         else:
-            access_error = GENERIC_TRACKING_ERROR
+            missing_fields = {
+                field_name
+                for field_name in ("reference_number", "token")
+                if not str(request.POST.get(field_name, "")).strip()
+            }
+            if missing_fields:
+                # Render only presence errors and never echo submitted access
+                # credentials back into the response.
+                form = PublicTrackingForm(data={})
+                form.is_valid()
+                for field_name in tuple(form.errors):
+                    if field_name not in missing_fields:
+                        form.errors.pop(field_name, None)
+            else:
+                access_error = GENERIC_TRACKING_ERROR
 
         # Never re-render submitted access codes, including malformed ones.
-        form = PublicTrackingForm()
-    else:
-        form = PublicTrackingForm()
 
     response = render(
         request,

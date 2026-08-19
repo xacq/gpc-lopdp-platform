@@ -25,7 +25,7 @@
             <p>Al enviar recibirás por correo los códigos para verificar tu dirección y consultar el estado. No compartas esos códigos.</p>
         </div>
 
-        <form class="public-request-form" method="post" action="{% url 'cases:public_request_create' %}" enctype="multipart/form-data" novalidate>
+        <form class="public-request-form" method="post" action="{% url 'cases:public_request_create' %}" enctype="multipart/form-data">
             {% csrf_token %}
             {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
             {% if form.non_field_errors %}<div class="portal-alert portal-alert--danger" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
