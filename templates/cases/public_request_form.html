@@ -1,4 +1,5 @@
 {% extends "public_base.html" %}
+{% load static %}
 {% block title %}Presentar solicitud{% endblock %}
 {% block body_class %}public-form-page{% endblock %}
 {% block content %}
@@ -13,11 +14,11 @@
             <a class="portal-heading__link" href="{% url 'cases:public_tracking' %}">Ya tengo una solicitud <span aria-hidden="true">→</span></a>
         </div>
 
-        <ol class="request-stepper" aria-label="Etapas del formulario">
+        <ol class="request-stepper" aria-label="Etapas del formulario" data-wizard-steps>
             <li class="request-stepper__item request-stepper__item--active"><span>1</span><strong>Titular</strong></li>
-            <li class="request-stepper__item request-stepper__item--active"><span>2</span><strong>Solicitud</strong></li>
-            <li class="request-stepper__item request-stepper__item--active"><span>3</span><strong>Adjuntos</strong></li>
-            <li class="request-stepper__item request-stepper__item--active"><span>4</span><strong>Confirmación</strong></li>
+            <li class="request-stepper__item"><span>2</span><strong>Solicitud</strong></li>
+            <li class="request-stepper__item"><span>3</span><strong>Adjuntos</strong></li>
+            <li class="request-stepper__item"><span>4</span><strong>Resumen</strong></li>
         </ol>
 
         <div class="portal-note" role="note">
@@ -25,12 +26,12 @@
             <p>Al enviar recibirás por correo los códigos para verificar tu dirección y consultar el estado. No compartas esos códigos.</p>
         </div>
 
-        <form class="public-request-form" method="post" action="{% url 'cases:public_request_create' %}" enctype="multipart/form-data">
+        <form class="public-request-form" method="post" action="{% url 'cases:public_request_create' %}" enctype="multipart/form-data" data-request-wizard>
             {% csrf_token %}
             {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
             {% if form.non_field_errors %}<div class="portal-alert portal-alert--danger" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
 
-            <section class="portal-panel">
+            <section class="portal-panel" data-wizard-panel="1">
                 <div class="portal-panel__heading"><span>1</span><div><h2>Datos del titular</h2><p>Información de la persona que ejerce el derecho.</p></div></div>
                 <div class="public-form-grid">
                     {% include "includes/public_field.html" with field=form.subject_type %}
@@ -40,17 +41,19 @@
                     {% include "includes/public_field.html" with field=form.email %}
                     {% include "includes/public_field.html" with field=form.phone %}
                 </div>
+                <div class="wizard-actions"><button class="button button--primary" type="button" data-wizard-next>Siguiente <span aria-hidden="true">→</span></button></div>
             </section>
 
-            <section class="portal-panel">
+            <section class="portal-panel" data-wizard-panel="2">
                 <div class="portal-panel__heading"><span>2</span><div><h2>Solicitud</h2><p>Selecciona el derecho y describe lo que necesitas.</p></div></div>
                 <div class="public-form-grid">
                     {% include "includes/public_field.html" with field=form.right class_name="public-field--full" %}
                     {% include "includes/public_field.html" with field=form.request_details class_name="public-field--full" %}
                 </div>
+                <div class="wizard-actions"><button class="button button--secondary" type="button" data-wizard-back>← Anterior</button><button class="button button--primary" type="button" data-wizard-next>Siguiente <span aria-hidden="true">→</span></button></div>
             </section>
 
-            <section class="portal-panel">
+            <section class="portal-panel" data-wizard-panel="3">
                 <div class="portal-panel__heading"><span>3</span><div><h2>Representación y adjuntos</h2><p>Completa esta sección únicamente cuando corresponda.</p></div></div>
                 <div class="public-check-row">
                     {{ form.has_representative }}
@@ -67,16 +70,26 @@
                     {% include "includes/public_field.html" with field=form.authority_document %}
                     {% include "includes/public_field.html" with field=form.supporting_document %}
                 </div>
+                <div class="wizard-actions"><button class="button button--secondary" type="button" data-wizard-back>← Anterior</button><button class="button button--primary" type="button" data-wizard-next>Revisar solicitud <span aria-hidden="true">→</span></button></div>
             </section>
 
-            <section class="portal-panel portal-panel--confirmation">
+            <section class="portal-panel portal-panel--confirmation" data-wizard-panel="4">
+                <div class="portal-panel__heading"><span>4</span><div><h2>Resumen</h2><p>Verifica la información antes de enviar.</p></div></div>
+                <dl class="request-summary" aria-live="polite">
+                    <div><dt>Titular</dt><dd data-summary="full_name">—</dd></div>
+                    <div><dt>Documento</dt><dd data-summary="document">—</dd></div>
+                    <div><dt>Correo</dt><dd data-summary="email">—</dd></div>
+                    <div><dt>Derecho solicitado</dt><dd data-summary="right">—</dd></div>
+                    <div><dt>Representación</dt><dd data-summary="representative">No</dd></div>
+                    <div><dt>Adjuntos seleccionados</dt><dd data-summary="attachments">0</dd></div>
+                </dl>
                 <div class="public-check-row">
                     {{ form.privacy_acknowledgement }}
                     <label for="{{ form.privacy_acknowledgement.id_for_label }}">{{ form.privacy_acknowledgement.label }} <span class="required-mark" aria-hidden="true">*</span></label>
                 </div>
                 {% for error in form.privacy_acknowledgement.errors %}<div class="public-field__error" role="alert">{{ error }}</div>{% endfor %}
                 <div class="public-request-form__actions">
-                    <a class="button button--secondary" href="{% url 'core:home' %}">Cancelar</a>
+                    <button class="button button--secondary" type="button" data-wizard-back>← Anterior</button>
                     <button class="button button--primary" type="submit">Enviar solicitud <span aria-hidden="true">→</span></button>
                 </div>
             </section>
@@ -84,3 +97,4 @@
     </div>
 </div>
 {% endblock %}
+{% block scripts %}<script src="{% static 'js/public-request.js' %}" defer></script>{% endblock %}

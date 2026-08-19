@@ -485,6 +485,8 @@ body {
     font-weight: 700;
 }
 .request-stepper__item--active span { border-color: var(--vinesa-red); color: var(--vinesa-red); }
+.request-stepper__item--complete { color: var(--vinesa-wine); }
+.request-stepper__item--complete span { border-color: var(--vinesa-red); background: var(--vinesa-red); color: #fff; }
 
 .portal-note,
 .portal-alert {
@@ -582,6 +584,28 @@ body {
 .portal-panel--confirmation { background: #fffaf8; }
 .public-request-form__actions { display: flex; justify-content: flex-end; gap: 0.8rem; margin-top: 1rem; }
 .public-request-form button.button { cursor: pointer; }
+.wizard-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.8rem;
+    margin-top: 1.6rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid #f0e7e3;
+}
+.request-summary {
+    display: grid;
+    margin: 0 0 1.5rem;
+    grid-template-columns: 1fr 1fr;
+    border: 1px solid var(--vinesa-line);
+    border-radius: 0.65rem;
+    background: #fff;
+    overflow: hidden;
+}
+.request-summary > div { padding: 1rem 1.1rem; border-bottom: 1px solid #f0e7e3; }
+.request-summary > div:nth-child(odd) { border-right: 1px solid #f0e7e3; }
+.request-summary > div:nth-last-child(-n + 2) { border-bottom: 0; }
+.request-summary dt { margin-bottom: 0.25rem; color: var(--vinesa-muted); font-size: 0.72rem; font-weight: 650; text-transform: uppercase; }
+.request-summary dd { margin: 0; color: #352a27; font-weight: 650; overflow-wrap: anywhere; }
 
 .confirmation-shell {
     min-height: 42rem;
@@ -700,8 +724,15 @@ body {
     .public-field--full { grid-column: auto; }
     .public-request-form__actions,
     .confirmation-card__actions { flex-direction: column-reverse; }
+    .wizard-actions { flex-direction: column-reverse; }
     .public-request-form__actions .button,
-    .confirmation-card__actions .button { width: 100%; }
+    .confirmation-card__actions .button,
+    .wizard-actions .button { width: 100%; }
+    .request-summary { grid-template-columns: 1fr; }
+    .request-summary > div,
+    .request-summary > div:nth-child(odd),
+    .request-summary > div:nth-last-child(-n + 2) { border-right: 0; border-bottom: 1px solid #f0e7e3; }
+    .request-summary > div:last-child { border-bottom: 0; }
     .tracking-result { min-height: auto; }
 }
 
