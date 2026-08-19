@@ -45,6 +45,7 @@ class PublicTrackingHistoryItem:
 @dataclass(frozen=True)
 class PublicTrackingResult:
     reference_number: str
+    right_name: str
     status: str
     received_at: datetime
     current_due_at: datetime | None
@@ -151,6 +152,7 @@ class PublicTrackingService:
         with transaction.atomic():
             request = (
                 RightsRequest.objects
+                .select_related("right")
                 .filter(
                     reference_number=(
                         reference_number
@@ -184,6 +186,7 @@ class PublicTrackingService:
                 reference_number=(
                     request.reference_number
                 ),
+                right_name=request.right.name,
                 status=request.status,
                 received_at=(
                     request.received_at

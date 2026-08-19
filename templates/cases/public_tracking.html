@@ -27,14 +27,15 @@
                 {% if result %}
                     <strong class="tracking-result__reference">{{ result.reference_number }}</strong>
                     <dl class="tracking-data">
-                        <div><dt>Fecha de recepción</dt><dd>{{ result.received_at }}</dd></div>
-                        <div><dt>Vencimiento estimado</dt><dd>{% if result.current_due_at %}{{ result.current_due_at }}{% else %}Por determinar{% endif %}</dd></div>
-                        {% if result.responded_at %}<div><dt>Fecha de respuesta</dt><dd>{{ result.responded_at }}</dd></div>{% endif %}
-                        {% if result.closed_at %}<div><dt>Fecha de cierre</dt><dd>{{ result.closed_at }}</dd></div>{% endif %}
+                        <div><dt>Fecha de recepción</dt><dd>{{ result.received_at|date:"d/m/Y H:i" }}</dd></div>
+                        <div><dt>Derecho solicitado</dt><dd>{{ result.right_name }}</dd></div>
+                        <div><dt>Vencimiento estimado</dt><dd>{% if result.current_due_at %}{{ result.current_due_at|date:"d/m/Y" }}{% else %}Por determinar{% endif %}</dd></div>
+                        {% if result.responded_at %}<div><dt>Fecha de respuesta</dt><dd>{{ result.responded_at|date:"d/m/Y H:i" }}</dd></div>{% endif %}
+                        {% if result.closed_at %}<div><dt>Fecha de cierre</dt><dd>{{ result.closed_at|date:"d/m/Y H:i" }}</dd></div>{% endif %}
                     </dl>
                     <h3>Historial de la solicitud</h3>
                     <ol class="tracking-history">
-                        {% for item in history %}<li><span></span><div><strong>{{ item.label }}</strong><time>{{ item.changed_at }}</time></div></li>{% empty %}<li class="tracking-history__empty">Sin movimientos registrados.</li>{% endfor %}
+                        {% for item in history %}<li><span></span><div><strong>{{ item.label }}</strong><time datetime="{{ item.changed_at|date:'c' }}">{{ item.changed_at|date:"d/m/Y H:i" }}</time></div></li>{% empty %}<li class="tracking-history__empty">Sin movimientos registrados.</li>{% endfor %}
                     </ol>
                 {% else %}
                     <div class="tracking-result__empty"><span aria-hidden="true">⌕</span><p>El estado y el historial aparecerán aquí después de validar tus datos de acceso.</p></div>

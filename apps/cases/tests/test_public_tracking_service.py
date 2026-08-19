@@ -146,6 +146,10 @@ class PublicTrackingServiceTests(
             RightsRequest.Status.RECEIVED,
         )
         self.assertEqual(
+            result.right_name,
+            self.right.name,
+        )
+        self.assertEqual(
             len(result.history),
             1,
         )
