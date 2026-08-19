@@ -18,6 +18,7 @@ from apps.cases.services.assignments import (
     AssignmentValidationError,
 )
 from apps.cases.services.cases import CaseWorkflowError
+from apps.legal_content.models import RightCatalog
 
 
 def _errors(form):
@@ -61,6 +62,9 @@ def assignment_index(request):
             "filter_form": form,
             "summary": summary,
             "assignment_list": assignment_list,
+            "rights": RightCatalog.objects.filter(is_active=True).order_by(
+                "name"
+            ),
         },
     )
 

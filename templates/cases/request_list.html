@@ -6,10 +6,10 @@
     {% if can_create %}<a class="btn btn-primary" href="{% url 'cases:request_create' %}">+ Nuevo expediente</a>{% endif %}
 </header>
 <section class="metric-grid metric-grid--compact">
-    <article class="metric-card"><p>Total expedientes</p><strong>{{ metrics.total }}</strong><small>Visibles para tu perfil</small></article>
-    <article class="metric-card metric-card--green"><p>En gestión</p><strong>{{ metrics.active }}</strong><small>Solicitudes activas</small></article>
-    <article class="metric-card metric-card--amber"><p>Sin asignar</p><strong>{{ metrics.unassigned }}</strong><small>Requieren responsable</small></article>
-    <article class="metric-card metric-card--blue"><p>Finalizados</p><strong>{{ metrics.finalized }}</strong><small>Gestión concluida</small></article>
+    <article class="metric-card"><span class="metric-card__icon" aria-hidden="true">▢</span><p>Total expedientes</p><strong>{{ metrics.total }}</strong><small>Visibles para tu perfil</small></article>
+    <article class="metric-card metric-card--green"><span class="metric-card__icon" aria-hidden="true">↻</span><p>En gestión</p><strong>{{ metrics.active }}</strong><small>Solicitudes activas</small></article>
+    <article class="metric-card metric-card--amber"><span class="metric-card__icon" aria-hidden="true">⌁</span><p>Sin asignar</p><strong>{{ metrics.unassigned }}</strong><small>Requieren responsable</small></article>
+    <article class="metric-card metric-card--blue"><span class="metric-card__icon" aria-hidden="true">✓</span><p>Finalizados</p><strong>{{ metrics.finalized }}</strong><small>Gestión concluida</small></article>
 </section>
 <form class="card app-card filter-panel" method="get">
     {% if filter_form.errors %}<div class="alert alert-danger">Revisa los filtros ingresados.</div>{% endif %}

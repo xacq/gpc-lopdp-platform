@@ -146,6 +146,9 @@ class AssignmentHttpTests(TestCase):
         self.assertContains(response, "Asignaciones")
         self.assertContains(response, "VS-ASG-001")
         self.assertContains(response, self.operator.full_name)
+        self.assertContains(response, "Asignar selección")
+        self.assertContains(response, 'name="due_from"')
+        self.assertContains(response, 'name="assigned_to"')
         self.assertNotContains(response, "secret-name")
         self.assertIn("no-cache", response["Cache-Control"])
 

@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 {% block title %}Asignaciones{% endblock %}
 {% block content %}
 <header class="page-heading admin-page-heading">
@@ -7,30 +8,43 @@
 </header>
 
 {% if summary %}<section class="metric-grid">
-    <article class="metric-card"><p>Asignaciones activas</p><strong>{{ summary.metrics.active }}</strong><small>Total en gestión</small></article>
-    <article class="metric-card metric-card--amber"><p>Sin asignar</p><strong>{{ summary.metrics.unassigned }}</strong><small>Requieren responsable</small></article>
-    <article class="metric-card metric-card--green"><p>Asignados</p><strong>{{ summary.metrics.assigned }}</strong><small>Con responsable activo</small></article>
-    <article class="metric-card metric-card--red"><p>Vencen hoy</p><strong>{{ summary.metrics.due_today }}</strong><small>{{ summary.metrics.reassigned_today }} reasignados hoy</small></article>
+    <article class="metric-card"><span class="metric-card__icon" aria-hidden="true">▢</span><p>Asignaciones activas</p><strong>{{ summary.metrics.active }}</strong><small>Total en gestión</small></article>
+    <article class="metric-card metric-card--amber"><span class="metric-card__icon" aria-hidden="true">⌁</span><p>Sin asignar</p><strong>{{ summary.metrics.unassigned }}</strong><small>Requieren responsable</small></article>
+    <article class="metric-card metric-card--green"><span class="metric-card__icon" aria-hidden="true">♙</span><p>Asignados</p><strong>{{ summary.metrics.assigned }}</strong><small>Con responsable activo</small></article>
+    <article class="metric-card metric-card--red"><span class="metric-card__icon" aria-hidden="true">◷</span><p>Vencen hoy</p><strong>{{ summary.metrics.due_today }}</strong><small>{{ summary.metrics.reassigned_today }} reasignados hoy</small></article>
 </section>{% endif %}
 
 <form class="card app-card filter-panel" method="get">
     {% if filter_form.errors %}<div class="alert alert-danger">Revisa los filtros ingresados.</div>{% endif %}
-    <div class="assignment-filter-grid">
-        <label>Buscar<input class="form-control" name="search" maxlength="100" value="{{ request.GET.search }}" placeholder="Referencia del expediente"></label>
-        <label>Estado de asignación<select class="form-select" name="assignment_state">{% for value, label in filter_form.fields.assignment_state.choices %}<option value="{{ value }}"{% if request.GET.assignment_state == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
-        <label>Estado del expediente<select class="form-select" name="status">{% for value, label in filter_form.fields.status.choices %}<option value="{{ value }}"{% if request.GET.status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+    <div class="assignment-filter-grid assignment-filter-grid--advanced">
+        <label class="assignment-filter-search">Buscar<input class="form-control" name="search" maxlength="100" value="{{ request.GET.search }}" placeholder="Referencia del expediente"></label>
+        <label>Derecho<select class="form-select" name="right_id"><option value="">Todos</option>{% for right in rights %}<option value="{{ right.id }}"{% if request.GET.right_id == right.id|stringformat:'s' %} selected{% endif %}>{{ right.name }}</option>{% endfor %}</select></label>
+        <label>Estado<select class="form-select" name="status">{% for value, label in filter_form.fields.status.choices %}<option value="{{ value }}"{% if request.GET.status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <label>Asignación<select class="form-select" name="assignment_state">{% for value, label in filter_form.fields.assignment_state.choices %}<option value="{{ value }}"{% if request.GET.assignment_state == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <label>Responsable<select class="form-select" name="assigned_to"><option value="">Todos</option>{% for item in summary.workload %}<option value="{{ item.user_id }}"{% if request.GET.assigned_to == item.user_id %} selected{% endif %}>{{ item.name|default:"Usuario institucional" }}</option>{% endfor %}</select></label>
+        <label>Vence desde<input class="form-control" type="date" name="due_from" value="{{ request.GET.due_from }}"></label>
+        <label>Vence hasta<input class="form-control" type="date" name="due_to" value="{{ request.GET.due_to }}"></label>
+        <label>Por página<select class="form-select" name="page_size"><option value="20"{% if request.GET.page_size == "20" or not request.GET.page_size %} selected{% endif %}>20</option><option value="50"{% if request.GET.page_size == "50" %} selected{% endif %}>50</option><option value="100"{% if request.GET.page_size == "100" %} selected{% endif %}>100</option></select></label>
         <div class="filter-actions"><a class="btn btn-light" href="{% url 'assignments:index' %}">Limpiar</a><button class="btn btn-primary" type="submit">Aplicar filtros</button></div>
     </div>
 </form>
 
 {% if assignment_list %}<div class="assignment-layout">
     <section class="card app-card admin-data-card">
-        <header class="admin-data-card__header"><div><p class="page-kicker">Expedientes</p><h2>{{ assignment_list.pagination.total }} resultados</h2></div></header>
-        <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Referencia</th><th>Derecho</th><th>Estado</th><th>Asignado a</th><th>Vencimiento</th><th></th></tr></thead><tbody>
-        {% for item in assignment_list.results %}<tr><td><a class="fw-semibold text-decoration-none" href="{% url 'cases:request_detail' item.id %}">{{ item.reference_number }}</a></td><td>{{ item.right.name }}</td><td><span class="status-badge status-badge--{{ item.status.code|lower }}">{{ item.status.label }}</span></td><td>{% if item.assignee %}{{ item.assignee.name }}{% else %}<span class="text-body-secondary">Sin asignar</span>{% endif %}</td><td>{{ item.current_due_at|date:"d/m/Y"|default:"—" }}</td><td><a class="btn btn-sm btn-outline-primary" href="{% url 'cases:request_assign' item.id %}">{% if item.assignee %}Reasignar{% else %}Asignar{% endif %}</a></td></tr>{% empty %}<tr><td colspan="6" class="text-center text-body-secondary py-5">No se encontraron expedientes.</td></tr>{% endfor %}
+        <header class="admin-data-card__header assignment-table-heading"><div><p class="page-kicker">Expedientes</p><h2>{{ assignment_list.pagination.total }} resultados</h2></div></header>
+        <form class="bulk-assignment" data-bulk-assignment data-apply-url="{% url 'assignments:apply' %}">
+            {% csrf_token %}
+            <span><strong data-selection-count>0</strong> seleccionados</span>
+            <label><span class="visually-hidden">Responsable para asignación masiva</span><select class="form-select" name="assignee_id" required><option value="">Selecciona responsable</option>{% for item in summary.workload %}<option value="{{ item.user_id }}">{{ item.name|default:"Usuario institucional" }} · {{ item.active_assignments }}/{{ item.capacity }}</option>{% endfor %}</select></label>
+            <button class="btn btn-primary" type="submit" disabled>Asignar selección</button>
+            <p class="bulk-assignment__feedback" data-assignment-feedback aria-live="polite"></p>
+        </form>
+        <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th class="selection-cell"><input type="checkbox" data-select-all aria-label="Seleccionar todos los expedientes visibles"></th><th>Referencia</th><th>Derecho</th><th>Estado</th><th>Asignado a</th><th>Vencimiento</th><th>Acción</th></tr></thead><tbody>
+        {% for item in assignment_list.results %}<tr><td class="selection-cell"><input type="checkbox" name="request_ids" value="{{ item.id }}" data-request-selection aria-label="Seleccionar {{ item.reference_number }}"></td><td><a class="fw-semibold text-decoration-none" href="{% url 'cases:request_detail' item.id %}">{{ item.reference_number }}</a></td><td>{{ item.right.name }}</td><td><span class="status-badge status-badge--{{ item.status.code|lower }}">{{ item.status.label }}</span></td><td>{% if item.assignee %}{{ item.assignee.name }}{% else %}<span class="text-body-secondary">Sin asignar</span>{% endif %}</td><td>{{ item.current_due_at|date:"d/m/Y"|default:"—" }}</td><td><a class="btn btn-sm btn-outline-primary" href="{% url 'cases:request_assign' item.id %}">{% if item.assignee %}Reasignar{% else %}Asignar{% endif %}</a></td></tr>{% empty %}<tr><td colspan="7" class="text-center text-body-secondary py-5">No se encontraron expedientes.</td></tr>{% endfor %}
         </tbody></table></div>
-        {% if assignment_list.pagination.pages > 1 %}<nav class="table-pagination"><span>Página {{ assignment_list.pagination.page }} de {{ assignment_list.pagination.pages }}</span><div>{% if assignment_list.pagination.page > 1 %}<a class="btn btn-sm btn-light" href="{% querystring page=assignment_list.pagination.page|add:'-1' %}">Anterior</a>{% endif %}{% if assignment_list.pagination.page < assignment_list.pagination.pages %}<a class="btn btn-sm btn-light" href="{% querystring page=assignment_list.pagination.page|add:'1' %}">Siguiente</a>{% endif %}</div></nav>{% endif %}
+        {% if assignment_list.pagination.pages > 1 %}<nav class="table-pagination"><span>Mostrando página {{ assignment_list.pagination.page }} de {{ assignment_list.pagination.pages }} · {{ assignment_list.pagination.total }} expedientes</span><div>{% if assignment_list.pagination.page > 1 %}<a class="btn btn-sm btn-light" href="{% querystring page=assignment_list.pagination.page|add:'-1' %}">Anterior</a>{% endif %}{% if assignment_list.pagination.page < assignment_list.pagination.pages %}<a class="btn btn-sm btn-light" href="{% querystring page=assignment_list.pagination.page|add:'1' %}">Siguiente</a>{% endif %}</div></nav>{% endif %}
     </section>
     <aside class="card app-card admin-data-card workload-card"><header class="admin-data-card__header"><div><p class="page-kicker">Capacidad</p><h2>Carga por usuario</h2></div></header><ul>{% for item in summary.workload %}<li><div><strong>{{ item.name|default:"Usuario institucional" }}</strong><span>{{ item.active_assignments }} / {{ item.capacity }} expedientes</span></div><div class="workload-meter"><i style="width: {% if item.utilization_percentage > 100 %}100{% else %}{{ item.utilization_percentage }}{% endif %}%"></i></div><small>{{ item.utilization_percentage }}%</small></li>{% empty %}<li>No hay responsables disponibles.</li>{% endfor %}</ul></aside>
 </div>{% endif %}
 {% endblock %}
+{% block scripts %}<script src="{% static 'js/assignments.js' %}" defer></script>{% endblock %}
