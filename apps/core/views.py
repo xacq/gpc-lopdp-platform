@@ -1,6 +1,14 @@
+from django.contrib.auth.decorators import login_required
+from django.core.exceptions import PermissionDenied
+from django.http import JsonResponse
 from django.shortcuts import render
+from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET
 
+from apps.cases.services.dashboard import (
+    CaseDashboardService,
+    DashboardPermissionError,
+)
 from apps.legal_content.models import RightCatalog
 from apps.organization.defaults import (
     VINESA_PRIVACY_POLICY_URL,
@@ -40,6 +48,20 @@ PRELIMINARY_RIGHTS = (
 )
 
 PROVISIONAL_DPD_NAME = "María Elena Terán"
+
+
+@never_cache
+@login_required
+@require_GET
+def dashboard_summary(request):
+    try:
+        snapshot = CaseDashboardService.snapshot(user=request.user)
+    except DashboardPermissionError:
+        raise PermissionDenied
+    return JsonResponse(
+        snapshot,
+        json_dumps_params={"ensure_ascii": False},
+    )
 
 
 @require_GET
