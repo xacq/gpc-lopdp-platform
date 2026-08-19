@@ -1084,17 +1084,33 @@ body {
 .audit-detail dd { margin: 0; color: #3e3431; }
 .table-pagination { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1rem 1.35rem; border-top: 1px solid var(--vinesa-line); color: #817672; font-size: 0.72rem; }
 .table-pagination > div { display: flex; gap: 0.5rem; }
+.assignment-filter-grid { display: grid; grid-template-columns: 2fr 1fr 1fr auto; align-items: end; gap: 0.9rem; }
+.assignment-filter-grid label { color: #554b47; font-size: 0.72rem; font-weight: 650; }
+.assignment-filter-grid .form-control,
+.assignment-filter-grid .form-select { min-height: 2.75rem; margin-top: 0.4rem; border-color: #ded4d0; font-size: 0.78rem; }
+.assignment-layout { display: grid; grid-template-columns: minmax(0, 3fr) minmax(17rem, 0.8fr); gap: 1.15rem; }
+.workload-card ul { margin: 0; padding: 0.65rem 1.35rem; list-style: none; }
+.workload-card li { display: grid; grid-template-columns: 1fr auto; gap: 0.5rem 0.8rem; padding: 0.8rem 0; border-bottom: 1px solid #f0e7e3; }
+.workload-card li > div:first-child { display: grid; }
+.workload-card li strong { overflow: hidden; font-size: 0.74rem; text-overflow: ellipsis; white-space: nowrap; }
+.workload-card li span,
+.workload-card li small { color: #837773; font-size: 0.66rem; }
+.workload-meter { grid-column: 1; height: 0.32rem; overflow: hidden; border-radius: 1rem; background: #eee9e7; }
+.workload-meter i { display: block; height: 100%; border-radius: inherit; background: var(--vinesa-red); }
 
 @media (max-width: 1199.98px) {
     .metric-grid { grid-template-columns: repeat(2, 1fr); }
     .filter-grid { grid-template-columns: repeat(3, 1fr); }
     .audit-layout--detail { grid-template-columns: 1fr; }
+    .assignment-filter-grid { grid-template-columns: 2fr 1fr 1fr; }
+    .assignment-filter-grid .filter-actions { grid-column: 1 / -1; }
 }
 
 @media (max-width: 767.98px) {
     .admin-page-heading { align-items: flex-start; flex-direction: column; }
     .admin-dashboard-grid,
     .report-grid { grid-template-columns: 1fr; }
+    .assignment-layout { grid-template-columns: 1fr; }
     .filter-grid,
     .filter-grid--audit { grid-template-columns: 1fr 1fr; }
 }
@@ -1103,6 +1119,8 @@ body {
     .metric-grid,
     .filter-grid,
     .filter-grid--audit { grid-template-columns: 1fr; }
+    .assignment-filter-grid { grid-template-columns: 1fr; }
+    .assignment-filter-grid .filter-actions { grid-column: auto; }
     .filter-actions { justify-content: stretch; }
     .filter-actions .btn { flex: 1; }
 }

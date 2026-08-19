@@ -135,6 +135,20 @@ class AssignmentHttpTests(TestCase):
         self.assertEqual(operator["active_assignments"], 1)
         self.assertEqual(operator["capacity"], 25)
 
+    def test_assignment_page_renders_metrics_and_safe_case_data(self):
+        self.first.assigned_to = self.operator
+        self.first.save(update_fields=["assigned_to"])
+        force_mfa_login(self.client, self.manager)
+
+        response = self.client.get(reverse("assignments:index"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Asignaciones")
+        self.assertContains(response, "VS-ASG-001")
+        self.assertContains(response, self.operator.full_name)
+        self.assertNotContains(response, "secret-name")
+        self.assertIn("no-cache", response["Cache-Control"])
+
     def test_list_filters_without_exposing_subject_data(self):
         self.first.assigned_to = self.operator
         self.first.save(update_fields=["assigned_to"])

@@ -1,6 +1,7 @@
 from django.urls import path
 
 from apps.cases.views.assignments import (
+    assignment_index,
     assignment_apply,
     assignment_history,
     assignment_request_list,
@@ -12,6 +13,7 @@ app_name = "assignments"
 
 
 urlpatterns = [
+    path("", assignment_index, name="index"),
     path("summary/", assignment_summary, name="summary"),
     path("requests/", assignment_request_list, name="request_list"),
     path("history/", assignment_history, name="history"),

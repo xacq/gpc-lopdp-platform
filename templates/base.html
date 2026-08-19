@@ -22,6 +22,7 @@
                 {% if nav_can_access_cases %}
                     <a class="admin-nav-link{% if request.resolver_match.url_name == 'dashboard' %} admin-nav-link--active{% endif %}" href="{% url 'core:dashboard' %}"><span aria-hidden="true">⌂</span> Dashboard</a>
                     <a class="admin-nav-link{% if request.resolver_match.namespace == 'cases' %} admin-nav-link--active{% endif %}" href="{% url 'cases:request_list' %}"><span aria-hidden="true">▢</span> Expedientes</a>
+                    {% if nav_can_assign_cases %}<a class="admin-nav-link{% if request.resolver_match.namespace == 'assignments' %} admin-nav-link--active{% endif %}" href="{% url 'assignments:index' %}"><span aria-hidden="true">♧</span> Asignaciones</a>{% endif %}
                     <a class="admin-nav-link{% if request.resolver_match.url_name == 'reports' %} admin-nav-link--active{% endif %}" href="{% url 'core:reports' %}"><span aria-hidden="true">▤</span> Reportes</a>
                 {% endif %}
                 {% if nav_can_read_audit %}
