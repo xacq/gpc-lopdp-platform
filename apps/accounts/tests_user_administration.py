@@ -265,6 +265,21 @@ class UserAdministrationHttpTests(UserAdministrationBase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, self.operator.email)
 
+    def test_user_list_filters_and_includes_security_metrics(self):
+        self._mfa_device(self.operator)
+        self._login_admin()
+
+        response = self.client.get(
+            reverse("accounts:user_list"),
+            {"search": self.operator.email, "status": "ACTIVE"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.operator.email)
+        self.assertNotContains(response, self.admin.email)
+        self.assertEqual(response.context["metrics"]["total"], 2)
+        self.assertEqual(response.context["metrics"]["mfa_enabled"], 1)
+
     def test_admin_can_create_user(self):
         self._login_admin()
         response = self.client.post(

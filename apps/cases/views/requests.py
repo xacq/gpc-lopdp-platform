@@ -6,6 +6,8 @@ from django.contrib.auth.decorators import (
 from django.core.exceptions import (
     PermissionDenied,
 )
+from django.core.paginator import Paginator
+from django.db.models import Count, Q
 from django.http import (
     HttpResponseBadRequest,
 )
@@ -29,6 +31,7 @@ from apps.cases.forms.requests import (
     RequestClarificationReceiveForm,
     RequestCreateForm,
     RequestExtensionForm,
+    RequestListFilterForm,
     RequestResolutionForm,
 )
 from apps.cases.models import (
@@ -107,22 +110,69 @@ def request_list(request):
     ):
         raise PermissionDenied
 
-    cases = (
+    base_cases = (
         visible_requests_for(
             request.user,
             _case_queryset(),
         )
-        .order_by(
+    )
+    metrics = base_cases.aggregate(
+        total=Count("id"),
+        active=Count(
+            "id",
+            filter=Q(status__in=(
+                RightsRequest.Status.RECEIVED,
+                RightsRequest.Status.UNDER_REVIEW,
+                RightsRequest.Status.AWAITING_INFORMATION,
+                RightsRequest.Status.EXTENDED,
+                RightsRequest.Status.PARTIALLY_APPROVED,
+            )),
+        ),
+        unassigned=Count("id", filter=Q(assigned_to__isnull=True)),
+        finalized=Count(
+            "id",
+            filter=Q(status__in=(
+                RightsRequest.Status.RESPONDED,
+                RightsRequest.Status.REJECTED,
+                RightsRequest.Status.ARCHIVED,
+                RightsRequest.Status.CANCELLED,
+                RightsRequest.Status.CLOSED,
+            )),
+        ),
+    )
+    form = RequestListFilterForm(request.GET)
+    cases = base_cases
+    if form.is_valid():
+        filters = form.cleaned_data
+        if filters["search"]:
+            cases = cases.filter(
+                reference_number__icontains=filters["search"]
+            )
+        if filters["right"]:
+            cases = cases.filter(right=filters["right"])
+        if filters["status"]:
+            cases = cases.filter(status=filters["status"])
+        if filters["assignment_state"] == "ASSIGNED":
+            cases = cases.filter(assigned_to__isnull=False)
+        elif filters["assignment_state"] == "UNASSIGNED":
+            cases = cases.filter(assigned_to__isnull=True)
+        page_number = filters["page"] or 1
+    else:
+        page_number = 1
+    cases = cases.order_by(
             "-received_at",
             "-created_at",
         )
-    )
+    page = Paginator(cases, 20).get_page(page_number)
 
     return render(
         request,
         "cases/request_list.html",
         {
-            "cases": cases,
+            "cases": page.object_list,
+            "page": page,
+            "filter_form": form,
+            "metrics": metrics,
             "can_create": (
                 can_create_case(
                     request.user
@@ -303,6 +353,10 @@ def request_detail(
                 )
             )
 
+    has_resolution = hasattr(case, "resolution")
+    workflow_manager = can_assign_case(request.user)
+    workflow_actor = can_start_review(request.user, case)
+
     return render(
         request,
         "cases/request_detail.html",
@@ -334,6 +388,43 @@ def request_detail(
                 == RightsRequest
                 .Status
                 .RECEIVED
+            ),
+            "can_request_clarification": (
+                workflow_actor
+                and case.status in {
+                    RightsRequest.Status.UNDER_REVIEW,
+                    RightsRequest.Status.EXTENDED,
+                }
+            ),
+            "can_extend": (
+                workflow_manager
+                and not case.extension_applied
+                and case.status in {
+                    RightsRequest.Status.UNDER_REVIEW,
+                    RightsRequest.Status.AWAITING_INFORMATION,
+                }
+            ),
+            "can_resolve": (
+                workflow_manager
+                and not has_resolution
+                and case.status in {
+                    RightsRequest.Status.UNDER_REVIEW,
+                    RightsRequest.Status.AWAITING_INFORMATION,
+                    RightsRequest.Status.EXTENDED,
+                }
+            ),
+            "can_mark_responded": (
+                workflow_manager
+                and has_resolution
+                and case.status in {
+                    RightsRequest.Status.UNDER_REVIEW,
+                    RightsRequest.Status.EXTENDED,
+                    RightsRequest.Status.PARTIALLY_APPROVED,
+                }
+            ),
+            "can_close": (
+                workflow_manager
+                and case.status == RightsRequest.Status.RESPONDED
             ),
         },
     )

@@ -63,6 +63,34 @@ class MFAChallengeForm(forms.Form):
     )
 
 
+class UserListFilterForm(forms.Form):
+    search = forms.CharField(required=False, max_length=180)
+    role = forms.ModelChoiceField(
+        required=False,
+        queryset=Role.objects.none(),
+        empty_label="Todos los roles",
+    )
+    status = forms.ChoiceField(
+        required=False,
+        choices=(
+            ("", "Todos los estados"),
+            ("ACTIVE", "Activos"),
+            ("INACTIVE", "Inactivos"),
+            ("LOCKED", "Bloqueados"),
+        ),
+    )
+    page = forms.IntegerField(required=False, min_value=1, initial=1)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["role"].queryset = Role.objects.filter(
+            is_active=True
+        ).order_by("code")
+
+    def clean_search(self):
+        return (self.cleaned_data.get("search") or "").strip()
+
+
 class ActiveRoleChoiceField(forms.ModelChoiceField):
     def label_from_instance(self, role):
         return f"{role.get_code_display()} ({role.code})"

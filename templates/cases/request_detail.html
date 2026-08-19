@@ -1,35 +1,20 @@
 {% extends "base.html" %}
 {% block title %}{{ case.reference_number }}{% endblock %}
 {% block content %}
-<div class="page-heading">
-    <a class="small text-decoration-none" href="{% url 'cases:request_list' %}">← Volver a solicitudes</a>
-    <div class="d-flex flex-column flex-md-row align-items-md-end justify-content-between gap-3 mt-3">
-        <div><p class="page-kicker">Expediente</p><h1 class="h2 mb-0">{{ case.reference_number }}</h1></div>
-        {% if can_assign %}<a class="btn btn-outline-primary" href="{% url 'cases:request_assign' case.id %}">Asignar o reasignar</a>{% endif %}
+<header class="case-detail-heading">
+    <a href="{% url 'cases:request_list' %}">← Volver al listado</a>
+    <div><section><p class="page-kicker">Expediente</p><h1>{{ case.reference_number }}</h1></section><div>{% if can_assign %}<a class="btn btn-outline-primary" href="{% url 'cases:request_assign' case.id %}">Asignar o reasignar</a>{% endif %}</div></div>
+</header>
+<nav class="case-tabs" aria-label="Secciones del expediente"><a class="active" href="#resumen">Resumen</a><a href="#identidad">Identidad</a><a href="#solicitud">Solicitud</a><a href="#historial">Historial</a></nav>
+<div class="case-detail-layout">
+    <div>
+        <section class="card app-card case-summary" id="resumen"><header><p class="page-kicker">Información general</p><h2>Resumen</h2></header><dl><div><dt>Derecho solicitado</dt><dd>{{ case.right.name }}</dd></div><div><dt>Estado actual</dt><dd><span class="status-badge status-badge--{{ case.status|lower }}">{{ case.get_status_display }}</span></dd></div><div><dt>Identidad</dt><dd>{{ case.get_identity_status_display }}</dd></div><div><dt>Fecha de recepción</dt><dd>{{ case.received_at|date:"d/m/Y H:i" }}</dd></div><div><dt>Fecha límite</dt><dd>{{ case.current_due_at|date:"d/m/Y H:i"|default:"—" }}</dd></div><div><dt>Asignado a</dt><dd>{% if case.assigned_to %}{{ case.assigned_to.full_name }}{% else %}Sin asignar{% endif %}</dd></div></dl></section>
+        <section class="card app-card case-section" id="identidad"><header><p class="page-kicker">Datos protegidos</p><h2>Identidad del titular</h2></header>{% if sensitive_data %}<dl class="data-list"><dt>Nombre</dt><dd>{{ subject_snapshot.full_name }}</dd><dt>Tipo de titular</dt><dd>{{ subject_snapshot.subject_type }}</dd><dt>Documento</dt><dd>{{ subject_snapshot.document_type }} {{ subject_snapshot.document_number }}</dd><dt>Correo</dt><dd>{{ subject_snapshot.email }}</dd><dt>Teléfono</dt><dd>{{ subject_snapshot.phone|default:"—" }}</dd></dl>{% if representative_pii %}<h3>Representante</h3><dl class="data-list"><dt>Nombre</dt><dd>{{ representative_pii.representative_name }}</dd><dt>Documento</dt><dd>{{ representative_pii.representative_document_type }} {{ representative_pii.representative_document_number }}</dd><dt>Estado</dt><dd>{{ representative_pii.verification_status }}</dd></dl>{% endif %}{% else %}<div class="privacy-restriction">Los datos personales no están disponibles para este perfil.</div>{% endif %}</section>
+        <section class="card app-card case-section" id="solicitud"><header><p class="page-kicker">Contenido</p><h2>Descripción de la solicitud</h2></header>{% if sensitive_data %}<p class="case-request-text">{{ request_details }}</p>{% else %}<div class="privacy-restriction">El contenido está protegido y no está disponible para este perfil.</div>{% endif %}</section>
     </div>
-</div>
-
-<div class="row g-4">
-    <div class="col-lg-8">
-        <section class="card app-card mb-4"><div class="card-body p-4">
-            <h2 class="h5 mb-4">Resumen</h2>
-            <dl class="data-list"><dt>Derecho</dt><dd>{{ case.right.name }}</dd><dt>Estado</dt><dd><span class="badge text-bg-light border">{{ case.get_status_display }}</span></dd><dt>Identidad</dt><dd>{{ case.get_identity_status_display }}</dd><dt>Asignado</dt><dd>{% if case.assigned_to %}{{ case.assigned_to.full_name }}{% else %}Sin asignar{% endif %}</dd><dt>Recibida</dt><dd>{{ case.received_at }}</dd><dt>Vencimiento</dt><dd>{% if case.current_due_at %}{{ case.current_due_at }}{% else %}—{% endif %}</dd></dl>
-        </div></section>
-
-        {% if sensitive_data %}
-            <section class="card app-card mb-4"><div class="card-body p-4"><h2 class="h5 mb-4">Titular</h2><dl class="data-list"><dt>Nombre</dt><dd>{{ subject_snapshot.full_name }}</dd><dt>Tipo de titular</dt><dd>{{ subject_snapshot.subject_type }}</dd><dt>Documento</dt><dd>{{ subject_snapshot.document_type }} {{ subject_snapshot.document_number }}</dd><dt>Correo</dt><dd>{{ subject_snapshot.email }}</dd><dt>Teléfono</dt><dd>{% if subject_snapshot.phone %}{{ subject_snapshot.phone }}{% else %}—{% endif %}</dd></dl></div></section>
-            {% if representative_pii %}<section class="card app-card mb-4"><div class="card-body p-4"><h2 class="h5 mb-4">Representante</h2><dl class="data-list"><dt>Nombre</dt><dd>{{ representative_pii.representative_name }}</dd><dt>Documento</dt><dd>{{ representative_pii.representative_document_type }} {{ representative_pii.representative_document_number }}</dd><dt>Estado</dt><dd>{{ representative_pii.verification_status }}</dd></dl></div></section>{% endif %}
-            <section class="card app-card mb-4"><div class="card-body p-4"><h2 class="h5">Descripción de la solicitud</h2><p class="mb-0 text-break">{{ request_details }}</p></div></section>
-        {% else %}
-            <div class="alert alert-info">Los datos personales del expediente no están disponibles para este perfil.</div>
-        {% endif %}
-    </div>
-    <div class="col-lg-4">
-        <section class="card app-card mb-4"><div class="card-body p-4">
-            <h2 class="h5 mb-3">Historial de estados</h2>
-            <ul class="list-group list-group-flush">{% for item in case.status_history.all %}<li class="list-group-item px-0"><div class="small text-body-secondary">{{ item.changed_at }}</div><div>{{ item.previous_status|default:"—" }} → {{ item.new_status }}</div></li>{% empty %}<li class="list-group-item px-0 text-body-secondary">Sin historial.</li>{% endfor %}</ul>
-        </div></section>
-        {% if can_start_review %}<form method="post" action="{% url 'cases:request_start_review' case.id %}">{% csrf_token %}<button class="btn btn-primary w-100" type="submit">Iniciar revisión</button></form>{% endif %}
-    </div>
+    <aside>
+        <section class="card app-card workflow-card"><header><p class="page-kicker">Gestión</p><h2>Acciones del expediente</h2></header><div>{% if can_start_review %}<form method="post" action="{% url 'cases:request_start_review' case.id %}">{% csrf_token %}<button class="btn btn-primary w-100" type="submit">Iniciar revisión</button></form>{% endif %}{% if can_request_clarification %}<a class="btn btn-outline-primary" href="{% url 'cases:request_clarification_create' case.id %}">Solicitar aclaración</a>{% endif %}{% if can_extend %}<a class="btn btn-outline-primary" href="{% url 'cases:request_extension' case.id %}">Aplicar extensión</a>{% endif %}{% if can_resolve %}<a class="btn btn-primary" href="{% url 'cases:request_resolution' case.id %}">Registrar resolución</a>{% endif %}{% if can_mark_responded %}<form method="post" action="{% url 'cases:request_mark_responded' case.id %}">{% csrf_token %}<button class="btn btn-primary w-100" type="submit">Marcar como respondida</button></form>{% endif %}{% if can_close %}<form method="post" action="{% url 'cases:request_close' case.id %}">{% csrf_token %}<button class="btn btn-outline-primary w-100" type="submit">Cerrar expediente</button></form>{% endif %}{% if not can_start_review and not can_request_clarification and not can_extend and not can_resolve and not can_mark_responded and not can_close %}<p>No hay acciones disponibles para el estado actual.</p>{% endif %}</div></section>
+        <section class="card app-card timeline-card" id="historial"><header><p class="page-kicker">Trazabilidad</p><h2>Línea de tiempo</h2></header><ol>{% for item in case.status_history.all %}<li><span></span><div><strong>{{ item.get_new_status_display|default:item.new_status }}</strong><small>{{ item.changed_at|date:"d/m/Y H:i" }}</small><p>{{ item.previous_status|default:"Inicio" }} → {{ item.new_status }}</p></div></li>{% empty %}<li><span></span><div><strong>Solicitud recibida</strong><small>{{ case.received_at|date:"d/m/Y H:i" }}</small></div></li>{% endfor %}</ol></section>
+    </aside>
 </div>
 {% endblock %}

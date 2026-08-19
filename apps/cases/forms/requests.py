@@ -21,6 +21,37 @@ from apps.subjects.models import (
 )
 
 
+class RequestListFilterForm(forms.Form):
+    search = forms.CharField(required=False, max_length=100)
+    right = forms.ModelChoiceField(
+        required=False,
+        queryset=RightCatalog.objects.none(),
+        empty_label="Todos los derechos",
+    )
+    status = forms.ChoiceField(
+        required=False,
+        choices=(("", "Todos los estados"), *RightsRequest.Status.choices),
+    )
+    assignment_state = forms.ChoiceField(
+        required=False,
+        choices=(
+            ("", "Todos"),
+            ("ASSIGNED", "Asignados"),
+            ("UNASSIGNED", "Sin asignar"),
+        ),
+    )
+    page = forms.IntegerField(required=False, min_value=1, initial=1)
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["right"].queryset = RightCatalog.objects.filter(
+            is_active=True
+        ).order_by("name")
+
+    def clean_search(self):
+        return (self.cleaned_data.get("search") or "").strip()
+
+
 class RequestCreateForm(forms.Form):
     subject_type = forms.ChoiceField(
         label="Tipo de titular",

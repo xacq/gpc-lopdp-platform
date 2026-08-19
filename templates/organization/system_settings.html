@@ -1,9 +1,24 @@
 {% extends "base.html" %}
-{% block title %}Configuración institucional{% endblock %}
+{% block title %}Configuración{% endblock %}
 {% block content %}
-<div class="row justify-content-center"><div class="col-xl-9">
-    <div class="page-heading"><p class="page-kicker">Administración</p><h1 class="h2">Configuración institucional</h1><p class="text-body-secondary mb-0">Define la identidad, operación y canales oficiales de esta instalación.</p></div>
-    {% if saved %}<div class="alert alert-success" role="status">La configuración fue guardada correctamente.</div>{% endif %}
-    <section class="card app-card"><div class="card-body p-4 p-md-5"><form method="post" novalidate>{% csrf_token %}{% include "includes/form_fields.html" %}<div class="d-flex justify-content-end"><button class="btn btn-primary" type="submit">Guardar configuración</button></div></form></div></section>
-</div></div>
+<header class="page-heading admin-page-heading"><div><p class="page-kicker">Administración</p><h1>Configuración</h1><p>Administra la identidad, canales oficiales y parámetros institucionales.</p></div></header>
+{% if saved %}<div class="alert alert-success" role="status">La configuración fue guardada correctamente.</div>{% endif %}
+<nav class="settings-tabs" aria-label="Secciones de configuración"><a class="active" href="#institucional">Configuración institucional</a><a href="#responsables">Responsables</a><a href="#branding">Branding</a><a href="#legal">Canal de reclamos</a></nav>
+<form class="settings-form" method="post" novalidate>{% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+    <div class="settings-grid" id="institucional">
+        <section class="card app-card settings-card"><header><p class="page-kicker">Identidad</p><h2>Datos institucionales</h2></header><div class="settings-card__grid">{% include "includes/admin_field.html" with field=form.legal_name %}{% include "includes/admin_field.html" with field=form.trade_name %}{% include "includes/admin_field.html" with field=form.ruc %}{% include "includes/admin_field.html" with field=form.domain %}</div></section>
+        <section class="card app-card settings-card"><header><p class="page-kicker">Contacto</p><h2>Canales oficiales</h2></header><div class="settings-card__grid">{% include "includes/admin_field.html" with field=form.phone %}{% include "includes/admin_field.html" with field=form.contact_email %}<div class="settings-card__full">{% include "includes/admin_field.html" with field=form.address %}</div></div></section>
+    </div>
+    <div class="settings-grid" id="responsables">
+        <section class="card app-card settings-card"><header><p class="page-kicker">Responsable</p><h2>Responsable del tratamiento</h2></header><div class="settings-card__grid">{% include "includes/admin_field.html" with field=form.controller_name %}{% include "includes/admin_field.html" with field=form.controller_email %}{% include "includes/admin_field.html" with field=form.controller_phone %}</div></section>
+        <section class="card app-card settings-card"><header><p class="page-kicker">Protección de datos</p><h2>Delegado de Protección de Datos</h2></header><div class="settings-card__grid">{% include "includes/admin_field.html" with field=form.dpd_name %}{% include "includes/admin_field.html" with field=form.dpd_email %}{% include "includes/admin_field.html" with field=form.dpd_phone %}</div></section>
+    </div>
+    <div class="settings-grid">
+        <section class="card app-card settings-card" id="branding"><header><p class="page-kicker">Identidad visual</p><h2>Branding</h2></header><div class="settings-card__grid"><div class="settings-card__full">{% include "includes/admin_field.html" with field=form.logo_url %}</div><div class="settings-card__full">{% include "includes/admin_field.html" with field=form.favicon_url %}</div>{% include "includes/admin_field.html" with field=form.primary_color %}{% include "includes/admin_field.html" with field=form.secondary_color %}{% include "includes/admin_field.html" with field=form.accent_color %}</div></section>
+        <section class="card app-card settings-card"><header><p class="page-kicker">Operación</p><h2>Parámetros generales</h2></header><div class="settings-card__grid">{% include "includes/admin_field.html" with field=form.request_prefix %}{% include "includes/admin_field.html" with field=form.timezone %}</div></section>
+    </div>
+    <section class="card app-card settings-card" id="legal"><header><p class="page-kicker">Autoridad de control</p><h2>Canal de reclamos</h2></header><div class="settings-card__grid settings-card__grid--three">{% include "includes/admin_field.html" with field=form.complaint_authority_name %}{% include "includes/admin_field.html" with field=form.complaint_channel_url %}<div class="settings-card__full">{% include "includes/admin_field.html" with field=form.complaint_instructions %}</div></div></section>
+    <footer class="settings-actions"><a class="btn btn-light" href="{% url 'organization:system_settings' %}">Restablecer formulario</a><button class="btn btn-primary" type="submit">Guardar cambios</button></footer>
+</form>
 {% endblock %}

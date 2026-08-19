@@ -1,12 +1,28 @@
 {% extends "base.html" %}
-{% block title %}Solicitudes{% endblock %}
+{% block title %}Expedientes{% endblock %}
 {% block content %}
-<div class="d-flex flex-column flex-md-row align-items-md-end justify-content-between gap-3 page-heading">
-    <div><p class="page-kicker">Gestión de derechos</p><h1 class="h2 mb-1">Solicitudes</h1><p class="text-body-secondary mb-0">Seguimiento de expedientes y plazos institucionales.</p></div>
-    {% if can_create %}<a class="btn btn-primary" href="{% url 'cases:request_create' %}">Registrar nueva solicitud</a>{% endif %}
-</div>
-<section class="card app-card"><div class="table-responsive"><table class="table table-hover align-middle mb-0">
-    <thead><tr><th class="ps-4">Referencia</th><th>Derecho</th><th>Estado</th><th>Identidad</th><th>Asignado</th><th>Recibida</th><th class="pe-4">Vencimiento</th></tr></thead>
-    <tbody>{% for case in cases %}<tr><td class="ps-4"><a class="fw-semibold text-decoration-none" href="{% url 'cases:request_detail' case.id %}">{{ case.reference_number }}</a></td><td>{{ case.right.name }}</td><td><span class="badge text-bg-light border">{{ case.get_status_display }}</span></td><td>{{ case.get_identity_status_display }}</td><td>{% if case.assigned_to %}{{ case.assigned_to.full_name }}{% else %}<span class="text-body-secondary">Sin asignar</span>{% endif %}</td><td>{{ case.received_at }}</td><td class="pe-4">{% if case.current_due_at %}{{ case.current_due_at }}{% else %}—{% endif %}</td></tr>{% empty %}<tr><td class="text-center text-body-secondary py-5" colspan="7">No hay expedientes disponibles.</td></tr>{% endfor %}</tbody>
-</table></div></section>
+<header class="page-heading admin-page-heading">
+    <div><p class="page-kicker">Gestión de derechos</p><h1>Expedientes</h1><p>Seguimiento de solicitudes, responsables y plazos institucionales.</p></div>
+    {% if can_create %}<a class="btn btn-primary" href="{% url 'cases:request_create' %}">+ Nuevo expediente</a>{% endif %}
+</header>
+<section class="metric-grid metric-grid--compact">
+    <article class="metric-card"><p>Total expedientes</p><strong>{{ metrics.total }}</strong><small>Visibles para tu perfil</small></article>
+    <article class="metric-card metric-card--green"><p>En gestión</p><strong>{{ metrics.active }}</strong><small>Solicitudes activas</small></article>
+    <article class="metric-card metric-card--amber"><p>Sin asignar</p><strong>{{ metrics.unassigned }}</strong><small>Requieren responsable</small></article>
+    <article class="metric-card metric-card--blue"><p>Finalizados</p><strong>{{ metrics.finalized }}</strong><small>Gestión concluida</small></article>
+</section>
+<form class="card app-card filter-panel" method="get">
+    {% if filter_form.errors %}<div class="alert alert-danger">Revisa los filtros ingresados.</div>{% endif %}
+    <div class="case-filter-grid">
+        <label>Buscar<input class="form-control" name="search" maxlength="100" value="{{ request.GET.search }}" placeholder="Referencia del expediente"></label>
+        <label>Derecho<select class="form-select" name="right"><option value="">Todos los derechos</option>{% for right in filter_form.fields.right.queryset %}<option value="{{ right.id }}"{% if request.GET.right == right.id|stringformat:'s' %} selected{% endif %}>{{ right.name }}</option>{% endfor %}</select></label>
+        <label>Estado<select class="form-select" name="status">{% for value, label in filter_form.fields.status.choices %}<option value="{{ value }}"{% if request.GET.status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <label>Asignación<select class="form-select" name="assignment_state">{% for value, label in filter_form.fields.assignment_state.choices %}<option value="{{ value }}"{% if request.GET.assignment_state == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <div class="filter-actions"><a class="btn btn-light" href="{% url 'cases:request_list' %}">Limpiar</a><button class="btn btn-primary" type="submit">Filtrar</button></div>
+    </div>
+</form>
+<section class="card app-card admin-data-card"><div class="table-responsive"><table class="table table-hover align-middle mb-0">
+    <thead><tr><th>Referencia</th><th>Derecho</th><th>Estado</th><th>Identidad</th><th>Asignado a</th><th>Recepción</th><th>Vencimiento</th><th></th></tr></thead>
+    <tbody>{% for case in cases %}<tr><td><a class="fw-semibold text-decoration-none" href="{% url 'cases:request_detail' case.id %}">{{ case.reference_number }}</a></td><td>{{ case.right.name }}</td><td><span class="status-badge status-badge--{{ case.status|lower }}">{{ case.get_status_display }}</span></td><td>{{ case.get_identity_status_display }}</td><td>{% if case.assigned_to %}{{ case.assigned_to.full_name }}{% else %}<span class="text-body-secondary">Sin asignar</span>{% endif %}</td><td>{{ case.received_at|date:"d/m/Y H:i" }}</td><td>{{ case.current_due_at|date:"d/m/Y"|default:"—" }}</td><td><a class="btn btn-sm btn-light" href="{% url 'cases:request_detail' case.id %}" aria-label="Abrir expediente">→</a></td></tr>{% empty %}<tr><td class="text-center text-body-secondary py-5" colspan="8">No hay expedientes que coincidan con los filtros.</td></tr>{% endfor %}</tbody>
+</table></div>{% if page.paginator.num_pages > 1 %}<nav class="table-pagination"><span>Mostrando {{ page.start_index }}–{{ page.end_index }} de {{ page.paginator.count }}</span><div>{% if page.has_previous %}<a class="btn btn-sm btn-light" href="{% querystring page=page.previous_page_number %}">Anterior</a>{% endif %}<span class="btn btn-sm btn-light disabled">{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a class="btn btn-sm btn-light" href="{% querystring page=page.next_page_number %}">Siguiente</a>{% endif %}</div></nav>{% endif %}</section>
 {% endblock %}

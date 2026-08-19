@@ -1,22 +1,21 @@
 {% extends "base.html" %}
-{% block title %}Administración de usuarios{% endblock %}
+{% block title %}Usuarios{% endblock %}
 {% block content %}
-<div class="d-flex flex-column flex-md-row align-items-md-end justify-content-between gap-3 page-heading">
-    <div><p class="page-kicker">Seguridad y acceso</p><h1 class="h2 mb-1">Administración de usuarios</h1><p class="text-body-secondary mb-0">Gestiona cuentas, roles y estado de acceso.</p></div>
-    <a class="btn btn-primary" href="{% url 'accounts:user_create' %}">Crear usuario</a>
-</div>
-<section class="card app-card"><div class="table-responsive"><table class="table table-hover align-middle mb-0">
-    <thead><tr><th class="ps-4">Correo</th><th>Nombre</th><th>Rol</th><th>Estado</th><th class="pe-4">Acciones</th></tr></thead>
-    <tbody>{% for managed_user in users %}<tr>
-        <td class="ps-4 fw-semibold">{{ managed_user.email }}</td><td>{{ managed_user.full_name|default:"—" }}</td>
-        <td>{% for assignment in managed_user.active_role_assignments %}<span class="badge text-bg-light border">{{ assignment.role.get_code_display }}</span>{% if not forloop.last %} {% endif %}{% empty %}<span class="text-body-secondary">Sin rol activo</span>{% endfor %}</td>
-        <td>{% if managed_user.is_active %}<span class="badge text-bg-success">Activo</span>{% else %}<span class="badge text-bg-secondary">Inactivo</span>{% endif %}</td>
-        <td class="pe-4"><div class="d-flex flex-wrap gap-2">
-            <a class="btn btn-sm btn-outline-primary" href="{% url 'accounts:user_change_role' managed_user.pk %}">Cambiar rol</a>
-            <a class="btn btn-sm btn-outline-primary" href="{% url 'accounts:user_reset_password' managed_user.pk %}">Contraseña</a>
-            <form method="post" action="{% url 'accounts:user_unlock' managed_user.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-secondary" type="submit">Desbloquear</button></form>
-            {% if managed_user.is_active %}<form method="post" action="{% url 'accounts:user_deactivate' managed_user.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-danger" type="submit">Desactivar</button></form>{% else %}<form method="post" action="{% url 'accounts:user_activate' managed_user.pk %}">{% csrf_token %}<button class="btn btn-sm btn-outline-success" type="submit">Activar</button></form>{% endif %}
-        </div></td>
-    </tr>{% empty %}<tr><td class="text-center text-body-secondary py-5" colspan="5">No existen usuarios.</td></tr>{% endfor %}</tbody>
-</table></div></section>
+<header class="page-heading admin-page-heading"><div><p class="page-kicker">Seguridad y acceso</p><h1>Usuarios</h1><p>Gestiona cuentas, roles, MFA y estado de acceso.</p></div><a class="btn btn-primary" href="{% url 'accounts:user_create' %}">+ Nuevo usuario</a></header>
+<section class="metric-grid metric-grid--compact">
+    <article class="metric-card"><p>Total usuarios</p><strong>{{ metrics.total }}</strong><small>Cuentas registradas</small></article>
+    <article class="metric-card metric-card--green"><p>Activos</p><strong>{{ metrics.active }}</strong><small>{{ metrics.inactive }} inactivos</small></article>
+    <article class="metric-card metric-card--blue"><p>MFA habilitado</p><strong>{{ metrics.mfa_enabled }}</strong><small>Segundo factor confirmado</small></article>
+    <article class="metric-card metric-card--amber"><p>Bloqueados</p><strong>{{ metrics.locked }}</strong><small>Requieren revisión</small></article>
+</section>
+<form class="card app-card filter-panel" method="get"><div class="user-filter-grid">
+    <label>Buscar<input class="form-control" name="search" maxlength="180" value="{{ request.GET.search }}" placeholder="Nombre o correo electrónico"></label>
+    <label>Rol<select class="form-select" name="role"><option value="">Todos los roles</option>{% for role in filter_form.fields.role.queryset %}<option value="{{ role.id }}"{% if request.GET.role == role.id|stringformat:'s' %} selected{% endif %}>{{ role.get_code_display }}</option>{% endfor %}</select></label>
+    <label>Estado<select class="form-select" name="status">{% for value, label in filter_form.fields.status.choices %}<option value="{{ value }}"{% if request.GET.status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+    <div class="filter-actions"><a class="btn btn-light" href="{% url 'accounts:user_list' %}">Limpiar</a><button class="btn btn-primary" type="submit">Filtrar</button></div>
+</div></form>
+<section class="card app-card admin-data-card"><div class="table-responsive"><table class="table table-hover align-middle mb-0">
+    <thead><tr><th>Usuario</th><th>Correo</th><th>Rol principal</th><th>Estado</th><th>MFA</th><th>Último acceso</th><th>Acciones</th></tr></thead><tbody>
+    {% for managed_user in users %}<tr><td><div class="user-cell"><span>{{ managed_user.full_name|slice:":1"|upper|default:"U" }}</span><strong>{{ managed_user.full_name|default:"Sin nombre" }}</strong></div></td><td>{{ managed_user.email }}</td><td>{% for assignment in managed_user.active_role_assignments %}<span class="role-badge role-badge--{{ assignment.role.code|lower }}">{{ assignment.role.get_code_display }}</span>{% empty %}<span class="text-body-secondary">Sin rol</span>{% endfor %}</td><td>{% if managed_user.is_active %}<span class="status-badge status-badge--under_review">Activo</span>{% else %}<span class="status-badge">Inactivo</span>{% endif %}</td><td>{% if managed_user.mfa_enabled %}<span class="mfa-state mfa-state--on">✓ Habilitado</span>{% else %}<span class="mfa-state">⚠ Pendiente</span>{% endif %}</td><td>{{ managed_user.last_login|date:"d/m/Y H:i"|default:"Nunca" }}</td><td><details class="row-actions"><summary aria-label="Abrir acciones">•••</summary><div><a href="{% url 'accounts:user_change_role' managed_user.pk %}">Cambiar rol</a><a href="{% url 'accounts:user_reset_password' managed_user.pk %}">Restablecer contraseña</a><form method="post" action="{% url 'accounts:user_unlock' managed_user.pk %}">{% csrf_token %}<button type="submit">Desbloquear</button></form>{% if managed_user.is_active %}<form method="post" action="{% url 'accounts:user_deactivate' managed_user.pk %}">{% csrf_token %}<button class="text-danger" type="submit">Desactivar</button></form>{% else %}<form method="post" action="{% url 'accounts:user_activate' managed_user.pk %}">{% csrf_token %}<button type="submit">Activar</button></form>{% endif %}</div></details></td></tr>{% empty %}<tr><td class="text-center text-body-secondary py-5" colspan="7">No existen usuarios que coincidan con los filtros.</td></tr>{% endfor %}
+    </tbody></table></div>{% if page.paginator.num_pages > 1 %}<nav class="table-pagination"><span>Mostrando {{ page.start_index }}–{{ page.end_index }} de {{ page.paginator.count }}</span><div>{% if page.has_previous %}<a class="btn btn-sm btn-light" href="{% querystring page=page.previous_page_number %}">Anterior</a>{% endif %}<span class="btn btn-sm btn-light disabled">{{ page.number }} / {{ page.paginator.num_pages }}</span>{% if page.has_next %}<a class="btn btn-sm btn-light" href="{% querystring page=page.next_page_number %}">Siguiente</a>{% endif %}</div></nav>{% endif %}</section>
 {% endblock %}

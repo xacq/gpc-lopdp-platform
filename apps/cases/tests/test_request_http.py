@@ -116,6 +116,38 @@ class RequestHttpTests(TestCase):
         self.assertContains(response, self.request_one.reference_number)
         self.assertContains(response, self.request_two.reference_number)
 
+    def test_case_list_filters_by_reference_and_status(self):
+        force_mfa_login(self.client, self.manager)
+
+        response = self.client.get(
+            reverse("cases:request_list"),
+            {
+                "search": self.request_one.reference_number,
+                "status": RightsRequest.Status.RECEIVED,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, self.request_one.reference_number)
+        self.assertNotContains(response, self.request_two.reference_number)
+        self.assertEqual(response.context["metrics"]["total"], 2)
+
+    def test_assigned_operator_sees_clarification_action_in_review(self):
+        self.request_one = CaseWorkflowService.transition(
+            request=self.request_one,
+            target_status=RightsRequest.Status.UNDER_REVIEW,
+            actor=self.operator,
+        )
+        force_mfa_login(self.client, self.operator)
+
+        response = self.client.get(
+            reverse("cases:request_detail", args=[self.request_one.id])
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["can_request_clarification"])
+        self.assertContains(response, "Solicitar aclaración")
+
     def test_operator_only_sees_assigned_cases(self):
         force_mfa_login(self.client, self.operator)
         response = self.client.get(reverse("cases:request_list"))

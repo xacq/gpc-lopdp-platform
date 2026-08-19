@@ -3,18 +3,21 @@ from __future__ import annotations
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.db.models import Prefetch
+from django.core.paginator import Paginator
+from django.db.models import Count, Exists, OuterRef, Prefetch, Q
 from django.http import HttpResponseBadRequest
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from apps.accounts.decorators import sensitive_reauthentication_required
 from apps.accounts.forms import (
     UserCreateForm,
     UserPasswordResetForm,
+    UserListFilterForm,
     UserRoleForm,
 )
-from apps.accounts.models import UserRole
+from apps.accounts.models import MFADevice, UserRole
 from apps.accounts.policies import can_manage_users
 from apps.accounts.services.users import (
     UserAdministrationError,
@@ -44,8 +47,54 @@ def user_list(request):
         revoked_at__isnull=True,
         role__is_active=True,
     ).select_related("role")
+    user_model = get_user_model()
+    base_users = user_model.objects.all()
+    metrics = base_users.aggregate(
+        total=Count("id"),
+        active=Count("id", filter=Q(is_active=True)),
+        inactive=Count("id", filter=Q(is_active=False)),
+    )
+    metrics["locked"] = base_users.filter(
+        locked_until__gt=timezone.now()
+    ).count()
+    metrics["mfa_enabled"] = base_users.filter(
+        mfa_devices__is_active=True,
+        mfa_devices__is_confirmed=True,
+        mfa_devices__revoked_at__isnull=True,
+    ).distinct().count()
+    form = UserListFilterForm(request.GET)
+    users = base_users
+    if form.is_valid():
+        filters = form.cleaned_data
+        if filters["search"]:
+            users = users.filter(
+                Q(email__icontains=filters["search"])
+                | Q(full_name__icontains=filters["search"])
+            )
+        if filters["role"]:
+            users = users.filter(
+                role_assignments__role=filters["role"],
+                role_assignments__revoked_at__isnull=True,
+            )
+        if filters["status"] == "ACTIVE":
+            users = users.filter(is_active=True)
+        elif filters["status"] == "INACTIVE":
+            users = users.filter(is_active=False)
+        elif filters["status"] == "LOCKED":
+            users = users.filter(locked_until__gt=timezone.now())
+        page_number = filters["page"] or 1
+    else:
+        page_number = 1
+    active_mfa = MFADevice.objects.filter(
+        user_id=OuterRef("pk"),
+        is_active=True,
+        is_confirmed=True,
+        revoked_at__isnull=True,
+    )
     users = (
-        get_user_model().objects
+        users
+        .distinct()
+        .annotate(mfa_enabled=Exists(active_mfa))
         .prefetch_related(
             Prefetch(
                 "role_assignments",
@@ -55,10 +104,16 @@ def user_list(request):
         )
         .order_by("email")
     )
+    page = Paginator(users, 20).get_page(page_number)
     return render(
         request,
         "accounts/user_list.html",
-        {"users": users},
+        {
+            "users": page.object_list,
+            "page": page,
+            "filter_form": form,
+            "metrics": metrics,
+        },
     )
 
 
