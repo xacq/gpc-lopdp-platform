@@ -1,6 +1,7 @@
 import csv
 
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth import get_user_model
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
@@ -8,12 +9,25 @@ from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET
 
 from apps.audit.forms import AuditEventFilterForm, AuditIntegrityForm
+from apps.audit.models import AuditLog
 from apps.audit.policies import can_read_audit
 from apps.audit.services.audit import AuditChainIntegrityError, AuditService
 from apps.audit.services.query import (
     AuditQueryPermissionError,
     AuditQueryService,
 )
+
+
+def _audit_actors():
+    actor_ids = (
+        AuditLog.objects.exclude(actor_user_id__isnull=True)
+        .values_list("actor_user_id", flat=True)
+        .distinct()
+    )
+    return get_user_model().objects.filter(pk__in=actor_ids).order_by(
+        "full_name",
+        "email",
+    )
 
 
 def _validated_filters(request):
@@ -40,7 +54,11 @@ def audit_index(request):
         return render(
             request,
             "audit/index.html",
-            {"filter_form": form, "audit": None},
+            {
+                "filter_form": form,
+                "audit": None,
+                "actors": _audit_actors(),
+            },
             status=400,
         )
     try:
@@ -64,6 +82,7 @@ def audit_index(request):
             "filter_form": form,
             "audit": payload,
             "selected_event": detail,
+            "actors": _audit_actors(),
         },
     )
 

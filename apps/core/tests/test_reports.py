@@ -148,6 +148,8 @@ class ReportBackendTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Reportes")
         self.assertContains(response, "Resumen por derecho")
+        self.assertContains(response, "Expedientes por mes")
+        self.assertContains(response, "Expedientes por estado")
         self.assertContains(response, "Acceso")
         self.assertNotContains(response, "VS-REPORT-001")
         self.assertIn("no-cache", response["Cache-Control"])

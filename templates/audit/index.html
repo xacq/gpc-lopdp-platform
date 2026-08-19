@@ -11,10 +11,13 @@
     <div class="filter-grid filter-grid--audit">
         <label>Desde<input class="form-control" type="date" name="date_from" value="{{ request.GET.date_from }}"></label>
         <label>Hasta<input class="form-control" type="date" name="date_to" value="{{ request.GET.date_to }}"></label>
+        <label>Actor<select class="form-select" name="actor"><option value="">Todos</option>{% for actor in actors %}<option value="{{ actor.id }}"{% if request.GET.actor == actor.id|stringformat:'s' %} selected{% endif %}>{{ actor.full_name|default:actor.email }}</option>{% endfor %}</select></label>
         <label>Acción<input class="form-control" name="action" maxlength="100" value="{{ request.GET.action }}" placeholder="Ej. REQUEST_CREATED"></label>
         <label>Entidad<input class="form-control" name="entity_type" maxlength="50" value="{{ request.GET.entity_type }}" placeholder="Ej. RIGHTS_REQUEST"></label>
         <label>Origen<select class="form-select" name="source"><option value="">Todos</option>{% for value, label in filter_form.fields.source.choices %}{% if value %}<option value="{{ value }}"{% if request.GET.source == value %} selected{% endif %}>{{ label }}</option>{% endif %}{% endfor %}</select></label>
         <label>Correlation ID<input class="form-control" name="correlation_id" value="{{ request.GET.correlation_id }}" placeholder="UUID"></label>
+        <label>Cadena<input class="form-control" name="chain_scope" maxlength="50" value="{{ request.GET.chain_scope }}" placeholder="GLOBAL"></label>
+        <label>Por página<select class="form-select" name="page_size"><option value="10"{% if request.GET.page_size == "10" %} selected{% endif %}>10</option><option value="25"{% if not request.GET.page_size or request.GET.page_size == "25" %} selected{% endif %}>25</option><option value="50"{% if request.GET.page_size == "50" %} selected{% endif %}>50</option><option value="100"{% if request.GET.page_size == "100" %} selected{% endif %}>100</option></select></label>
         <div class="filter-actions"><a class="btn btn-light" href="{% url 'audit:index' %}">Limpiar</a><button class="btn btn-primary" type="submit">Aplicar filtros</button></div>
     </div>
 </form>

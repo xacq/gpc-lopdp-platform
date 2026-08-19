@@ -1148,6 +1148,28 @@ body {
 .filter-grid .form-select { min-height: 2.75rem; margin-top: 0.4rem; border-color: #ded4d0; font-size: 0.78rem; }
 .filter-actions { display: flex; justify-content: flex-end; gap: 0.55rem; }
 .metric-grid--reports { margin-top: 0; }
+.report-visual-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(19rem, 0.85fr); gap: 1.15rem; margin-bottom: 1.15rem; }
+.report-chart-card { min-height: 22rem; }
+.monthly-chart { display: flex; min-height: 16rem; align-items: stretch; gap: clamp(0.45rem, 2vw, 1rem); padding: 1.25rem 1.35rem 1rem; }
+.monthly-chart__column { display: grid; min-width: 2.8rem; flex: 1; grid-template-rows: 1.5rem 1fr 2rem; justify-items: center; gap: 0.35rem; }
+.monthly-chart__column > strong { color: #4d403c; font-size: 0.72rem; }
+.monthly-chart__track { position: relative; display: block; width: min(100%, 3.2rem); height: 100%; overflow: hidden; border-radius: 0.35rem 0.35rem 0 0; background: #f5e9e6; }
+.monthly-chart__track i { position: absolute; right: 0; bottom: 0; left: 0; height: max(var(--bar-height), 0.25rem); border-radius: 0.35rem 0.35rem 0 0; background: linear-gradient(180deg, #d9272e, var(--vinesa-red-dark)); }
+.monthly-chart time { color: #7d716d; font-size: 0.66rem; text-align: center; text-transform: capitalize; }
+.chart-empty { align-self: center; margin: auto; color: var(--vinesa-muted); font-size: 0.8rem; }
+.distribution-chart { display: grid; min-height: 16rem; align-items: center; padding: 1.25rem 1.35rem; grid-template-columns: 11rem 1fr; gap: 1.5rem; }
+.distribution-chart__donut { display: grid; width: 11rem; aspect-ratio: 1; border-radius: 50%; background: conic-gradient(#3c914f 0 var(--finalized), #efaa2f var(--finalized) var(--in-process-end), #4e82ce var(--in-process-end) 100%); place-items: center; }
+.distribution-chart__donut--empty { background: #e9e4e2; }
+.distribution-chart__donut::before { width: 62%; aspect-ratio: 1; border-radius: 50%; background: #fff; content: ""; grid-area: 1 / 1; }
+.distribution-chart__donut > span { display: grid; z-index: 1; grid-area: 1 / 1; text-align: center; }
+.distribution-chart__donut strong { color: #352824; font-family: Georgia, serif; font-size: 1.8rem; font-weight: 500; }
+.distribution-chart__donut small { color: #817672; font-size: 0.68rem; }
+.distribution-chart ul { display: grid; gap: 0.8rem; margin: 0; padding: 0; list-style: none; }
+.distribution-chart li { display: grid; align-items: center; grid-template-columns: 0.65rem 1fr auto; gap: 0.45rem; color: #6d625e; font-size: 0.72rem; }
+.distribution-chart li strong { color: #3e3431; font-size: 0.7rem; }
+.distribution-chart__key { width: 0.6rem; height: 0.6rem; border-radius: 0.15rem; background: #4e82ce; }
+.distribution-chart__key--finalized { background: #3c914f; }
+.distribution-chart__key--process { background: #efaa2f; }
 .report-grid { display: grid; grid-template-columns: minmax(0, 3fr) minmax(15rem, 0.8fr); gap: 1.15rem; }
 .completion { display: flex; align-items: center; gap: 0.65rem; min-width: 8rem; }
 .completion > span { display: block; width: 5rem; height: 0.4rem; overflow: hidden; border-radius: 1rem; background: #eee9e7; }
@@ -1334,7 +1356,9 @@ body {
 @media (max-width: 767.98px) {
     .admin-page-heading { align-items: flex-start; flex-direction: column; }
     .admin-dashboard-grid,
-    .report-grid { grid-template-columns: 1fr; }
+    .report-grid,
+    .report-visual-grid { grid-template-columns: 1fr; }
+    .distribution-chart { grid-template-columns: auto 1fr; }
     .assignment-layout { grid-template-columns: 1fr; }
     .case-detail-layout { grid-template-columns: 1fr; }
     .settings-grid { grid-template-columns: 1fr; }
@@ -1370,6 +1394,10 @@ body {
     .evidence-recorder__full { grid-column: auto; }
     .legal-editor__grid { grid-template-columns: 1fr; }
     .legal-editor__full { grid-column: auto; }
+    .monthly-chart { overflow-x: auto; }
+    .monthly-chart__column { min-width: 3rem; }
+    .distribution-chart { grid-template-columns: 1fr; justify-items: center; }
+    .distribution-chart ul { width: 100%; }
     .filter-actions { justify-content: stretch; }
     .filter-actions .btn { flex: 1; }
 }

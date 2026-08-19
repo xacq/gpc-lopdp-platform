@@ -26,6 +26,32 @@
     <article class="metric-card metric-card--blue"><p>Pendientes</p><strong>{{ report.metrics.pending }}</strong><small>Recepción inicial</small></article>
 </section>
 
+<div class="report-visual-grid">
+    <section class="card app-card admin-data-card report-chart-card">
+        <header class="admin-data-card__header"><div><p class="page-kicker">Tendencia</p><h2>Expedientes por mes</h2></div></header>
+        <div class="monthly-chart" aria-label="Expedientes recibidos por mes">
+            {% for row in report.by_month %}
+                <div class="monthly-chart__column">
+                    <strong>{{ row.count }}</strong>
+                    <span class="monthly-chart__track"><i style="--bar-height: {{ row.relative_percentage }}%"></i></span>
+                    <time datetime="{{ row.month|date:'Y-m' }}">{{ row.month|date:"M Y" }}</time>
+                </div>
+            {% empty %}<p class="chart-empty">No hay datos mensuales para los filtros seleccionados.</p>{% endfor %}
+        </div>
+    </section>
+    <section class="card app-card admin-data-card report-chart-card">
+        <header class="admin-data-card__header"><div><p class="page-kicker">Distribución</p><h2>Expedientes por estado</h2></div></header>
+        <div class="distribution-chart">
+            <div class="distribution-chart__donut{% if not report.metrics.total %} distribution-chart__donut--empty{% endif %}" role="img" aria-label="{{ report.metrics.finalized }} finalizados, {{ report.metrics.in_process }} en proceso y {{ report.metrics.pending }} pendientes" style="--finalized: {{ report.distribution.finalized_percentage }}%; --in-process-end: {{ report.distribution.in_process_end_percentage }}%"><span><strong>{{ report.metrics.total }}</strong><small>Total</small></span></div>
+            <ul>
+                <li><i class="distribution-chart__key distribution-chart__key--finalized"></i><span>Finalizados</span><strong>{{ report.metrics.finalized }} ({{ report.distribution.finalized_percentage }}%)</strong></li>
+                <li><i class="distribution-chart__key distribution-chart__key--process"></i><span>En proceso</span><strong>{{ report.metrics.in_process }} ({{ report.distribution.in_process_percentage }}%)</strong></li>
+                <li><i class="distribution-chart__key distribution-chart__key--pending"></i><span>Pendientes</span><strong>{{ report.metrics.pending }} ({{ report.distribution.pending_percentage }}%)</strong></li>
+            </ul>
+        </div>
+    </section>
+</div>
+
 <div class="report-grid">
     <section class="card app-card admin-data-card">
         <header class="admin-data-card__header"><div><p class="page-kicker">Desempeño</p><h2>Resumen por derecho</h2></div></header>

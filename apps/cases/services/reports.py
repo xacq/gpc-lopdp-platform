@@ -75,6 +75,25 @@ class CaseReportService:
             ),
         )
         metrics["average_attention_days"] = cls._average_days(queryset)
+        total = metrics["total"]
+        finalized_percentage = (
+            round(metrics["finalized"] * 100 / total, 1) if total else 0.0
+        )
+        in_process_percentage = (
+            round(metrics["in_process"] * 100 / total, 1) if total else 0.0
+        )
+        pending_percentage = (
+            round(metrics["pending"] * 100 / total, 1) if total else 0.0
+        )
+        distribution = {
+            "finalized_percentage": finalized_percentage,
+            "in_process_percentage": in_process_percentage,
+            "pending_percentage": pending_percentage,
+            "in_process_end_percentage": min(
+                finalized_percentage + in_process_percentage,
+                100.0,
+            ),
+        }
 
         status_counts_by_code = {
             row["status"]: row["count"]
@@ -129,17 +148,27 @@ class CaseReportService:
             for row in by_right
         ]
 
+        raw_by_month = list(
+            queryset.annotate(month=TruncMonth("received_at"))
+            .values("month")
+            .annotate(count=Count("id"))
+            .order_by("month")
+        )
+        maximum_month_count = max(
+            (row["count"] for row in raw_by_month),
+            default=0,
+        )
         by_month = [
             {
                 "month": row["month"].date(),
                 "count": row["count"],
+                "relative_percentage": (
+                    round(row["count"] * 100 / maximum_month_count, 1)
+                    if maximum_month_count
+                    else 0.0
+                ),
             }
-            for row in (
-                queryset.annotate(month=TruncMonth("received_at"))
-                .values("month")
-                .annotate(count=Count("id"))
-                .order_by("month")
-            )
+            for row in raw_by_month
         ]
 
         return {
@@ -156,8 +185,8 @@ class CaseReportService:
                 ),
             },
             "metrics": metrics,
+            "distribution": distribution,
             "by_status": by_status,
             "by_right": by_right,
             "by_month": by_month,
         }
-
