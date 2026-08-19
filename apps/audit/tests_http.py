@@ -102,6 +102,22 @@ class AuditHttpTests(TestCase):
         self.assertNotIn("reason", serialized)
         self.assertNotIn("subject@example.test", serialized)
 
+    def test_audit_page_renders_safe_event_headers_and_detail(self):
+        force_mfa_login(self.client, self.auditor)
+
+        response = self.client.get(
+            reverse("audit:index"),
+            {"event": self.second.id},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Auditoría")
+        self.assertContains(response, "REQUEST_CREATED")
+        self.assertContains(response, "127.0.0.1")
+        self.assertNotContains(response, "subject@example.test")
+        self.assertNotContains(response, "Motivo interno cifrado")
+        self.assertIn("no-cache", response["Cache-Control"])
+
     def test_detail_is_sanitized_and_never_returns_encrypted_reason(self):
         force_mfa_login(self.client, self.admin)
 

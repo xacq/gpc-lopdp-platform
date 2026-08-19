@@ -140,6 +140,18 @@ class ReportBackendTests(TestCase):
         self.assertEqual(rights["ACCESS"]["completion_percentage"], 50.0)
         self.assertEqual(rights["DELETION"]["pending"], 1)
 
+    def test_report_page_renders_aggregated_metrics_and_filters(self):
+        force_mfa_login(self.client, self.manager)
+
+        response = self.client.get(reverse("core:reports"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Reportes")
+        self.assertContains(response, "Resumen por derecho")
+        self.assertContains(response, "Acceso")
+        self.assertNotContains(response, "VS-REPORT-001")
+        self.assertIn("no-cache", response["Cache-Control"])
+
     def test_filters_are_combined_and_normalized(self):
         force_mfa_login(self.client, self.manager)
         date_from = (self.now - timedelta(days=6)).date().isoformat()

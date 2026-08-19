@@ -1,5 +1,6 @@
 import csv
 
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, JsonResponse
@@ -12,7 +13,7 @@ from apps.cases.services.dashboard import (
     DashboardPermissionError,
 )
 from apps.cases.forms.reports import CaseReportFilterForm
-from apps.cases.policies import can_access_case_panel
+from apps.cases.policies import can_access_case_panel, visible_requests_for
 from apps.cases.services.reports import CaseReportService, ReportPermissionError
 from apps.legal_content.models import RightCatalog
 from apps.organization.defaults import (
@@ -69,6 +70,17 @@ def dashboard_summary(request):
     )
 
 
+@never_cache
+@login_required
+@require_GET
+def dashboard(request):
+    try:
+        snapshot = CaseDashboardService.snapshot(user=request.user)
+    except DashboardPermissionError:
+        raise PermissionDenied
+    return render(request, "core/dashboard.html", {"dashboard": snapshot})
+
+
 def _report_payload(request):
     if not can_access_case_panel(request.user):
         raise PermissionDenied
@@ -99,6 +111,40 @@ def report_summary(request):
     return JsonResponse(
         payload,
         json_dumps_params={"ensure_ascii": False},
+    )
+
+
+def _report_page_context(request, *, report):
+    visible_cases = visible_requests_for(request.user)
+    return {
+        "filter_form": CaseReportFilterForm(request.GET),
+        "report": report,
+        "rights": RightCatalog.objects.filter(is_active=True).order_by(
+            "name"
+        ),
+        "assignees": get_user_model().objects.filter(
+            is_active=True,
+            assigned_requests__in=visible_cases,
+        ).distinct().order_by("full_name", "email"),
+    }
+
+
+@never_cache
+@login_required
+@require_GET
+def reports(request):
+    payload, error = _report_payload(request)
+    if error:
+        return render(
+            request,
+            "core/reports.html",
+            _report_page_context(request, report=None),
+            status=400,
+        )
+    return render(
+        request,
+        "core/reports.html",
+        _report_page_context(request, report=payload),
     )
 
 

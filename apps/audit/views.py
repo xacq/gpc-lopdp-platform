@@ -3,6 +3,7 @@ import csv
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import HttpResponse, JsonResponse
+from django.shortcuts import render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET
 
@@ -26,6 +27,45 @@ def _validated_filters(request):
             json_dumps_params={"ensure_ascii": False},
         )
     return form.cleaned_data, None
+
+
+@never_cache
+@login_required
+@require_GET
+def audit_index(request):
+    if not can_read_audit(request.user):
+        raise PermissionDenied
+    form = AuditEventFilterForm(request.GET)
+    if not form.is_valid():
+        return render(
+            request,
+            "audit/index.html",
+            {"filter_form": form, "audit": None},
+            status=400,
+        )
+    try:
+        payload = AuditQueryService.search(
+            user=request.user,
+            filters=form.cleaned_data,
+        )
+        detail = None
+        selected = request.GET.get("event")
+        if selected and selected.isdigit():
+            detail = AuditQueryService.detail(
+                user=request.user,
+                event_id=int(selected),
+            )
+    except AuditQueryPermissionError:
+        raise PermissionDenied
+    return render(
+        request,
+        "audit/index.html",
+        {
+            "filter_form": form,
+            "audit": payload,
+            "selected_event": detail,
+        },
+    )
 
 
 @never_cache

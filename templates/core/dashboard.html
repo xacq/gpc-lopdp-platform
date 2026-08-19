@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<header class="page-heading admin-page-heading">
+    <div><p class="page-kicker">Resumen operativo</p><h1>Dashboard</h1><p>Estado general de los expedientes visibles para tu perfil.</p></div>
+    <a class="btn btn-primary" href="{% url 'cases:request_list' %}">Ver expedientes</a>
+</header>
+
+<section class="metric-grid" aria-label="Indicadores principales">
+    <article class="metric-card"><span class="metric-card__icon" aria-hidden="true">▢</span><p>Total expedientes</p><strong>{{ dashboard.metrics.total }}</strong><small>{{ dashboard.metrics.active }} activos</small></article>
+    <article class="metric-card metric-card--green"><span class="metric-card__icon" aria-hidden="true">◷</span><p>En revisión</p><strong>{{ dashboard.metrics.in_review }}</strong><small>{{ dashboard.metrics.received }} recién recibidos</small></article>
+    <article class="metric-card metric-card--amber"><span class="metric-card__icon" aria-hidden="true">⌛</span><p>Por vencer</p><strong>{{ dashboard.metrics.due_soon }}</strong><small>Próximos {{ dashboard.due_soon_days }} días</small></article>
+    <article class="metric-card metric-card--red"><span class="metric-card__icon" aria-hidden="true">!</span><p>Vencidos</p><strong>{{ dashboard.metrics.overdue }}</strong><small>{{ dashboard.metrics.unassigned }} sin asignar</small></article>
+</section>
+
+<div class="admin-dashboard-grid">
+    <section class="card app-card admin-data-card">
+        <header class="admin-data-card__header"><div><p class="page-kicker">Actividad reciente</p><h2>Últimas solicitudes</h2></div><a href="{% url 'cases:request_list' %}">Ver todas <span aria-hidden="true">→</span></a></header>
+        <div class="table-responsive">
+            <table class="table align-middle mb-0">
+                <thead><tr><th>Referencia</th><th>Derecho</th><th>Estado</th><th>Vencimiento</th></tr></thead>
+                <tbody>
+                {% for item in dashboard.latest_requests %}
+                    <tr><td><a class="fw-semibold text-decoration-none" href="{% url 'cases:request_detail' item.id %}">{{ item.reference_number }}</a></td><td>{{ item.right.name }}</td><td><span class="status-badge status-badge--{{ item.status.code|lower }}">{{ item.status.label }}</span></td><td>{{ item.current_due_at|date:"d/m/Y"|default:"—" }}</td></tr>
+                {% empty %}<tr><td colspan="4" class="text-center text-body-secondary py-5">No existen solicitudes registradas.</td></tr>{% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    <aside class="card app-card admin-data-card status-summary">
+        <header class="admin-data-card__header"><div><p class="page-kicker">Distribución</p><h2>Expedientes por estado</h2></div></header>
+        <ul>{% for item in dashboard.status_counts %}{% if item.count %}<li><span>{{ item.label }}</span><strong>{{ item.count }}</strong></li>{% endif %}{% empty %}<li><span>Sin datos</span><strong>0</strong></li>{% endfor %}</ul>
+        <p class="status-summary__note">Datos actualizados {{ dashboard.generated_at|date:"d/m/Y H:i" }}.</p>
+    </aside>
+</div>
+{% endblock %}

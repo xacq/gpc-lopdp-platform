@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Auditoría{% endblock %}
+{% block content %}
+<header class="page-heading admin-page-heading">
+    <div><p class="page-kicker">Trazabilidad y cumplimiento</p><h1>Auditoría</h1><p>Registro inmutable de eventos relevantes del sistema.</p></div>
+    <a class="btn btn-outline-primary" href="{% url 'audit:export_csv' %}?{{ request.GET.urlencode }}">Exportar CSV</a>
+</header>
+
+<form class="card app-card filter-panel" method="get">
+    {% if filter_form.non_field_errors %}<div class="alert alert-danger">{{ filter_form.non_field_errors }}</div>{% endif %}
+    <div class="filter-grid filter-grid--audit">
+        <label>Desde<input class="form-control" type="date" name="date_from" value="{{ request.GET.date_from }}"></label>
+        <label>Hasta<input class="form-control" type="date" name="date_to" value="{{ request.GET.date_to }}"></label>
+        <label>Acción<input class="form-control" name="action" maxlength="100" value="{{ request.GET.action }}" placeholder="Ej. REQUEST_CREATED"></label>
+        <label>Entidad<input class="form-control" name="entity_type" maxlength="50" value="{{ request.GET.entity_type }}" placeholder="Ej. RIGHTS_REQUEST"></label>
+        <label>Origen<select class="form-select" name="source"><option value="">Todos</option>{% for value, label in filter_form.fields.source.choices %}{% if value %}<option value="{{ value }}"{% if request.GET.source == value %} selected{% endif %}>{{ label }}</option>{% endif %}{% endfor %}</select></label>
+        <label>Correlation ID<input class="form-control" name="correlation_id" value="{{ request.GET.correlation_id }}" placeholder="UUID"></label>
+        <div class="filter-actions"><a class="btn btn-light" href="{% url 'audit:index' %}">Limpiar</a><button class="btn btn-primary" type="submit">Aplicar filtros</button></div>
+    </div>
+</form>
+
+{% if audit %}<div class="audit-layout{% if selected_event %} audit-layout--detail{% endif %}">
+    <section class="card app-card admin-data-card">
+        <header class="admin-data-card__header"><div><p class="page-kicker">Eventos</p><h2>{{ audit.pagination.total }} registros encontrados</h2></div><a href="{% url 'audit:integrity' %}" target="_blank" rel="noopener">Verificar integridad</a></header>
+        <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Fecha / hora</th><th>Actor</th><th>Acción</th><th>Entidad</th><th>Origen</th><th></th></tr></thead><tbody>
+        {% for event in audit.events %}<tr{% if selected_event.id == event.id %} class="table-active"{% endif %}><td>{{ event.created_at|date:"d/m/Y H:i:s" }}</td><td>{{ event.actor.name }}</td><td><code>{{ event.action }}</code></td><td>{{ event.entity_type }}</td><td>{{ event.source }}</td><td><a class="btn btn-sm btn-light" href="{% querystring event=event.id %}" aria-label="Ver detalle">→</a></td></tr>{% empty %}<tr><td colspan="6" class="text-center text-body-secondary py-5">No se encontraron eventos.</td></tr>{% endfor %}
+        </tbody></table></div>
+        {% if audit.pagination.pages > 1 %}<nav class="table-pagination" aria-label="Paginación"><span>Página {{ audit.pagination.page }} de {{ audit.pagination.pages }}</span><div>{% if audit.pagination.page > 1 %}<a class="btn btn-sm btn-light" href="{% querystring page=audit.pagination.page|add:'-1' %}">Anterior</a>{% endif %}{% if audit.pagination.page < audit.pagination.pages %}<a class="btn btn-sm btn-light" href="{% querystring page=audit.pagination.page|add:'1' %}">Siguiente</a>{% endif %}</div></nav>{% endif %}
+    </section>
+    {% if selected_event %}<aside class="card app-card audit-detail"><header><div><p class="page-kicker">Detalle del evento</p><h2>{{ selected_event.action }}</h2></div><a href="{% querystring event=None %}" aria-label="Cerrar detalle">×</a></header><dl><dt>Fecha y hora</dt><dd>{{ selected_event.created_at|date:"d/m/Y H:i:s" }}</dd><dt>Actor</dt><dd>{{ selected_event.actor.name }}</dd><dt>Entidad</dt><dd>{{ selected_event.entity_type }} · {{ selected_event.entity_pk|default:"—" }}</dd><dt>Origen</dt><dd>{{ selected_event.source }}</dd><dt>Correlation ID</dt><dd class="text-break"><code>{{ selected_event.correlation_id }}</code></dd><dt>Cadena</dt><dd>{{ selected_event.chain_scope }} #{{ selected_event.chain_position }}</dd><dt>Dirección IP</dt><dd>{{ selected_event.ip_address|default:"—" }}</dd><dt>Descripción</dt><dd>{{ selected_event.description|default:"—" }}</dd></dl></aside>{% endif %}
+</div>{% endif %}
+{% endblock %}

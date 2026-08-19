@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Reportes{% endblock %}
+{% block content %}
+<header class="page-heading admin-page-heading">
+    <div><p class="page-kicker">Análisis consolidado</p><h1>Reportes</h1><p>Consulta métricas agregadas sin exponer datos personales.</p></div>
+    {% if report %}<a class="btn btn-outline-primary" href="{% url 'core:report_export_csv' %}?{{ request.GET.urlencode }}">Exportar CSV</a>{% endif %}
+</header>
+
+<form class="card app-card filter-panel" method="get">
+    {% if filter_form.non_field_errors %}<div class="alert alert-danger">{{ filter_form.non_field_errors }}</div>{% endif %}
+    <div class="filter-grid">
+        <label>Desde<input class="form-control" type="date" name="date_from" value="{{ request.GET.date_from }}"></label>
+        <label>Hasta<input class="form-control" type="date" name="date_to" value="{{ request.GET.date_to }}"></label>
+        <label>Derecho<select class="form-select" name="right_code"><option value="">Todos</option>{% for right in rights %}<option value="{{ right.code }}"{% if request.GET.right_code == right.code %} selected{% endif %}>{{ right.name }}</option>{% endfor %}</select></label>
+        <label>Estado<select class="form-select" name="status">{% for value, label in filter_form.fields.status.choices %}<option value="{{ value }}"{% if request.GET.status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <label>Responsable<select class="form-select" name="assigned_to"><option value="">Todos</option>{% for assignee in assignees %}<option value="{{ assignee.id }}"{% if request.GET.assigned_to == assignee.id|stringformat:'s' %} selected{% endif %}>{{ assignee.full_name|default:assignee.email }}</option>{% endfor %}</select></label>
+        <div class="filter-actions"><a class="btn btn-light" href="{% url 'core:reports' %}">Limpiar</a><button class="btn btn-primary" type="submit">Aplicar filtros</button></div>
+    </div>
+</form>
+
+{% if report %}
+<section class="metric-grid metric-grid--reports" aria-label="Indicadores del reporte">
+    <article class="metric-card"><p>Total expedientes</p><strong>{{ report.metrics.total }}</strong><small>100% del período</small></article>
+    <article class="metric-card metric-card--green"><p>Finalizados</p><strong>{{ report.metrics.finalized }}</strong><small>Gestión concluida</small></article>
+    <article class="metric-card metric-card--amber"><p>En proceso</p><strong>{{ report.metrics.in_process }}</strong><small>Actualmente en gestión</small></article>
+    <article class="metric-card metric-card--blue"><p>Pendientes</p><strong>{{ report.metrics.pending }}</strong><small>Recepción inicial</small></article>
+</section>
+
+<div class="report-grid">
+    <section class="card app-card admin-data-card">
+        <header class="admin-data-card__header"><div><p class="page-kicker">Desempeño</p><h2>Resumen por derecho</h2></div></header>
+        <div class="table-responsive"><table class="table align-middle mb-0"><thead><tr><th>Derecho</th><th>Total</th><th>Finalizados</th><th>En proceso</th><th>Pendientes</th><th>% finalización</th></tr></thead><tbody>
+        {% for row in report.by_right %}<tr><td>{{ row.name }}</td><td>{{ row.total }}</td><td>{{ row.finalized }}</td><td>{{ row.in_process }}</td><td>{{ row.pending }}</td><td><div class="completion"><span><i style="width: {{ row.completion_percentage }}%"></i></span><strong>{{ row.completion_percentage }}%</strong></div></td></tr>{% empty %}<tr><td colspan="6" class="text-center text-body-secondary py-5">No hay datos para los filtros seleccionados.</td></tr>{% endfor %}
+        </tbody></table></div>
+    </section>
+    <aside class="card app-card admin-data-card attention-card"><p class="page-kicker">Atención</p><h2>Tiempo promedio</h2><strong>{% if report.metrics.average_attention_days is not None %}{{ report.metrics.average_attention_days }} días{% else %}—{% endif %}</strong><p>Calculado sobre expedientes respondidos o cerrados.</p></aside>
+</div>
+{% endif %}
+{% endblock %}

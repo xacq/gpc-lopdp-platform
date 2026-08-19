@@ -110,12 +110,26 @@ class DashboardSummaryTests(TestCase):
         self.assertEqual(response.status_code, 302)
         self.assertIn("/accounts/login/", response["Location"])
 
+    def test_dashboard_page_renders_operational_metrics(self):
+        force_mfa_login(self.client, self.manager)
+
+        response = self.client.get(reverse("core:dashboard"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Dashboard")
+        self.assertContains(response, "Total expedientes")
+        self.assertContains(response, "VS-DASH-001")
+        self.assertIn("no-cache", response["Cache-Control"])
+
     def test_user_without_panel_role_is_forbidden(self):
         force_mfa_login(self.client, self.outsider)
 
         response = self.client.get(reverse("core:dashboard_summary"))
 
         self.assertEqual(response.status_code, 403)
+
+        page_response = self.client.get(reverse("core:dashboard"))
+        self.assertEqual(page_response.status_code, 403)
 
     def test_manager_receives_global_non_pii_metrics(self):
         force_mfa_login(self.client, self.manager)

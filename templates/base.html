@@ -20,7 +20,12 @@
             </a>
             <nav class="admin-sidebar__nav" aria-label="Navegación administrativa">
                 {% if nav_can_access_cases %}
+                    <a class="admin-nav-link{% if request.resolver_match.url_name == 'dashboard' %} admin-nav-link--active{% endif %}" href="{% url 'core:dashboard' %}"><span aria-hidden="true">⌂</span> Dashboard</a>
                     <a class="admin-nav-link{% if request.resolver_match.namespace == 'cases' %} admin-nav-link--active{% endif %}" href="{% url 'cases:request_list' %}"><span aria-hidden="true">▢</span> Expedientes</a>
+                    <a class="admin-nav-link{% if request.resolver_match.url_name == 'reports' %} admin-nav-link--active{% endif %}" href="{% url 'core:reports' %}"><span aria-hidden="true">▤</span> Reportes</a>
+                {% endif %}
+                {% if nav_can_read_audit %}
+                    <a class="admin-nav-link{% if request.resolver_match.namespace == 'audit' %} admin-nav-link--active{% endif %}" href="{% url 'audit:index' %}"><span aria-hidden="true">◎</span> Auditoría</a>
                 {% endif %}
                 {% if nav_can_manage_users %}
                     <a class="admin-nav-link{% if request.resolver_match.url_name == 'user_list' or request.resolver_match.url_name == 'user_create' or request.resolver_match.url_name == 'user_change_role' or request.resolver_match.url_name == 'user_reset_password' %} admin-nav-link--active{% endif %}" href="{% url 'accounts:user_list' %}"><span aria-hidden="true">♙</span> Usuarios</a>
