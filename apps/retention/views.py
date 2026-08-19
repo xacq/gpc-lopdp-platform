@@ -1,6 +1,8 @@
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, JsonResponse
+from django.shortcuts import redirect, render
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET, require_POST
 
@@ -27,6 +29,30 @@ def _event(event_id):
         return DataDisposalEvent.objects.get(pk=event_id)
     except DataDisposalEvent.DoesNotExist:
         raise Http404
+
+
+@never_cache
+@login_required
+@require_GET
+def retention_panel(request):
+    _require_manager(request.user)
+    form = RetentionEventFilterForm(request.GET)
+    if form.is_valid():
+        event_list = RetentionQueryService.list(
+            user=request.user, filters=form.cleaned_data
+        )
+    else:
+        event_list = None
+    return render(
+        request,
+        "retention/panel.html",
+        {
+            "summary": RetentionQueryService.summary(user=request.user),
+            "event_list": event_list,
+            "filter_form": form,
+        },
+        status=400 if form.errors else 200,
+    )
 
 
 @never_cache
@@ -64,9 +90,15 @@ def _transition(request, event_id, operation):
     try:
         changed = operation(event=_event(event_id), actor=request.user)
     except RetentionServiceError:
+        if request.POST.get("return_to") == "panel":
+            messages.error(request, "La transición solicitada no es válida.")
+            return redirect("retention:panel")
         return JsonResponse(
             {"error": "La transición solicitada no es válida."}, status=409
         )
+    if request.POST.get("return_to") == "panel":
+        messages.success(request, "El evento de retención fue actualizado.")
+        return redirect("retention:panel")
     return JsonResponse(RetentionQueryService.serialize(changed))
 
 

@@ -72,6 +72,23 @@ class RetentionHttpTests(TestCase):
         self.assertEqual(listing.json()["pagination"]["total"], 1)
         self.assertEqual(listing.json()["results"][0]["entity_pk"], "case-pending")
 
+    def test_panel_renders_and_approves_with_html_redirect(self):
+        force_mfa_login(self.client, self.manager)
+
+        panel = self.client.get(reverse("retention:panel"))
+        response = self.client.post(
+            reverse("retention:approve", args=[self.pending.id]),
+            {"return_to": "panel"},
+        )
+
+        self.assertEqual(panel.status_code, 200)
+        self.assertContains(panel, "Ciclo de vida de datos")
+        self.assertContains(panel, "case-pending")
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], reverse("retention:panel"))
+        self.pending.refresh_from_db()
+        self.assertEqual(self.pending.status, DataDisposalEvent.Status.APPROVED)
+
     def test_operator_and_auditor_are_forbidden(self):
         for user in (self.operator, self.auditor):
             force_mfa_login(self.client, user)

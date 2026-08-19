@@ -107,6 +107,27 @@ class EvidenceHttpTests(TestCase):
             "Documento revisado de forma confidencial",
         )
 
+    def test_case_panel_records_verification_and_redirects(self):
+        force_mfa_login(self.client, self.operator)
+
+        response = self.client.post(
+            reverse("evidence:case_panel", args=[self.case.id]),
+            {
+                "verification_method": "MANUAL",
+                "result": "VERIFIED",
+                "validation_notes": "Validación realizada desde el panel.",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        panel = self.client.get(
+            reverse("evidence:case_panel", args=[self.case.id])
+        )
+        self.assertEqual(panel.status_code, 200)
+        self.assertContains(panel, "Historial de verificaciones")
+        self.assertContains(panel, "Validación realizada desde el panel.")
+        self.assertIn("no-cache", panel["Cache-Control"])
+
     def test_operator_can_modify_only_assigned_case(self):
         force_mfa_login(self.client, self.operator)
         allowed = self._post_verification(self.case)
@@ -130,6 +151,13 @@ class EvidenceHttpTests(TestCase):
         self.assertIsNone(row["validation_notes"])
         self.assertIsNone(row["validation_metadata"])
         self.assertEqual(create.status_code, 403)
+
+        panel = self.client.get(
+            reverse("evidence:case_panel", args=[self.case.id])
+        )
+        self.assertEqual(panel.status_code, 200)
+        self.assertNotContains(panel, "Documento revisado de forma confidencial")
+        self.assertNotContains(panel, "Registrar verificación de identidad")
 
     def test_attachment_filename_is_hidden_from_auditor(self):
         attachment_id = uuid.uuid4()

@@ -1,6 +1,7 @@
 from django.urls import path
 
 from apps.communications.views import (
+    communication_panel,
     communication_create_inbound,
     communication_create_outbound,
     communication_detail,
@@ -17,6 +18,7 @@ app_name = "communications"
 
 
 urlpatterns = [
+    path("panel/", communication_panel, name="panel"),
     path("summary/", communication_summary, name="summary"),
     path("portability/", portability_export_list, name="portability_list"),
     path(

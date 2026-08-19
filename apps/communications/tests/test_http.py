@@ -232,6 +232,41 @@ class CommunicationHttpTests(TestCase):
         self.assertIn("no-cache", summary["Cache-Control"])
         self.assertEqual(listing.json()["pagination"]["total"], 1)
 
+    def test_panel_renders_and_records_encrypted_inbound_message(self):
+        force_mfa_login(self.client, self.manager)
+
+        response = self.client.post(
+            reverse("communications:panel"),
+            {
+                "mode": "inbound",
+                "request_id": str(self.assigned.id),
+                "channel": "PHONE",
+                "communication_type": "OTHER",
+                "contact": "+593991112233",
+                "subject": "Seguimiento telefónico",
+                "body": "Contenido reservado desde el panel.",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        communication = RequestCommunication.objects.latest("created_at")
+        self.assertEqual(communication.direction, "INBOUND")
+        self.assertNotIn(
+            b"+593991112233", bytes(communication.recipient_encrypted)
+        )
+        panel = self.client.get(reverse("communications:panel"))
+        self.assertContains(panel, "Comunicaciones")
+        self.assertContains(panel, self.assigned.reference_number)
+        self.assertIn("no-cache", panel["Cache-Control"])
+
+    def test_auditor_panel_has_no_composer(self):
+        force_mfa_login(self.client, self.auditor)
+
+        response = self.client.get(reverse("communications:panel"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Registrar comunicación")
+
     def test_idempotency_prevents_duplicate_messages(self):
         force_mfa_login(self.client, self.manager)
         key = uuid.uuid4()

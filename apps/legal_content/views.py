@@ -1,19 +1,19 @@
 import json
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, JsonResponse
-from django.shortcuts import render
+from django.shortcuts import redirect, render
 from django.views.decorators.cache import never_cache
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
-from apps.accounts.models import Role
-from apps.cases.policies import active_role_codes
 from apps.legal_content.forms import (
     LegalDocumentCreateForm,
     LegalDocumentFilterForm,
 )
 from apps.legal_content.models import LegalDocument
+from apps.legal_content.policies import can_manage_legal
 from apps.legal_content.services.documents import (
     LegalDocumentError,
     LegalDocumentService,
@@ -212,16 +212,6 @@ PUBLIC_DOCUMENT_TYPES = {
 PUBLIC_DOCUMENT_CONFIG = {item["key"]: item for item in PUBLIC_DOCUMENTS}
 
 
-def _can_manage_legal(user):
-    return bool(
-        getattr(user, "is_active", False)
-        and (
-            getattr(user, "is_superuser", False)
-            or active_role_codes(user) & {Role.Code.ADMIN, Role.Code.DPD}
-        )
-    )
-
-
 def _legal_payload(document):
     return {
         "id": str(document.id),
@@ -250,7 +240,7 @@ def _legal_payload(document):
 @login_required
 @require_GET
 def legal_document_list(request):
-    if not _can_manage_legal(request.user):
+    if not can_manage_legal(request.user):
         raise PermissionDenied
     form = LegalDocumentFilterForm(request.GET)
     if not form.is_valid():
@@ -274,7 +264,7 @@ def legal_document_list(request):
 @login_required
 @require_POST
 def legal_document_create(request):
-    if not _can_manage_legal(request.user):
+    if not can_manage_legal(request.user):
         raise PermissionDenied
     try:
         data = json.loads(request.body or b"{}")
@@ -312,7 +302,7 @@ def legal_document_create(request):
 @login_required
 @require_POST
 def legal_document_publish(request, document_id):
-    if not _can_manage_legal(request.user):
+    if not can_manage_legal(request.user):
         raise PermissionDenied
     document = LegalDocument.objects.filter(pk=document_id).first()
     if document is None:
@@ -322,12 +312,57 @@ def legal_document_publish(request, document_id):
             document=document, actor=request.user
         )
     except LegalDocumentError:
+        if request.POST.get("return_to") == "panel":
+            messages.error(request, "La versión legal no puede publicarse.")
+            return redirect("legal_content:manage_panel")
         return JsonResponse(
             {"error": "La versión legal no puede publicarse en su estado actual."},
             status=409,
         )
     document = LegalDocument.objects.select_related("created_by").get(pk=document.pk)
+    if request.POST.get("return_to") == "panel":
+        messages.success(request, "La versión legal fue publicada.")
+        return redirect("legal_content:manage_panel")
     return JsonResponse(_legal_payload(document))
+
+
+@never_cache
+@login_required
+@require_http_methods(["GET", "POST"])
+def legal_document_panel(request):
+    if not can_manage_legal(request.user):
+        raise PermissionDenied
+    create_form = LegalDocumentCreateForm(request.POST or None)
+    if request.method == "POST" and create_form.is_valid():
+        cleaned = create_form.cleaned_data
+        try:
+            LegalDocumentService.create_draft(
+                document_type=cleaned["document_type"],
+                title=cleaned["title"],
+                slug=cleaned.get("slug"),
+                version=cleaned["version"],
+                content_html=cleaned["content_html"],
+                effective_from=cleaned["effective_from"],
+                actor=request.user,
+            )
+        except (LegalDocumentError, ValueError):
+            create_form.add_error(None, "No fue posible crear el borrador legal.")
+        else:
+            messages.success(request, "El borrador legal fue creado.")
+            return redirect("legal_content:manage_panel")
+    documents = LegalDocument.objects.select_related("created_by").order_by(
+        "document_type", "-effective_from", "-created_at"
+    )
+    return render(
+        request,
+        "legal_content/manage_panel.html",
+        {
+            "documents": documents,
+            "create_form": create_form,
+            "document_types": LegalDocument.DocumentType.choices,
+        },
+        status=400 if create_form.errors else 200,
+    )
 
 
 @require_GET

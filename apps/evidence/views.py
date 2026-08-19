@@ -1,11 +1,13 @@
 import json
 
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponse, JsonResponse
+from django.shortcuts import redirect, render
 from django.utils.http import content_disposition_header
 from django.views.decorators.cache import never_cache
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from apps.cases.models import RightsRequest
 from apps.cases.policies import (
@@ -88,6 +90,77 @@ def _identity_payload(item, user):
     }
 
 
+def _attachment_payload(item, *, may_read):
+    return {
+        "id": str(item.id),
+        "attachment_type": {
+            "code": item.attachment_type,
+            "label": item.get_attachment_type_display(),
+        },
+        "visibility": item.visibility,
+        "filename": AttachmentService.decrypt_filename(item) if may_read else None,
+        "mime_type": item.mime_type,
+        "size_bytes": item.size_bytes,
+        "malware_scan_status": item.malware_scan_status,
+        "uploaded_at": item.uploaded_at,
+        "can_download": may_read,
+    }
+
+
+@never_cache
+@login_required
+@require_http_methods(["GET", "POST"])
+def evidence_case_panel(request, request_id):
+    if not can_access_case_panel(request.user):
+        raise PermissionDenied
+    case = _visible_case(request.user, request_id)
+    can_record = can_start_review(request.user, case)
+    form = None
+    if request.method == "POST":
+        if not can_record:
+            raise PermissionDenied
+        data = request.POST.copy()
+        data["request_id"] = str(case.id)
+        form = IdentityVerificationCreateForm(data)
+        if form.is_valid():
+            try:
+                IdentityVerificationService.record(
+                    request=case,
+                    verification_method=form.cleaned_data["verification_method"],
+                    result=form.cleaned_data["result"],
+                    actor=request.user,
+                    validation_notes=form.cleaned_data.get("validation_notes"),
+                )
+            except (IdentityVerificationError, ValueError, TypeError):
+                form.add_error(None, "No fue posible registrar la verificación.")
+            else:
+                messages.success(request, "La verificación fue registrada.")
+                return redirect("evidence:case_panel", request_id=case.id)
+    identities = IdentityVerification.objects.filter(request=case).select_related(
+        "request", "verified_by"
+    ).order_by("-created_at", "-id")
+    may_read = can_view_sensitive_case_data(request.user, case)
+    attachments = RequestAttachment.objects.filter(
+        request=case, deleted_at__isnull=True
+    ).select_related("uploaded_by").order_by("-uploaded_at", "-id")
+    return render(
+        request,
+        "evidence/case_panel.html",
+        {
+            "case": case,
+            "can_record": can_record,
+            "form": form,
+            "identities": [_identity_payload(item, request.user) for item in identities],
+            "attachments": [
+                _attachment_payload(item, may_read=may_read) for item in attachments
+            ],
+            "verification_methods": IdentityVerification.VerificationMethod.choices,
+            "verification_results": IdentityVerification.Result.choices,
+        },
+        status=400 if form is not None and form.errors else 200,
+    )
+
+
 @never_cache
 @login_required
 @require_GET
@@ -154,22 +227,7 @@ def attachment_list(request):
     return JsonResponse(
         {
             "results": [
-                {
-                    "id": str(item.id),
-                    "attachment_type": {
-                        "code": item.attachment_type,
-                        "label": item.get_attachment_type_display(),
-                    },
-                    "visibility": item.visibility,
-                    "filename": (
-                        AttachmentService.decrypt_filename(item) if may_read else None
-                    ),
-                    "mime_type": item.mime_type,
-                    "size_bytes": item.size_bytes,
-                    "malware_scan_status": item.malware_scan_status,
-                    "uploaded_at": item.uploaded_at,
-                    "can_download": may_read,
-                }
+                _attachment_payload(item, may_read=may_read)
                 for item in items
             ]
         },

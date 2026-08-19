@@ -5,7 +5,7 @@
     <a href="{% url 'cases:request_list' %}">← Volver al listado</a>
     <div><section><p class="page-kicker">Expediente</p><h1>{{ case.reference_number }}</h1></section><div>{% if can_assign %}<a class="btn btn-outline-primary" href="{% url 'cases:request_assign' case.id %}">Asignar o reasignar</a>{% endif %}</div></div>
 </header>
-<nav class="case-tabs" aria-label="Secciones del expediente"><a class="active" href="#resumen">Resumen</a><a href="#identidad">Identidad</a><a href="#solicitud">Solicitud</a><a href="#historial">Historial</a></nav>
+<nav class="case-tabs" aria-label="Secciones del expediente"><a class="active" href="#resumen">Resumen</a><a href="#identidad">Identidad</a><a href="#solicitud">Solicitud</a><a href="{% url 'evidence:case_panel' case.id %}">Evidencias</a><a href="#historial">Historial</a></nav>
 <div class="case-detail-layout">
     <div>
         <section class="card app-card case-summary" id="resumen"><header><p class="page-kicker">Información general</p><h2>Resumen</h2></header><dl><div><dt>Derecho solicitado</dt><dd>{{ case.right.name }}</dd></div><div><dt>Estado actual</dt><dd><span class="status-badge status-badge--{{ case.status|lower }}">{{ case.get_status_display }}</span></dd></div><div><dt>Identidad</dt><dd>{{ case.get_identity_status_display }}</dd></div><div><dt>Fecha de recepción</dt><dd>{{ case.received_at|date:"d/m/Y H:i" }}</dd></div><div><dt>Fecha límite</dt><dd>{{ case.current_due_at|date:"d/m/Y H:i"|default:"—" }}</dd></div><div><dt>Asignado a</dt><dd>{% if case.assigned_to %}{{ case.assigned_to.full_name }}{% else %}Sin asignar{% endif %}</dd></div></dl></section>

@@ -1,11 +1,13 @@
 import json
 
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.http import Http404, HttpResponse, JsonResponse
+from django.shortcuts import redirect, render
 from django.utils.http import content_disposition_header
 from django.views.decorators.cache import never_cache
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET, require_http_methods, require_POST
 
 from apps.cases.models import RightsRequest
 from apps.cases.policies import (
@@ -71,6 +73,83 @@ def _manageable_case(user, request_id):
     if not can_start_review(user, case):
         raise PermissionDenied
     return case
+
+
+@never_cache
+@login_required
+@require_http_methods(["GET", "POST"])
+def communication_panel(request):
+    _require_panel(request.user)
+    manageable_cases = [
+        case
+        for case in visible_requests_for(request.user).select_related("right")
+        if can_start_review(request.user, case)
+    ]
+    if request.method == "POST":
+        mode = request.POST.get("mode")
+        form_class = (
+            OutboundCommunicationForm
+            if mode == "outbound"
+            else InboundCommunicationForm
+        )
+        create_form = form_class(request.POST)
+        if create_form.is_valid():
+            data = create_form.cleaned_data
+            case = _manageable_case(request.user, data["request_id"])
+            try:
+                if mode == "outbound":
+                    NotificationService.queue_email(
+                        request=case,
+                        communication_type=data["communication_type"],
+                        recipient=data["recipient"],
+                        subject=data["subject"],
+                        body=data["body"],
+                        visible_to_subject=data["visible_to_subject"],
+                        actor=request.user,
+                    )
+                else:
+                    NotificationService.record_inbound(
+                        request=case,
+                        channel=data["channel"],
+                        communication_type=data["communication_type"],
+                        contact=data["contact"],
+                        subject=data["subject"],
+                        body=data["body"],
+                        visible_to_subject=data["visible_to_subject"],
+                        actor=request.user,
+                    )
+            except (NotificationServiceError, ValueError):
+                create_form.add_error(
+                    None, "No fue posible registrar la comunicación."
+                )
+            else:
+                messages.success(request, "La comunicación fue registrada.")
+                return redirect("communications:panel")
+    else:
+        mode = None
+        create_form = None
+    filter_form = CommunicationFilterForm(request.GET)
+    if filter_form.is_valid():
+        communication_list = CommunicationQueryService.list(
+            user=request.user, filters=filter_form.cleaned_data
+        )
+    else:
+        communication_list = None
+    return render(
+        request,
+        "communications/panel.html",
+        {
+            "summary": CommunicationQueryService.summary(user=request.user),
+            "communication_list": communication_list,
+            "filter_form": filter_form,
+            "manageable_cases": manageable_cases,
+            "create_form": create_form,
+            "create_mode": mode,
+            "communication_types": RequestCommunication.CommunicationType.choices,
+            "channels": RequestCommunication.Channel.choices,
+        },
+        status=400 if create_form is not None and create_form.errors else 200,
+    )
 
 
 @never_cache

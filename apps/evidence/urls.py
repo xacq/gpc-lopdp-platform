@@ -5,6 +5,7 @@ from apps.evidence.views import (
     attachment_list,
     identity_verification_create,
     identity_verification_list,
+    evidence_case_panel,
 )
 
 
@@ -12,6 +13,7 @@ app_name = "evidence"
 
 
 urlpatterns = [
+    path("cases/<uuid:request_id>/", evidence_case_panel, name="case_panel"),
     path("identity/", identity_verification_list, name="identity_list"),
     path(
         "identity/record/",

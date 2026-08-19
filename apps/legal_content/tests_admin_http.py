@@ -88,6 +88,35 @@ class LegalDocumentAdminHttpTests(TestCase):
         self.assertTrue(published.json()["is_published"])
         self.assertContains(public, "Contenido aprobado")
 
+    def test_management_panel_creates_and_publishes_with_redirects(self):
+        force_mfa_login(self.client, self.dpd)
+        effective_from = timezone.now().replace(microsecond=0)
+
+        created = self.client.post(
+            reverse("legal_content:manage_panel"),
+            {
+                "document_type": "RIGHTS_NOTICE",
+                "title": "Aviso de derechos",
+                "slug": "derechos-panel",
+                "version": "1.0-panel",
+                "content_html": "<h2>Derechos</h2><p>Contenido temporal.</p>",
+                "effective_from": effective_from.isoformat(),
+            },
+        )
+
+        self.assertEqual(created.status_code, 302)
+        document = LegalDocument.objects.get(version="1.0-panel")
+        panel = self.client.get(reverse("legal_content:manage_panel"))
+        self.assertContains(panel, "Aviso de derechos")
+        published = self.client.post(
+            reverse("legal_content:manage_publish", args=[document.id]),
+            {"return_to": "panel"},
+        )
+        self.assertEqual(published.status_code, 302)
+        document.refresh_from_db()
+        self.assertTrue(document.is_published)
+        self.assertIn("no-cache", panel["Cache-Control"])
+
     def test_new_publication_supersedes_open_version(self):
         force_mfa_login(self.client, self.admin)
         first = self._create(
