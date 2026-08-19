@@ -521,6 +521,92 @@ class NotificationService:
         }
 
     @classmethod
+    def record_inbound(
+        cls,
+        *,
+        request,
+        channel: str,
+        communication_type: str,
+        contact: str,
+        subject: str,
+        body: str,
+        visible_to_subject: bool,
+        actor,
+        idempotency_key: uuid.UUID | None = None,
+        correlation_id: uuid.UUID | None = None,
+    ) -> RequestCommunication:
+        channel = cls._validate_choice(field_name="channel", value=channel)
+        communication_type = cls._validate_choice(
+            field_name="communication_type",
+            value=communication_type,
+        )
+        contact = cls._normalize_text(
+            contact,
+            field_name="contact",
+            max_length=254,
+        )
+        subject = cls._normalize_text(
+            subject,
+            field_name="subject",
+            max_length=998,
+        )
+        body = cls._normalize_text(body, field_name="body")
+        if idempotency_key is None:
+            idempotency_key = uuid.uuid4()
+        elif not isinstance(idempotency_key, uuid.UUID):
+            idempotency_key = uuid.UUID(str(idempotency_key))
+        if correlation_id is None:
+            correlation_id = uuid.uuid4()
+        elif not isinstance(correlation_id, uuid.UUID):
+            correlation_id = uuid.UUID(str(correlation_id))
+
+        existing = RequestCommunication.objects.filter(
+            idempotency_key=idempotency_key
+        ).first()
+        if existing is not None:
+            return existing
+
+        communication_id = uuid.uuid4()
+        key_version = int(settings.PII_ENCRYPTION_ACTIVE_VERSION)
+        encrypted = {
+            field_name: cls._encrypt_text(
+                communication_id=communication_id,
+                field_name=field_name,
+                value=value,
+                key_version=key_version,
+            )
+            for field_name, value in {
+                "recipient": contact,
+                "subject": subject,
+                "body": body,
+            }.items()
+        }
+        with transaction.atomic():
+            communication = RequestCommunication.objects.create(
+                id=communication_id,
+                request=request,
+                direction=RequestCommunication.Direction.INBOUND,
+                channel=channel,
+                communication_type=communication_type,
+                visible_to_subject=visible_to_subject,
+                recipient_encrypted=encrypted["recipient"],
+                subject_encrypted=encrypted["subject"],
+                body_encrypted=encrypted["body"],
+                encryption_key_version=key_version,
+                idempotency_key=idempotency_key,
+                delivery_status=RequestCommunication.DeliveryStatus.RECEIVED,
+                sent_by=actor,
+            )
+            cls._audit(
+                action="REQUEST_COMMUNICATION_RECEIVED",
+                communication=communication,
+                actor=actor,
+                correlation_id=correlation_id,
+                source=AuditLog.Source.WEB,
+            )
+            return communication
+
+    @classmethod
     def process_email(
         cls,
         communication_id,
