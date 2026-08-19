@@ -19,3 +19,9 @@ class PublicHomeTests(SimpleTestCase):
             response,
             reverse("cases:public_tracking"),
         )
+
+    def test_uses_official_logo_and_favicon_assets(self):
+        response = self.client.get(reverse("core:home"))
+        self.assertContains(response, "/static/images/vinesa-logo.png")
+        self.assertContains(response, "/static/images/vinesa-favicon.png")
+        self.assertNotContains(response, 'class="vinesa-brand__mark"')

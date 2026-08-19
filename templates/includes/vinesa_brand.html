@@ -1,11 +1,5 @@
+{% load static %}
 <span class="vinesa-brand{% if compact %} vinesa-brand--compact{% endif %}">
-    <svg class="vinesa-brand__mark" viewBox="0 0 64 64" aria-hidden="true" focusable="false">
-        <path d="M25 4v11.5c-9.9 2.9-17 12-17 22.5 0 13.2 10.8 24 24 24V31.5c0-4.3-2.2-8.1-5.5-10.3" />
-        <path d="M39 4v11.5c9.9 2.9 17 12 17 22.5 0 13.2-10.8 24-24 24" />
-        <path d="M32 4v23" />
-    </svg>
-    <span class="vinesa-brand__copy">
-        <span class="vinesa-brand__name">VINESA</span>
-        {% if not compact %}<span class="vinesa-brand__tagline">Plataforma de Privacidad y Gestión de Solicitudes LOPDP</span>{% endif %}
-    </span>
+    <img class="vinesa-brand__image" src="{% static 'images/vinesa-logo.png' %}" alt="VINESA">
+    {% if not compact %}<span class="vinesa-brand__tagline">Plataforma de Privacidad y Gestión de Solicitudes LOPDP</span>{% endif %}
 </span>

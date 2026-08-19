@@ -154,23 +154,12 @@ body {
     gap: 0.8rem;
 }
 
-.vinesa-brand__mark {
-    width: 3.25rem;
-    height: 3.25rem;
-    fill: none;
-    stroke: var(--vinesa-red);
-    stroke-linecap: round;
-    stroke-linejoin: round;
-    stroke-width: 4.4;
-}
-
-.vinesa-brand__copy { display: grid; gap: 0.08rem; }
-.vinesa-brand__name {
-    color: #35100e;
-    font-size: 1.9rem;
-    font-weight: 500;
-    letter-spacing: 0.24em;
-    line-height: 1;
+.vinesa-brand__image {
+    display: block;
+    width: 5rem;
+    height: 5rem;
+    border-radius: 0.25rem;
+    object-fit: contain;
 }
 .vinesa-brand__tagline {
     max-width: 20rem;
@@ -388,8 +377,7 @@ body {
 
 @media (max-width: 991.98px) {
     .public-header__inner { min-height: 5.6rem; flex-wrap: wrap; gap: 0; }
-    .vinesa-brand__mark { width: 2.7rem; height: 2.7rem; }
-    .vinesa-brand__name { font-size: 1.5rem; }
+    .vinesa-brand__image { width: 4rem; height: 4rem; }
     .vinesa-brand__tagline { display: none; }
     .public-menu-button { display: block; }
     .public-nav {
@@ -639,8 +627,7 @@ body {
 
 .tracking-layout { display: grid; grid-template-columns: minmax(19rem, 0.9fr) minmax(24rem, 1.1fr); gap: 1.25rem; }
 .tracking-query__brand { margin-bottom: 1.6rem; }
-.vinesa-brand--compact .vinesa-brand__mark { width: 2.65rem; height: 2.65rem; }
-.vinesa-brand--compact .vinesa-brand__name { font-size: 1.4rem; }
+.vinesa-brand--compact .vinesa-brand__image { width: 4.4rem; height: 4.4rem; }
 .tracking-query > p { margin: 0.55rem 0 1.5rem; color: var(--vinesa-muted); font-size: 0.86rem; }
 .tracking-query .public-field { margin-bottom: 1rem; }
 .tracking-query__submit { width: 100%; margin-top: 0.25rem; }
@@ -825,15 +812,17 @@ body {
 }
 .admin-sidebar__mobile-heading { display: none; }
 .admin-sidebar__brand {
-    display: block;
+    display: flex;
     min-height: 7rem;
     padding: 1.8rem 1.5rem;
     border-bottom: 1px solid rgb(255 255 255 / 10%);
-    color: #fff;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    color: var(--vinesa-wine);
     text-decoration: none;
 }
-.admin-sidebar .vinesa-brand__mark { stroke: #fff; }
-.admin-sidebar .vinesa-brand__name { color: #fff; font-size: 1.45rem; letter-spacing: 0.18em; }
+.admin-sidebar .vinesa-brand__image { width: 5rem; height: 5rem; }
 .admin-sidebar__nav { display: grid; gap: 0.35rem; padding: 1.35rem 0.7rem; }
 .admin-nav-link {
     display: flex;
