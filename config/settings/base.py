@@ -334,6 +334,18 @@ MALWARE_SCAN_TIMEOUT_SECONDS = env.int(
     "MALWARE_SCAN_TIMEOUT_SECONDS",
     default=30,
 )
+PORTABILITY_DOWNLOAD_TTL_SECONDS = env.int(
+    "PORTABILITY_DOWNLOAD_TTL_SECONDS",
+    default=86400,
+)
+PORTABILITY_RIGHT_CODES = [
+    value.strip().upper()
+    for value in env(
+        "PORTABILITY_RIGHT_CODES",
+        default="PORTABILITY",
+    ).split(",")
+    if value.strip()
+]
 DATA_UPLOAD_MAX_NUMBER_FILES = env.int(
     "DATA_UPLOAD_MAX_NUMBER_FILES",
     default=3,
