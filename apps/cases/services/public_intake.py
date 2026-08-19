@@ -18,6 +18,7 @@ from apps.cases.services.tokens import (
 from apps.communications.models import RequestCommunication
 from apps.communications.services.notifications import NotificationService
 from apps.organization.models import SystemSetting
+from apps.evidence.services.temporary_uploads import TemporaryUploadService
 from apps.subjects.services.normalization import normalize_email
 
 
@@ -72,6 +73,8 @@ class PublicIntakeService:
         representative_document_type: str | None = None,
         representative_document_number: str | None = None,
         representative_email: str | None = None,
+        temporary_uploads=(),
+        upload_session_key: str | None = None,
         correlation_id=None,
     ) -> PublicIntakeResult:
         if correlation_id is None:
@@ -87,6 +90,11 @@ class PublicIntakeService:
             "PUBLIC_TRACKING_TTL_SECONDS",
             90 * 24 * 60 * 60,
         )
+        temporary_uploads = tuple(temporary_uploads)
+        if temporary_uploads and not upload_session_key:
+            raise PublicIntakeSubmissionError(
+                "Upload session is required for temporary attachments."
+            )
 
         with transaction.atomic():
             case = CaseIntakeService.create_administrative_request(
@@ -122,6 +130,15 @@ class PublicIntakeService:
                 correlation_id=correlation_id,
                 source=AuditLog.Source.WEB,
             )
+
+            for issued_upload in temporary_uploads:
+                TemporaryUploadService.promote(
+                    request=case,
+                    upload_id=issued_upload.record.id,
+                    token=issued_upload.token,
+                    session_key=upload_session_key,
+                    correlation_id=correlation_id,
+                )
 
             organization = SystemSetting.objects.get(singleton_key=1)
             portal_base = f"https://{organization.domain}/cases/public"

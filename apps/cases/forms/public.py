@@ -4,6 +4,21 @@ from apps.cases.forms.requests import RequestCreateForm
 
 
 class PublicRequestForm(RequestCreateForm):
+    identity_document = forms.FileField(
+        label="Documento de identidad (opcional)",
+        required=False,
+        help_text="PDF, JPG o PNG. Máximo 10 MB.",
+    )
+    authority_document = forms.FileField(
+        label="Documento de representación (opcional)",
+        required=False,
+        help_text="PDF, JPG o PNG. Máximo 10 MB.",
+    )
+    supporting_document = forms.FileField(
+        label="Documento de respaldo (opcional)",
+        required=False,
+        help_text="PDF, JPG o PNG. Máximo 10 MB.",
+    )
     privacy_acknowledgement = forms.BooleanField(
         label=(
             "Confirmo que los datos proporcionados son correctos y que "
@@ -25,6 +40,14 @@ class PublicRequestForm(RequestCreateForm):
         if cleaned.get("website"):
             raise forms.ValidationError(
                 "No fue posible procesar la solicitud."
+            )
+        if cleaned.get("authority_document") and not (
+            cleaned.get("has_representative")
+            or cleaned.get("representative_name")
+        ):
+            self.add_error(
+                "authority_document",
+                "Este documento requiere los datos del representante.",
             )
         return cleaned
 

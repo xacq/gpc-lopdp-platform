@@ -34,7 +34,18 @@ from apps.cases.services.public_intake import (
 from apps.communications.services.notifications import NotificationServiceError
 from apps.core.services.crypto import CryptoError
 from apps.core.services.storage import PrivateStorageError
-from apps.evidence.services.attachments import AttachmentIntegrityError
+from apps.evidence.services.attachments import (
+    AttachmentIntegrityError,
+    AttachmentLimitError,
+    AttachmentService,
+    FileRejectedError,
+    MalwareScannerUnavailableError,
+)
+from apps.evidence.services.scanners import get_public_upload_scanner
+from apps.evidence.services.temporary_uploads import (
+    TemporaryUploadError,
+    TemporaryUploadService,
+)
 from apps.subjects.services.subjects import SubjectServiceError
 
 
@@ -68,9 +79,74 @@ def _status_label(value: str) -> str:
 @require_http_methods(["GET", "POST"])
 def public_request_create(request):
     if request.method == "POST":
-        form = PublicRequestForm(request.POST)
+        form = PublicRequestForm(request.POST, request.FILES)
         if form.is_valid():
             cleaned = form.cleaned_data
+            upload_fields = (
+                ("identity_document", "IDENTITY_DOCUMENT"),
+                ("authority_document", "AUTHORITY_DOCUMENT"),
+                ("supporting_document", "SUPPORTING_DOCUMENT"),
+            )
+            issued_uploads = []
+            upload_session_key = None
+
+            if any(cleaned.get(name) for name, _ in upload_fields):
+                if request.session.session_key is None:
+                    request.session.create()
+                upload_session_key = request.session.session_key
+
+                try:
+                    scanner = get_public_upload_scanner()
+                    for field_name, attachment_type in upload_fields:
+                        uploaded_file = cleaned.get(field_name)
+                        if uploaded_file is None:
+                            continue
+                        if uploaded_file.size > AttachmentService.MAX_FILE_SIZE:
+                            raise FileRejectedError("File size is not allowed.")
+                        content = uploaded_file.read(
+                            AttachmentService.MAX_FILE_SIZE + 1
+                        )
+                        issued_uploads.append(
+                            TemporaryUploadService.create(
+                                session_key=upload_session_key,
+                                attachment_type=attachment_type,
+                                filename=uploaded_file.name,
+                                declared_mime=(uploaded_file.content_type or ""),
+                                content=content,
+                                scanner=scanner,
+                                correlation_id=uuid.uuid4(),
+                            )
+                        )
+                except (
+                    AttachmentLimitError,
+                    CryptoError,
+                    FileRejectedError,
+                    MalwareScannerUnavailableError,
+                    PrivateStorageError,
+                    TemporaryUploadError,
+                    ImportError,
+                    OSError,
+                ):
+                    for issued_upload in issued_uploads:
+                        TemporaryUploadService.discard(
+                            issued_upload=issued_upload,
+                            session_key=upload_session_key,
+                        )
+                    form.add_error(
+                        None,
+                        (
+                            "No fue posible aceptar los documentos. "
+                            "Verifica el formato, tamaño y contenido."
+                        ),
+                    )
+                    response = render(
+                        request,
+                        "cases/public_request_form.html",
+                        {"form": form},
+                    )
+                    return _private_response(response)
+
+            submitted = False
             try:
                 PublicIntakeService.submit(
                     subject_type=cleaned["subject_type"],
@@ -89,6 +165,8 @@ def public_request_create(request):
                         "representative_document_number"
                     ),
                     representative_email=cleaned.get("representative_email"),
+                    temporary_uploads=issued_uploads,
+                    upload_session_key=upload_session_key,
                     correlation_id=uuid.uuid4(),
                 )
             except (
@@ -97,11 +175,24 @@ def public_request_create(request):
                 CaseWorkflowError,
                 SubjectServiceError,
                 NotificationServiceError,
+                AttachmentLimitError,
+                CryptoError,
+                PrivateStorageError,
+                TemporaryUploadError,
                 ValueError,
             ):
                 # The same confirmation prevents disclosure of existing
                 # subject or representative records.
                 pass
+            else:
+                submitted = True
+            finally:
+                if not submitted:
+                    for issued_upload in issued_uploads:
+                        TemporaryUploadService.discard(
+                            issued_upload=issued_upload,
+                            session_key=upload_session_key,
+                        )
             return _private_response(
                 HttpResponse(
                     status=303,

@@ -317,6 +317,32 @@ MEDIA_URL = "/media/"
 
 MEDIA_ROOT = BASE_DIR / "media"
 
+PRIVATE_STORAGE_ROOT = env(
+    "PRIVATE_STORAGE_ROOT",
+    default=str(BASE_DIR / "private_storage"),
+)
+PUBLIC_TEMPORARY_UPLOAD_TTL_SECONDS = env.int(
+    "PUBLIC_TEMPORARY_UPLOAD_TTL_SECONDS",
+    default=60 * 60,
+)
+PUBLIC_UPLOAD_MALWARE_SCANNER = env(
+    "PUBLIC_UPLOAD_MALWARE_SCANNER",
+    default="apps.evidence.services.scanners.ClamAVCommandScanner",
+)
+CLAMAV_EXECUTABLE = env("CLAMAV_EXECUTABLE", default="clamscan")
+MALWARE_SCAN_TIMEOUT_SECONDS = env.int(
+    "MALWARE_SCAN_TIMEOUT_SECONDS",
+    default=30,
+)
+DATA_UPLOAD_MAX_NUMBER_FILES = env.int(
+    "DATA_UPLOAD_MAX_NUMBER_FILES",
+    default=3,
+)
+FILE_UPLOAD_MAX_MEMORY_SIZE = env.int(
+    "FILE_UPLOAD_MAX_MEMORY_SIZE",
+    default=1024 * 1024,
+)
+
 
 # ---------------------------------------------------------------------
 # Django defaults
