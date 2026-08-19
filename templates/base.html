@@ -15,13 +15,13 @@
     <div class="admin-shell">
         <aside class="admin-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="adminNavigation" aria-labelledby="adminNavigationLabel">
             <div class="admin-sidebar__mobile-heading"><span id="adminNavigationLabel">Navegación</span><button type="button" data-bs-dismiss="offcanvas" data-bs-target="#adminNavigation" aria-label="Cerrar">×</button></div>
-            <a class="admin-sidebar__brand" href="{% if nav_can_access_cases %}{% url 'cases:request_list' %}{% else %}{% url 'core:home' %}{% endif %}" aria-label="VINESA, inicio administrativo">
+            <a class="admin-sidebar__brand" href="{% if nav_can_access_cases %}{% url 'core:dashboard' %}{% else %}{% url 'core:home' %}{% endif %}" aria-label="VINESA, inicio administrativo">
                 {% include "includes/vinesa_brand.html" with compact=True %}
             </a>
             <nav class="admin-sidebar__nav" aria-label="Navegación administrativa">
                 {% if nav_can_access_cases %}
                     <a class="admin-nav-link{% if request.resolver_match.url_name == 'dashboard' %} admin-nav-link--active{% endif %}" href="{% url 'core:dashboard' %}"><span aria-hidden="true">⌂</span> Dashboard</a>
-                    <a class="admin-nav-link{% if request.resolver_match.namespace == 'cases' %} admin-nav-link--active{% endif %}" href="{% url 'cases:request_list' %}"><span aria-hidden="true">▢</span> Expedientes</a>
+                    <a class="admin-nav-link{% if request.resolver_match.namespace == 'cases' or request.resolver_match.namespace == 'evidence' %} admin-nav-link--active{% endif %}" href="{% url 'cases:request_list' %}"><span aria-hidden="true">▢</span> Expedientes</a>
                     {% if nav_can_assign_cases %}<a class="admin-nav-link{% if request.resolver_match.namespace == 'assignments' %} admin-nav-link--active{% endif %}" href="{% url 'assignments:index' %}"><span aria-hidden="true">♧</span> Asignaciones</a>{% endif %}
                     <a class="admin-nav-link{% if request.resolver_match.namespace == 'communications' %} admin-nav-link--active{% endif %}" href="{% url 'communications:panel' %}"><span aria-hidden="true">✉</span> Comunicaciones</a>
                     <a class="admin-nav-link{% if request.resolver_match.url_name == 'reports' %} admin-nav-link--active{% endif %}" href="{% url 'core:reports' %}"><span aria-hidden="true">▤</span> Reportes</a>
@@ -55,7 +55,7 @@
                 {% if user.is_authenticated %}
                     <div class="admin-user">
                         <span class="admin-user__avatar" aria-hidden="true">{% if user.full_name %}{{ user.full_name|slice:":1"|upper }}{% else %}{{ user.email|slice:":1"|upper }}{% endif %}</span>
-                        <span><strong>{% if user.full_name %}{{ user.full_name }}{% else %}{{ user.email }}{% endif %}</strong><small>Usuario institucional</small></span>
+                        <span><strong>{% if user.full_name %}{{ user.full_name }}{% else %}{{ user.email }}{% endif %}</strong><small>{% if user.is_superuser %}Administrador del sistema{% else %}Usuario institucional{% endif %}</small></span>
                     </div>
                 {% else %}
                     <div class="admin-user admin-user--anonymous"><span><strong>Sesión finalizada</strong><small>Vuelve a iniciar sesión para continuar</small></span></div>

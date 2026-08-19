@@ -1013,7 +1013,7 @@ body {
     text-decoration: none;
 }
 .admin-sidebar .vinesa-brand__image { width: 5rem; height: 5rem; }
-.admin-sidebar__nav { display: grid; gap: 0.35rem; padding: 1.35rem 0.7rem; }
+.admin-sidebar__nav { display: grid; gap: 0.35rem; padding: 1.35rem 0.7rem; overflow-y: auto; scrollbar-color: rgb(255 255 255 / 24%) transparent; scrollbar-width: thin; }
 .admin-nav-link {
     display: flex;
     min-height: 3.3rem;
