@@ -26,7 +26,8 @@ class PublicLegalDocumentTests(TestCase):
         response = self.client.get(self.url())
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "No publicar")
-        self.assertContains(response, "Contenido en actualización")
+        self.assertContains(response, "Contenido pendiente de aprobación")
+        self.assertContains(response, "Información a solicitar al cliente")
 
     def test_current_published_document_is_rendered(self):
         LegalDocument.objects.create(
@@ -43,3 +44,49 @@ class PublicLegalDocumentTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Responsable del tratamiento")
         self.assertContains(response, "Contenido público.")
+
+    def test_legal_index_lists_all_supported_documents_as_pending(self):
+        response = self.client.get(reverse("legal_content:public_index"))
+        self.assertEqual(response.status_code, 200)
+        self.assertTemplateUsed(response, "legal_content/public_index.html")
+        self.assertContains(response, "Avisos y políticas")
+        self.assertContains(response, ">Pendiente<", count=8, html=False)
+        self.assertContains(response, self.url("privacidad"))
+        self.assertContains(response, self.url("cookies"))
+        self.assertContains(response, self.url("videovigilancia"))
+
+    def test_legal_index_marks_published_document_as_current(self):
+        LegalDocument.objects.create(
+            document_type=LegalDocument.DocumentType.COOKIES_POLICY,
+            title="Política de Cookies aprobada",
+            slug="cookies-aprobada",
+            version="1.0",
+            content_html="<p>Contenido aprobado.</p>",
+            content_sha256="2" * 64,
+            effective_from=timezone.now(),
+            is_published=True,
+        )
+
+        response = self.client.get(reverse("legal_content:public_index"))
+
+        self.assertContains(response, "Política de Cookies aprobada")
+        self.assertContains(response, ">Vigente<", count=1, html=False)
+
+    def test_each_empty_document_exposes_client_requirements(self):
+        for key in (
+            "privacidad",
+            "derechos",
+            "cookies",
+            "empleados",
+            "candidatos",
+            "clientes-vendedores",
+            "proveedores",
+            "videovigilancia",
+        ):
+            with self.subTest(key=key):
+                response = self.client.get(self.url(key))
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(
+                    response,
+                    "Datos necesarios para completar este documento",
+                )

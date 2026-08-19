@@ -1,0 +1,74 @@
+{% extends "public_base.html" %}
+{% block title %}Contacto{% endblock %}
+{% block body_class %}public-information-page{% endblock %}
+{% block content %}
+<div class="information-page">
+    <div class="public-container information-page__inner">
+        <header class="information-hero">
+            <p class="section-kicker">Canales institucionales</p>
+            <h1>Contacto</h1>
+            <p>Información oficial para consultas de privacidad, ejercicio de derechos y reclamaciones.</p>
+        </header>
+
+        {% if settings %}
+            <section class="contact-grid">
+                <article class="contact-card">
+                    <p class="section-kicker">Contacto general</p>
+                    <h2>{{ settings.trade_name|default:settings.legal_name }}</h2>
+                    <dl>
+                        <div><dt>Correo</dt><dd><a href="mailto:{{ settings.contact_email }}">{{ settings.contact_email }}</a></dd></div>
+                        {% if settings.phone %}<div><dt>Teléfono</dt><dd>{{ settings.phone }}</dd></div>{% endif %}
+                        {% if settings.address %}<div><dt>Dirección</dt><dd>{{ settings.address }}</dd></div>{% endif %}
+                    </dl>
+                </article>
+                <article class="contact-card">
+                    <p class="section-kicker">Responsable del tratamiento</p>
+                    {% if settings.controller_name or settings.controller_email or settings.controller_phone %}
+                        <h2>{{ settings.controller_name|default:"Canal del responsable" }}</h2>
+                        <dl>
+                            {% if settings.controller_email %}<div><dt>Correo</dt><dd><a href="mailto:{{ settings.controller_email }}">{{ settings.controller_email }}</a></dd></div>{% endif %}
+                            {% if settings.controller_phone %}<div><dt>Teléfono</dt><dd>{{ settings.controller_phone }}</dd></div>{% endif %}
+                        </dl>
+                    {% else %}<p class="contact-card__pending">Nombre, correo y teléfono pendientes de confirmación.</p>{% endif %}
+                </article>
+                <article class="contact-card">
+                    <p class="section-kicker">Delegado de Protección de Datos</p>
+                    {% if settings.dpd_name or settings.dpd_email or settings.dpd_phone %}
+                        <h2>{{ settings.dpd_name|default:"Canal del DPD" }}</h2>
+                        <dl>
+                            {% if settings.dpd_email %}<div><dt>Correo</dt><dd><a href="mailto:{{ settings.dpd_email }}">{{ settings.dpd_email }}</a></dd></div>{% endif %}
+                            {% if settings.dpd_phone %}<div><dt>Teléfono</dt><dd>{{ settings.dpd_phone }}</dd></div>{% endif %}
+                        </dl>
+                    {% else %}<p class="contact-card__pending">Designación vigente y canales oficiales pendientes de confirmación.</p>{% endif %}
+                </article>
+                <article class="contact-card">
+                    <p class="section-kicker">Reclamaciones</p>
+                    <h2>{{ settings.complaint_authority_name }}</h2>
+                    {% if settings.complaint_instructions %}<p>{{ settings.complaint_instructions }}</p>{% endif %}
+                    {% if settings.complaint_channel_url %}<a class="contact-card__link" href="{{ settings.complaint_channel_url }}" rel="noopener">Consultar canal oficial <span aria-hidden="true">→</span></a>{% else %}<p class="contact-card__pending">Canal e instrucciones pendientes de confirmación.</p>{% endif %}
+                </article>
+            </section>
+        {% else %}
+            <section class="pending-content" role="status">
+                <div class="pending-content__icon" aria-hidden="true">i</div>
+                <div>
+                    <p class="section-kicker">Información requerida</p>
+                    <h2>Datos institucionales pendientes del cliente</h2>
+                    <p>No existe una configuración institucional activa. La página se completará automáticamente cuando se registren los datos aprobados.</p>
+                    <ul class="requirement-list">
+                        <li>Razón social, RUC, dirección, teléfono y correo general.</li>
+                        <li>Responsable del tratamiento y canales oficiales.</li>
+                        <li>Designación vigente, correo y teléfono del DPD.</li>
+                        <li>Autoridad, canal e instrucciones para reclamaciones.</li>
+                    </ul>
+                </div>
+            </section>
+        {% endif %}
+
+        <div class="information-actions">
+            <a class="button button--primary" href="{% url 'cases:public_request_create' %}">Presentar solicitud</a>
+            <a class="button button--secondary" href="{% url 'legal_content:public_document' 'derechos' %}">Derechos y contacto</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

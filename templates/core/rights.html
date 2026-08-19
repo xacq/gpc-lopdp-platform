@@ -1,0 +1,52 @@
+{% extends "public_base.html" %}
+{% block title %}Sobre tus derechos{% endblock %}
+{% block body_class %}public-information-page{% endblock %}
+{% block content %}
+<div class="information-page">
+    <div class="public-container information-page__inner">
+        <header class="information-hero">
+            <p class="section-kicker">Protección de datos personales</p>
+            <h1>Sobre tus derechos</h1>
+            <p>Consulta los derechos habilitados por VINESA y utiliza el canal seguro para presentar y dar seguimiento a tu solicitud.</p>
+        </header>
+
+        {% if rights %}
+            <section class="information-grid" aria-label="Derechos disponibles">
+                {% for right in rights %}
+                    <article class="information-card">
+                        <span class="information-card__number" aria-hidden="true">{{ forloop.counter|stringformat:"02d" }}</span>
+                        <h2>{{ right.name }}</h2>
+                        {% if right.description %}<p>{{ right.description }}</p>{% else %}<p>Descripción institucional pendiente de completar.</p>{% endif %}
+                        {% if right.legal_reference %}<small>{{ right.legal_reference }}</small>{% endif %}
+                    </article>
+                {% endfor %}
+            </section>
+        {% else %}
+            <section class="pending-content" role="status">
+                <div class="pending-content__icon" aria-hidden="true">i</div>
+                <div>
+                    <p class="section-kicker">Información requerida</p>
+                    <h2>Catálogo pendiente de aprobación del cliente</h2>
+                    <p>No hay derechos activos configurados. La estructura de la página está lista y se completará desde el catálogo administrativo.</p>
+                    <ul class="requirement-list">
+                        <li>Nombre y descripción oficial de cada derecho.</li>
+                        <li>Referencia legal y alcance aprobado para VINESA.</li>
+                        <li>Plazos, extensiones y reglas de atención aplicables.</li>
+                    </ul>
+                </div>
+            </section>
+        {% endif %}
+
+        <section class="process-panel">
+            <div><span>1</span><h2>Presenta</h2><p>Completa los datos básicos y describe tu solicitud.</p></div>
+            <div><span>2</span><h2>Verifica</h2><p>Recibirás los códigos de acceso en tu correo electrónico.</p></div>
+            <div><span>3</span><h2>Consulta</h2><p>Revisa el estado sin exponer tus datos personales.</p></div>
+        </section>
+
+        <div class="information-actions">
+            <a class="button button--primary" href="{% url 'cases:public_request_create' %}">Presentar solicitud</a>
+            <a class="button button--secondary" href="{% url 'cases:public_tracking' %}">Consultar solicitud</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

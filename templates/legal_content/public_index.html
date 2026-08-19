@@ -1,0 +1,27 @@
+{% extends "public_base.html" %}
+{% block title %}Avisos y políticas{% endblock %}
+{% block body_class %}public-information-page{% endblock %}
+{% block content %}
+<div class="information-page">
+    <div class="public-container information-page__inner">
+        <header class="information-hero">
+            <p class="section-kicker">Transparencia y privacidad</p>
+            <h1>Avisos y políticas</h1>
+            <p>Consulta las versiones públicas vigentes. Los documentos pendientes muestran la información que debe ser aprobada y entregada por el cliente.</p>
+        </header>
+
+        <section class="notice-grid" aria-label="Documentos legales">
+            {% for item in documents %}
+                <article class="notice-card">
+                    <div class="notice-card__status{% if item.document %} notice-card__status--published{% endif %}">{% if item.document %}Vigente{% else %}Pendiente{% endif %}</div>
+                    <p class="section-kicker">Documento legal</p>
+                    <h2>{% if item.document %}{{ item.document.title }}{% else %}{{ item.title }}{% endif %}</h2>
+                    <p>{{ item.summary }}</p>
+                    {% if item.document %}<small>Versión {{ item.document.version }} · {{ item.document.effective_from|date:"d/m/Y" }}</small>{% else %}<small>Contenido jurídico pendiente de aprobación.</small>{% endif %}
+                    <a href="{% url 'legal_content:public_document' item.key %}">Ver documento <span aria-hidden="true">→</span></a>
+                </article>
+            {% endfor %}
+        </section>
+    </div>
+</div>
+{% endblock %}

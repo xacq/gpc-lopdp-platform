@@ -4,20 +4,26 @@
 {% block content %}
 <div class="legal-page">
     <div class="public-container legal-page__inner">
-        <a class="legal-page__back" href="{% url 'core:home' %}">← Volver al inicio</a>
+        <a class="legal-page__back" href="{% url 'legal_content:public_index' %}">← Volver a avisos y políticas</a>
         <article class="legal-document">
             <header class="legal-document__header">
                 <p class="section-kicker">Información legal</p>
                 <h1>{% if document %}{{ document.title }}{% else %}{{ document_title }}{% endif %}</h1>
                 {% if document %}<p>Versión {{ document.version }} · Vigente desde {{ document.effective_from|date:"d/m/Y" }}</p>{% endif %}
+                {% if not document %}<p>{{ document_summary }}</p>{% endif %}
             </header>
             {% if document %}
                 <div class="legal-document__content">{{ document.content_html|safe }}</div>
             {% else %}
                 <div class="legal-document__empty" role="status">
                     <span aria-hidden="true">i</span>
-                    <div><h2>Contenido en actualización</h2><p>Este documento aún no tiene una versión pública vigente. Para información adicional, utiliza nuestros canales de contacto.</p></div>
+                    <div><h2>Contenido pendiente de aprobación</h2><p>Esta plantilla no contiene texto jurídico definitivo y será publicada cuando el cliente apruebe una versión vigente.</p></div>
                 </div>
+                <section class="client-requirements">
+                    <p class="section-kicker">Información a solicitar al cliente</p>
+                    <h2>Datos necesarios para completar este documento</h2>
+                    <ul class="requirement-list">{% for requirement in client_requirements %}<li>{{ requirement }}</li>{% endfor %}</ul>
+                </section>
             {% endif %}
         </article>
     </div>

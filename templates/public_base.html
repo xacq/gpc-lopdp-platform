@@ -21,10 +21,10 @@
                 <span></span><span></span><span></span>
             </button>
             <nav class="collapse public-nav" id="publicNavigation" aria-label="Navegación pública">
-                <a class="public-nav__link public-nav__link--active" href="{% url 'core:home' %}">Inicio</a>
-                <a class="public-nav__link" href="{% url 'core:home' %}#derechos">Sobre derechos</a>
-                <a class="public-nav__link" href="{% url 'core:home' %}#avisos">Avisos</a>
-                <a class="public-nav__link" href="{% url 'core:home' %}#contacto">Contacto</a>
+                <a class="public-nav__link{% if request.resolver_match.url_name == 'home' %} public-nav__link--active{% endif %}" href="{% url 'core:home' %}">Inicio</a>
+                <a class="public-nav__link{% if request.resolver_match.url_name == 'rights' %} public-nav__link--active{% endif %}" href="{% url 'core:rights' %}">Sobre derechos</a>
+                <a class="public-nav__link{% if request.resolver_match.namespace == 'legal_content' %} public-nav__link--active{% endif %}" href="{% url 'legal_content:public_index' %}">Avisos</a>
+                <a class="public-nav__link{% if request.resolver_match.url_name == 'contact' %} public-nav__link--active{% endif %}" href="{% url 'core:contact' %}">Contacto</a>
                 <a class="button button--primary public-nav__cta" href="{% url 'cases:public_request_create' %}">Presentar solicitud</a>
             </nav>
         </div>
@@ -32,13 +32,14 @@
 
     <main id="contenido">{% block content %}{% endblock %}</main>
 
-    <footer class="public-footer" id="contacto">
+    <footer class="public-footer">
         <div class="public-container public-footer__inner">
             <p>© {% now "Y" %} VINESA S.A. <span aria-hidden="true">|</span> Todos los derechos reservados.</p>
-            <nav class="public-footer__links" aria-label="Enlaces legales" id="avisos">
+            <nav class="public-footer__links" aria-label="Enlaces legales">
                 <a href="{% url 'legal_content:public_document' 'privacidad' %}">Política de Privacidad</a>
                 <a href="{% url 'legal_content:public_document' 'derechos' %}">Derechos y contacto</a>
                 <a href="{% url 'legal_content:public_document' 'cookies' %}">Política de Cookies</a>
+                <a href="{% url 'core:contact' %}">Contacto</a>
                 <a href="{% url 'accounts:login' %}">Acceso institucional</a>
             </nav>
         </div>

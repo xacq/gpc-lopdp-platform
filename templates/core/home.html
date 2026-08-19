@@ -10,7 +10,7 @@
             <p class="hero__lead">Solicita el ejercicio de tus derechos de protección y conoce nuestras políticas de forma segura y confidencial.</p>
             <div class="hero__actions">
                 <a class="button button--primary" href="{% url 'cases:public_request_create' %}">Presentar solicitud</a>
-                <a class="button button--secondary" href="#derechos">Conocer más</a>
+                <a class="button button--secondary" href="{% url 'core:rights' %}">Conocer más</a>
             </div>
         </div>
         <div class="hero__visual" aria-hidden="true">
@@ -52,6 +52,7 @@
         </div>
         <div class="rights-section__closing">
             <p>Ejércelos de manera sencilla, segura y confidencial.</p>
+            <a href="{% url 'core:rights' %}">Conocer todos los derechos <span aria-hidden="true">→</span></a>
             <a href="{% url 'cases:public_tracking' %}">Consultar una solicitud <span aria-hidden="true">→</span></a>
         </div>
     </div>

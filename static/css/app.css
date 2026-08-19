@@ -708,6 +708,103 @@ body {
 .legal-document__empty h2 { margin: 0 0 0.35rem; font-size: 1rem; }
 .legal-document__empty p { margin: 0; color: var(--vinesa-muted); font-size: 0.88rem; }
 
+/* Public information, notices and contact pages */
+.information-page {
+    min-height: 40rem;
+    padding-block: 3.5rem 5rem;
+    background:
+        radial-gradient(circle at 90% 8%, rgb(197 21 29 / 7%), transparent 22rem),
+        linear-gradient(180deg, #fff8f6, #fff 22rem);
+}
+.information-page__inner { display: grid; gap: 2rem; }
+.information-hero { max-width: 52rem; }
+.information-hero h1 {
+    margin: 0 0 0.8rem;
+    color: #351411;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(2.35rem, 5vw, 4rem);
+    font-weight: 500;
+    line-height: 1.05;
+}
+.information-hero > p:last-child { margin: 0; color: var(--vinesa-muted); font-size: 1rem; line-height: 1.7; }
+.information-grid,
+.notice-grid,
+.contact-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.2rem; }
+.information-card,
+.notice-card,
+.contact-card {
+    position: relative;
+    padding: clamp(1.35rem, 3vw, 2rem);
+    border: 1px solid var(--vinesa-line);
+    border-radius: 0.85rem;
+    background: rgb(255 255 255 / 94%);
+    box-shadow: 0 0.7rem 2rem rgb(70 27 22 / 5%);
+}
+.information-card__number { display: block; margin-bottom: 1.2rem; color: #d9a8a3; font-family: Georgia, serif; font-size: 2rem; }
+.information-card h2,
+.notice-card h2,
+.contact-card h2,
+.process-panel h2,
+.pending-content h2,
+.client-requirements h2 {
+    margin: 0 0 0.55rem;
+    color: #431713;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 1.35rem;
+    font-weight: 500;
+}
+.information-card p,
+.notice-card > p:not(.section-kicker),
+.contact-card > p:not(.section-kicker) { margin: 0; color: var(--vinesa-muted); line-height: 1.65; }
+.information-card small,
+.notice-card small { display: block; margin-top: 1rem; color: #7b706c; font-size: 0.76rem; }
+.pending-content {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.2rem;
+    padding: clamp(1.5rem, 4vw, 2.4rem);
+    border: 1px solid #edcbc5;
+    border-radius: 0.9rem;
+    background: #fff8f6;
+}
+.pending-content__icon { display: grid; width: 2.4rem; height: 2.4rem; flex: 0 0 auto; border-radius: 50%; background: var(--vinesa-red); color: #fff; font-family: Georgia, serif; font-weight: 700; place-items: center; }
+.pending-content p:not(.section-kicker) { margin: 0; color: var(--vinesa-muted); line-height: 1.65; }
+.requirement-list { display: grid; gap: 0.6rem; margin: 1.2rem 0 0; padding-left: 1.2rem; color: #554945; }
+.requirement-list li::marker { color: var(--vinesa-red); }
+.process-panel { display: grid; grid-template-columns: repeat(3, 1fr); border: 1px solid var(--vinesa-line); border-radius: 0.9rem; background: #fff; }
+.process-panel > div { padding: 1.6rem; border-right: 1px solid var(--vinesa-line); }
+.process-panel > div:last-child { border-right: 0; }
+.process-panel span { display: grid; width: 2rem; height: 2rem; margin-bottom: 1rem; border-radius: 50%; background: var(--vinesa-red); color: #fff; font-weight: 700; place-items: center; }
+.process-panel p { margin: 0; color: var(--vinesa-muted); font-size: 0.85rem; line-height: 1.55; }
+.information-actions { display: flex; flex-wrap: wrap; gap: 0.8rem; }
+.notice-card { display: flex; min-height: 17rem; flex-direction: column; }
+.notice-card__status { position: absolute; top: 1.25rem; right: 1.25rem; padding: 0.35rem 0.6rem; border-radius: 2rem; background: #f3efed; color: #756a66; font-size: 0.68rem; font-weight: 750; text-transform: uppercase; }
+.notice-card__status--published { background: #e8f5ea; color: #176329; }
+.notice-card h2 { max-width: calc(100% - 5.5rem); }
+.notice-card a { margin-top: auto; padding-top: 1.4rem; color: var(--vinesa-red); font-size: 0.82rem; font-weight: 700; text-decoration: none; }
+.contact-card dl { display: grid; gap: 0.85rem; margin: 1.2rem 0 0; }
+.contact-card dl > div { display: grid; gap: 0.15rem; }
+.contact-card dt { color: #897d78; font-size: 0.68rem; text-transform: uppercase; }
+.contact-card dd { margin: 0; color: #403633; overflow-wrap: anywhere; }
+.contact-card a { color: var(--vinesa-red-dark); }
+.contact-card__pending { padding: 0.9rem; border-radius: 0.5rem; background: #fff6f3; font-size: 0.84rem; }
+.contact-card__link { display: inline-block; margin-top: 1rem; color: var(--vinesa-red) !important; font-weight: 700; text-decoration: none; }
+.client-requirements { margin-top: 1.5rem; padding: 1.5rem; border: 1px dashed #dca8a3; border-radius: 0.7rem; background: #fffdfc; }
+
+@media (max-width: 767.98px) {
+    .information-grid,
+    .notice-grid,
+    .contact-grid { grid-template-columns: 1fr; }
+    .process-panel { grid-template-columns: 1fr; }
+    .process-panel > div { border-right: 0; border-bottom: 1px solid var(--vinesa-line); }
+    .process-panel > div:last-child { border-bottom: 0; }
+}
+
+@media (max-width: 479.98px) {
+    .pending-content { flex-direction: column; }
+    .information-actions .button { width: 100%; }
+}
+
 /* Institutional authentication */
 .auth-page { min-height: 100vh; margin: 0; background: #fbf4f1; color: var(--vinesa-ink); font-family: Inter, "Segoe UI", Arial, sans-serif; }
 .auth-layout {
