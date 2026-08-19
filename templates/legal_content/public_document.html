@@ -19,6 +19,22 @@
                     <span aria-hidden="true">i</span>
                     <div><h2>Contenido pendiente de aprobación</h2><p>Esta plantilla no contiene texto jurídico definitivo y será publicada cuando el cliente apruebe una versión vigente.</p></div>
                 </div>
+                <section class="preliminary-content" aria-labelledby="preliminary-content-title">
+                    <div class="preliminary-content__heading">
+                        <p class="section-kicker">Contenido de trabajo</p>
+                        <span class="preliminary-badge">Preliminar · no aprobado</span>
+                    </div>
+                    <h2 id="preliminary-content-title">Borrador editorial temporal</h2>
+                    <p class="preliminary-content__notice">Este contenido resume la información disponible en el consolidado del portal. No reemplaza el texto jurídico que deberá aprobar VINESA.</p>
+                    <div class="preliminary-sections">
+                        {% for section in preliminary_sections %}
+                            <section>
+                                <h3>{{ section.title }}</h3>
+                                {% for paragraph in section.paragraphs %}<p>{{ paragraph }}</p>{% endfor %}
+                            </section>
+                        {% endfor %}
+                    </div>
+                </section>
                 <section class="client-requirements">
                     <p class="section-kicker">Información a solicitar al cliente</p>
                     <h2>Datos necesarios para completar este documento</h2>

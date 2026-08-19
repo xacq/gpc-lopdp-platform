@@ -37,11 +37,13 @@ class PublicHomeTests(SimpleTestCase):
 
 
 class PublicInformationPageTests(TestCase):
-    def test_rights_page_marks_missing_catalog_as_pending(self):
+    def test_rights_page_uses_preliminary_catalog_when_database_is_empty(self):
         response = self.client.get(reverse("core:rights"))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "core/rights.html")
-        self.assertContains(response, "Catálogo pendiente de aprobación")
+        self.assertContains(response, "Catálogo preliminar orientativo")
+        self.assertContains(response, "Suspensión")
+        self.assertContains(response, "No constituyen todavía el catálogo oficial")
 
     def test_rights_page_uses_active_catalog_data(self):
         RightCatalog.objects.create(
@@ -62,12 +64,15 @@ class PublicInformationPageTests(TestCase):
         self.assertContains(response, "Derecho de prueba aprobado")
         self.assertContains(response, "Descripción pública configurada.")
         self.assertNotContains(response, "No publicar")
+        self.assertNotContains(response, "Catálogo preliminar orientativo")
 
     def test_contact_page_marks_missing_settings_as_pending(self):
         response = self.client.get(reverse("core:contact"))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "core/contact.html")
         self.assertContains(response, "Datos institucionales pendientes")
+        self.assertContains(response, "María Elena Terán")
+        self.assertContains(response, "no debe considerarse un contacto oficial")
 
     def test_contact_page_uses_configured_institutional_channels(self):
         SystemSetting.objects.create(
@@ -92,3 +97,4 @@ class PublicInformationPageTests(TestCase):
         self.assertContains(response, "Responsable de prueba")
         self.assertContains(response, "DPD de prueba")
         self.assertContains(response, "https://example.test/reclamos")
+        self.assertNotContains(response, "María Elena Terán")

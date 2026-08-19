@@ -25,9 +25,14 @@
             <section class="pending-content" role="status">
                 <div class="pending-content__icon" aria-hidden="true">i</div>
                 <div>
-                    <p class="section-kicker">Información requerida</p>
-                    <h2>Catálogo pendiente de aprobación del cliente</h2>
-                    <p>No hay derechos activos configurados. La estructura de la página está lista y se completará desde el catálogo administrativo.</p>
+                    <p class="section-kicker">Contenido de trabajo</p>
+                    <h2>Catálogo preliminar orientativo</h2>
+                    <p>El consolidado permite mostrar estas categorías como referencia temporal. No constituyen todavía el catálogo oficial de VINESA y deben ser validadas por el cliente y su asesoría jurídica.</p>
+                    <div class="preliminary-rights">
+                        {% for name, description in preliminary_rights %}
+                            <article><h3>{{ name }}</h3><p>{{ description }}</p></article>
+                        {% endfor %}
+                    </div>
                     <ul class="requirement-list">
                         <li>Nombre y descripción oficial de cada derecho.</li>
                         <li>Referencia legal y alcance aprobado para VINESA.</li>

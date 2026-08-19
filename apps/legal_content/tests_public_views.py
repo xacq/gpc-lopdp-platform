@@ -27,6 +27,8 @@ class PublicLegalDocumentTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertNotContains(response, "No publicar")
         self.assertContains(response, "Contenido pendiente de aprobación")
+        self.assertContains(response, "Borrador editorial temporal")
+        self.assertContains(response, "Preliminar · no aprobado")
         self.assertContains(response, "Información a solicitar al cliente")
 
     def test_current_published_document_is_rendered(self):
@@ -44,6 +46,7 @@ class PublicLegalDocumentTests(TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Responsable del tratamiento")
         self.assertContains(response, "Contenido público.")
+        self.assertNotContains(response, "Borrador editorial temporal")
 
     def test_legal_index_lists_all_supported_documents_as_pending(self):
         response = self.client.get(reverse("legal_content:public_index"))
@@ -90,3 +93,13 @@ class PublicLegalDocumentTests(TestCase):
                     response,
                     "Datos necesarios para completar este documento",
                 )
+                self.assertContains(response, "Borrador editorial temporal")
+
+    def test_preliminary_document_content_is_specific_to_document_type(self):
+        privacy_response = self.client.get(self.url("privacidad"))
+        cookies_response = self.client.get(self.url("cookies"))
+
+        self.assertContains(privacy_response, "Compromiso institucional")
+        self.assertContains(privacy_response, "selección y contratación")
+        self.assertContains(cookies_response, "Gestión de preferencias")
+        self.assertContains(cookies_response, "aceptar, rechazar o personalizar")
