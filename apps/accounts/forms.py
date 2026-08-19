@@ -11,6 +11,7 @@ class LoginForm(forms.Form):
             attrs={
                 "autocomplete": "username",
                 "autofocus": True,
+                "placeholder": "usuario@vinesa.com",
             }
         ),
     )
@@ -22,6 +23,7 @@ class LoginForm(forms.Form):
         widget=forms.PasswordInput(
             attrs={
                 "autocomplete": "current-password",
+                "placeholder": "Ingresa tu contraseña",
             }
         ),
     )
@@ -43,6 +45,7 @@ class TOTPForm(forms.Form):
                 "autocomplete": "one-time-code",
                 "inputmode": "numeric",
                 "autofocus": True,
+                "placeholder": "000000",
             }
         ),
     )
@@ -58,6 +61,7 @@ class MFAChallengeForm(forms.Form):
             attrs={
                 "autocomplete": "one-time-code",
                 "autofocus": True,
+                "placeholder": "Código MFA o de respaldo",
             }
         ),
     )

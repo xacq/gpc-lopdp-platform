@@ -2,11 +2,12 @@
 {% block title %}Verificación en dos pasos{% endblock %}
 {% block content %}
 <div class="auth-heading auth-heading--center"><p class="section-kicker">Segundo factor</p><h1>Verificación en dos pasos</h1><p>Ingresa el código de 6 dígitos generado por tu aplicación autenticadora o utiliza un código de respaldo.</p></div>
-<form class="auth-form auth-form--mfa" method="post" novalidate>
+<form class="auth-form auth-form--mfa" method="post">
     {% csrf_token %}
     {% if form.non_field_errors %}<div class="portal-alert portal-alert--danger" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
     {% for field in form.visible_fields %}{% include "includes/public_field.html" with field=field %}{% endfor %}
     <button class="button button--primary auth-form__submit" type="submit">Verificar</button>
 </form>
+<details class="mfa-recovery-help"><summary>Usar código de respaldo</summary><p>Escribe uno de tus códigos de recuperación en el mismo campo. Cada código puede utilizarse una sola vez.</p></details>
 <form class="auth-cancel" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit">Cancelar acceso</button></form>
 {% endblock %}

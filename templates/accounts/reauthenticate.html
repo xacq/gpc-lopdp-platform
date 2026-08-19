@@ -1,10 +1,16 @@
 {% extends "base.html" %}
 {% block title %}Confirmar operación sensible{% endblock %}
 {% block content %}
-<div class="auth-shell">
-    <div class="page-heading text-center"><p class="page-kicker">Operación sensible</p><h1 class="h2">Confirma tu identidad</h1><p class="text-body-secondary mb-0">Esta operación requiere una verificación reciente.</p></div>
-    <section class="card app-card"><div class="card-body p-4 p-md-5">
-        <form method="post" novalidate>{% csrf_token %}<input type="hidden" name="next" value="{{ next_url }}">{% include "includes/form_fields.html" %}<button class="btn btn-primary w-100" type="submit">Verificar</button></form>
-    </div></section>
-</div>
+<section class="admin-auth-guard">
+    <div class="admin-auth-guard__icon" aria-hidden="true">✓</div>
+    <div class="admin-auth-guard__heading"><p class="page-kicker">Operación sensible</p><h1>Confirma tu identidad</h1><p>Por seguridad, ingresa un código MFA o un código de recuperación antes de continuar.</p></div>
+    <form class="auth-form auth-form--mfa" method="post">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ next_url }}">
+        {% if form.non_field_errors %}<div class="portal-alert portal-alert--danger" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+        {% for field in form.visible_fields %}{% include "includes/public_field.html" with field=field %}{% endfor %}
+        <button class="button button--primary auth-form__submit" type="submit">Verificar y continuar</button>
+    </form>
+    <a class="admin-auth-guard__cancel" href="{% url 'core:dashboard' %}">Cancelar operación</a>
+</section>
 {% endblock %}

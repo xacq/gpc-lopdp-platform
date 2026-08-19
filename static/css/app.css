@@ -947,12 +947,16 @@ body {
 .auth-form { display: grid; gap: 1.1rem; }
 .auth-form .public-field { margin: 0; }
 .auth-form__submit { width: 100%; margin-top: 0.4rem; cursor: pointer; }
+.auth-assistance { margin: 1rem 0 0; color: var(--vinesa-muted); font-size: 0.78rem; line-height: 1.5; text-align: center; }
 .auth-security-note { margin: 1.3rem 0 0; color: #756966; font-size: 0.76rem; text-align: center; }
 .auth-security-note span { margin-right: 0.3rem; color: var(--vinesa-red); }
 .auth-form--mfa input[type="text"],
 .auth-form--mfa input[type="password"] { height: 4rem; font-family: Georgia, serif; font-size: 1.55rem; letter-spacing: 0.5em; text-align: center; }
 .auth-cancel { margin-top: 0.8rem; text-align: center; }
 .auth-cancel button { padding: 0.5rem; border: 0; background: transparent; color: var(--vinesa-red); font-size: 0.8rem; cursor: pointer; }
+.mfa-recovery-help { margin-top: 1rem; padding: 0.85rem 1rem; border-top: 1px solid var(--vinesa-line); color: var(--vinesa-muted); font-size: 0.78rem; text-align: center; }
+.mfa-recovery-help summary { color: var(--vinesa-red); font-weight: 650; cursor: pointer; list-style-position: inside; }
+.mfa-recovery-help p { margin: 0.65rem 0 0; line-height: 1.5; }
 .mfa-enrollment { display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 1.2rem; margin-bottom: 1.4rem; padding: 1rem; border: 1px solid var(--vinesa-line); border-radius: 0.7rem; background: #fffaf8; }
 .mfa-enrollment img { width: 10rem; height: 10rem; padding: 0.4rem; border: 1px solid var(--vinesa-line); border-radius: 0.4rem; background: #fff; }
 .mfa-enrollment p { margin-bottom: 0.4rem; font-size: 0.78rem; }
@@ -1064,6 +1068,20 @@ body {
 .admin-main .table tbody td { padding-block: 0.95rem; border-bottom-color: #f0e7e3; }
 .admin-main .table a { color: var(--vinesa-red-dark); }
 .admin-footer { display: flex; justify-content: space-between; gap: 1rem; margin-top: 2.5rem; padding-top: 1.2rem; border-top: 1px solid var(--vinesa-line); color: #837873; font-size: 0.72rem; }
+.admin-auth-guard {
+    width: min(100%, 35rem);
+    margin: clamp(1rem, 5vw, 4rem) auto;
+    padding: clamp(1.5rem, 4vw, 2.5rem);
+    border: 1px solid var(--vinesa-line);
+    border-radius: 0.85rem;
+    background: #fff;
+    box-shadow: 0 1rem 3rem rgb(70 27 22 / 7%);
+}
+.admin-auth-guard__icon { display: grid; width: 3.5rem; height: 3.5rem; margin: 0 auto 1rem; border: 2px solid var(--vinesa-red); border-radius: 50%; color: var(--vinesa-red); font-size: 1.6rem; place-items: center; }
+.admin-auth-guard__heading { margin-bottom: 1.5rem; text-align: center; }
+.admin-auth-guard__heading h1 { margin-bottom: 0.65rem; }
+.admin-auth-guard__heading p:last-child { margin: 0; color: var(--vinesa-muted); line-height: 1.55; }
+.admin-auth-guard__cancel { display: block; margin-top: 1rem; color: var(--vinesa-red); font-size: 0.8rem; font-weight: 650; text-align: center; text-decoration: none; }
 
 @media (min-width: 992px) {
     .admin-sidebar.offcanvas-lg { position: sticky; visibility: visible !important; transform: none !important; }

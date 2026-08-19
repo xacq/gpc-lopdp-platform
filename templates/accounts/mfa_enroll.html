@@ -6,6 +6,6 @@
     <img src="{{ qr_data_uri }}" alt="Código QR para configurar MFA" width="210" height="210">
     <div><p><strong>Clave manual</strong></p><code>{{ secret }}</code><details><summary>Mostrar URI de configuración</summary><code>{{ provisioning_uri }}</code></details></div>
 </div>
-<form class="auth-form" method="post" novalidate>{% csrf_token %}{% if form.non_field_errors %}<div class="portal-alert portal-alert--danger" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}{% for field in form.visible_fields %}{% include "includes/public_field.html" with field=field %}{% endfor %}<button class="button button--primary auth-form__submit" type="submit">Verificar y activar</button></form>
+<form class="auth-form auth-form--mfa" method="post">{% csrf_token %}{% if form.non_field_errors %}<div class="portal-alert portal-alert--danger" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}{% for field in form.visible_fields %}{% include "includes/public_field.html" with field=field %}{% endfor %}<button class="button button--primary auth-form__submit" type="submit">Verificar y activar</button></form>
 <form class="auth-cancel" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit">Cancelar acceso</button></form>
 {% endblock %}
