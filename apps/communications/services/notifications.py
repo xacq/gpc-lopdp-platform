@@ -2,12 +2,14 @@ from __future__ import annotations
 
 import re
 import uuid
+from dataclasses import dataclass
 from datetime import timedelta
 from typing import Callable
 
 from django.conf import settings
 from django.core.mail import EmailMessage
 from django.db import IntegrityError, connection, transaction
+from django.db.models import Q
 
 from apps.audit.models import AuditLog
 from apps.audit.services.audit import AuditService
@@ -29,6 +31,14 @@ class CommunicationPayloadError(
     NotificationServiceError
 ):
     pass
+
+
+@dataclass(frozen=True)
+class OutboxBatchResult:
+    selected: int
+    sent: int
+    failed: int
+    skipped: int
 
 
 class NotificationService:
@@ -518,6 +528,7 @@ class NotificationService:
         correlation_id: (
             uuid.UUID | None
         ) = None,
+        source: str = AuditLog.Source.CELERY,
     ) -> RequestCommunication:
         if not isinstance(
             communication_id,
@@ -676,9 +687,7 @@ class NotificationService:
                     correlation_id=(
                         correlation_id
                     ),
-                    source=(
-                        AuditLog.Source.CELERY
-                    ),
+                    source=source,
                 )
 
             return communication
@@ -718,9 +727,78 @@ class NotificationService:
                 correlation_id=(
                     correlation_id
                 ),
-                source=(
-                    AuditLog.Source.CELERY
-                ),
+                source=source,
             )
 
             return communication
+
+    @classmethod
+    def process_due_email_batch(
+        cls,
+        *,
+        batch_size: int = 100,
+        correlation_id: uuid.UUID | None = None,
+        source: str = AuditLog.Source.COMMAND,
+    ) -> OutboxBatchResult:
+        if not isinstance(batch_size, int) or not 1 <= batch_size <= 1000:
+            raise ValueError("batch_size must be between 1 and 1000.")
+
+        if correlation_id is None:
+            correlation_id = uuid.uuid4()
+        elif not isinstance(correlation_id, uuid.UUID):
+            correlation_id = uuid.UUID(str(correlation_id))
+
+        db_now = cls._database_now()
+        candidate_ids = list(
+            RequestCommunication.objects.filter(
+                direction=RequestCommunication.Direction.OUTBOUND,
+                channel=RequestCommunication.Channel.EMAIL,
+                attempt_count__lt=cls._max_attempts(),
+            )
+            .filter(
+                Q(delivery_status=RequestCommunication.DeliveryStatus.PENDING)
+                | Q(
+                    delivery_status=RequestCommunication.DeliveryStatus.FAILED,
+                    next_retry_at__lte=db_now,
+                )
+            )
+            .order_by("queued_at", "id")
+            .values_list("id", flat=True)[:batch_size]
+        )
+
+        sent = 0
+        failed = 0
+        skipped = 0
+
+        for communication_id in candidate_ids:
+            try:
+                communication = cls.process_email(
+                    communication_id,
+                    correlation_id=correlation_id,
+                    source=source,
+                )
+            except (
+                CommunicationStateError,
+                RequestCommunication.DoesNotExist,
+            ):
+                skipped += 1
+                continue
+
+            if communication.delivery_status in {
+                RequestCommunication.DeliveryStatus.SENT,
+                RequestCommunication.DeliveryStatus.DELIVERED,
+            }:
+                sent += 1
+            elif communication.delivery_status == (
+                RequestCommunication.DeliveryStatus.FAILED
+            ):
+                failed += 1
+            else:
+                skipped += 1
+
+        return OutboxBatchResult(
+            selected=len(candidate_ids),
+            sent=sent,
+            failed=failed,
+            skipped=skipped,
+        )
