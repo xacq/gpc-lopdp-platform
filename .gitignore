@@ -32,7 +32,10 @@ htmlcov/
 .ruff_cache/
 
 # IDE
-.vscode/
+.vscode/*
+!.vscode/launch.json
+!.vscode/settings.json
+!.vscode/tasks.json
 .idea/
 
 # OS
