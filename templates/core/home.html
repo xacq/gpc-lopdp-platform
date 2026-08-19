@@ -1,0 +1,59 @@
+{% extends "public_base.html" %}
+{% block title %}Tus datos, tus derechos{% endblock %}
+{% block body_class %}public-home{% endblock %}
+{% block content %}
+<section class="hero">
+    <div class="public-container hero__inner">
+        <div class="hero__content">
+            <p class="hero__eyebrow">Privacidad clara y segura</p>
+            <h1>Tus datos,<br>tus derechos.</h1>
+            <p class="hero__lead">Solicita el ejercicio de tus derechos de protección y conoce nuestras políticas de forma segura y confidencial.</p>
+            <div class="hero__actions">
+                <a class="button button--primary" href="{% url 'cases:public_request_create' %}">Presentar solicitud</a>
+                <a class="button button--secondary" href="#derechos">Conocer más</a>
+            </div>
+        </div>
+        <div class="hero__visual" aria-hidden="true">
+            {% include "includes/privacy_shield.html" %}
+        </div>
+    </div>
+</section>
+
+<section class="rights-section" id="derechos">
+    <div class="public-container">
+        <p class="section-kicker">Ley Orgánica de Protección de Datos Personales</p>
+        <h2>¿Cuáles son tus derechos?</h2>
+        <div class="rights-grid">
+            <article class="right-item">
+                <span class="right-item__icon" aria-hidden="true">⌕</span>
+                <h3>Acceso</h3>
+                <p>Conoce qué datos personales tratamos y cómo los utilizamos.</p>
+            </article>
+            <article class="right-item">
+                <span class="right-item__icon" aria-hidden="true">✎</span>
+                <h3>Rectificación</h3>
+                <p>Corrige información personal inexacta o incompleta.</p>
+            </article>
+            <article class="right-item">
+                <span class="right-item__icon" aria-hidden="true">⌫</span>
+                <h3>Eliminación</h3>
+                <p>Solicita la supresión de datos cuando corresponda.</p>
+            </article>
+            <article class="right-item">
+                <span class="right-item__icon" aria-hidden="true">⊘</span>
+                <h3>Oposición</h3>
+                <p>Opónte al tratamiento en los casos previstos por la ley.</p>
+            </article>
+            <article class="right-item">
+                <span class="right-item__icon" aria-hidden="true">⇧</span>
+                <h3>Portabilidad</h3>
+                <p>Recibe tus datos en un formato estructurado y seguro.</p>
+            </article>
+        </div>
+        <div class="rights-section__closing">
+            <p>Ejércelos de manera sencilla, segura y confidencial.</p>
+            <a href="{% url 'cases:public_tracking' %}">Consultar una solicitud <span aria-hidden="true">→</span></a>
+        </div>
+    </div>
+</section>
+{% endblock %}

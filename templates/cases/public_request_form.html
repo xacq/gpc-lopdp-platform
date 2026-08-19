@@ -1,20 +1,86 @@
-{% extends "base.html" %}
+{% extends "public_base.html" %}
 {% block title %}Presentar solicitud{% endblock %}
+{% block body_class %}public-form-page{% endblock %}
 {% block content %}
-<div class="row justify-content-center"><div class="col-lg-9 col-xl-8">
-    <div class="page-heading text-center">
-        <p class="page-kicker">Ejercicio de derechos</p>
-        <h1 class="h2">Presentar una solicitud</h1>
-        <p class="text-body-secondary mb-0">Completa tus datos y describe el derecho que deseas ejercer.</p>
-    </div>
-    <div class="alert alert-info" role="note">Al enviar, recibirás por correo los códigos para verificar tu dirección y consultar el estado. No compartas esos códigos.</div>
-    <section class="card app-card"><div class="card-body p-4 p-md-5">
-        <form method="post" action="{% url 'cases:public_request_create' %}" enctype="multipart/form-data" novalidate>
+<div class="portal-page">
+    <div class="public-container portal-page__inner">
+        <div class="portal-heading">
+            <div>
+                <p class="section-kicker">Ejercicio de derechos</p>
+                <h1>Presentar una solicitud</h1>
+                <p>Completa la información necesaria para gestionar tu solicitud de forma segura.</p>
+            </div>
+            <a class="portal-heading__link" href="{% url 'cases:public_tracking' %}">Ya tengo una solicitud <span aria-hidden="true">→</span></a>
+        </div>
+
+        <ol class="request-stepper" aria-label="Etapas del formulario">
+            <li class="request-stepper__item request-stepper__item--active"><span>1</span><strong>Titular</strong></li>
+            <li class="request-stepper__item request-stepper__item--active"><span>2</span><strong>Solicitud</strong></li>
+            <li class="request-stepper__item request-stepper__item--active"><span>3</span><strong>Adjuntos</strong></li>
+            <li class="request-stepper__item request-stepper__item--active"><span>4</span><strong>Confirmación</strong></li>
+        </ol>
+
+        <div class="portal-note" role="note">
+            <span class="portal-note__icon" aria-hidden="true">i</span>
+            <p>Al enviar recibirás por correo los códigos para verificar tu dirección y consultar el estado. No compartas esos códigos.</p>
+        </div>
+
+        <form class="public-request-form" method="post" action="{% url 'cases:public_request_create' %}" enctype="multipart/form-data" novalidate>
             {% csrf_token %}
-            {% include "includes/form_fields.html" %}
-            <button class="btn btn-primary w-100" type="submit">Enviar solicitud</button>
+            {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+            {% if form.non_field_errors %}<div class="portal-alert portal-alert--danger" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+
+            <section class="portal-panel">
+                <div class="portal-panel__heading"><span>1</span><div><h2>Datos del titular</h2><p>Información de la persona que ejerce el derecho.</p></div></div>
+                <div class="public-form-grid">
+                    {% include "includes/public_field.html" with field=form.subject_type %}
+                    {% include "includes/public_field.html" with field=form.document_type %}
+                    {% include "includes/public_field.html" with field=form.document_number %}
+                    {% include "includes/public_field.html" with field=form.full_name %}
+                    {% include "includes/public_field.html" with field=form.email %}
+                    {% include "includes/public_field.html" with field=form.phone %}
+                </div>
+            </section>
+
+            <section class="portal-panel">
+                <div class="portal-panel__heading"><span>2</span><div><h2>Solicitud</h2><p>Selecciona el derecho y describe lo que necesitas.</p></div></div>
+                <div class="public-form-grid">
+                    {% include "includes/public_field.html" with field=form.right class_name="public-field--full" %}
+                    {% include "includes/public_field.html" with field=form.request_details class_name="public-field--full" %}
+                </div>
+            </section>
+
+            <section class="portal-panel">
+                <div class="portal-panel__heading"><span>3</span><div><h2>Representación y adjuntos</h2><p>Completa esta sección únicamente cuando corresponda.</p></div></div>
+                <div class="public-check-row">
+                    {{ form.has_representative }}
+                    <label for="{{ form.has_representative.id_for_label }}">{{ form.has_representative.label }}</label>
+                </div>
+                <div class="public-form-grid representative-fields">
+                    {% include "includes/public_field.html" with field=form.representative_name %}
+                    {% include "includes/public_field.html" with field=form.representative_document_type %}
+                    {% include "includes/public_field.html" with field=form.representative_document_number %}
+                    {% include "includes/public_field.html" with field=form.representative_email %}
+                </div>
+                <div class="upload-grid">
+                    {% include "includes/public_field.html" with field=form.identity_document %}
+                    {% include "includes/public_field.html" with field=form.authority_document %}
+                    {% include "includes/public_field.html" with field=form.supporting_document %}
+                </div>
+            </section>
+
+            <section class="portal-panel portal-panel--confirmation">
+                <div class="public-check-row">
+                    {{ form.privacy_acknowledgement }}
+                    <label for="{{ form.privacy_acknowledgement.id_for_label }}">{{ form.privacy_acknowledgement.label }} <span class="required-mark" aria-hidden="true">*</span></label>
+                </div>
+                {% for error in form.privacy_acknowledgement.errors %}<div class="public-field__error" role="alert">{{ error }}</div>{% endfor %}
+                <div class="public-request-form__actions">
+                    <a class="button button--secondary" href="{% url 'core:home' %}">Cancelar</a>
+                    <button class="button button--primary" type="submit">Enviar solicitud <span aria-hidden="true">→</span></button>
+                </div>
+            </section>
         </form>
-        <div class="text-center mt-3"><a class="small" href="{% url 'cases:public_tracking' %}">Ya tengo una solicitud</a></div>
-    </div></section>
-</div></div>
+    </div>
+</div>
 {% endblock %}

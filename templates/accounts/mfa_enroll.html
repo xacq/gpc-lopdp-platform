@@ -1,14 +1,11 @@
-{% extends "base.html" %}
+{% extends "auth_base.html" %}
 {% block title %}Configurar verificación en dos pasos{% endblock %}
 {% block content %}
-<div class="auth-shell">
-    <div class="page-heading text-center"><p class="page-kicker">Protección de la cuenta</p><h1 class="h2">Configurar verificación en dos pasos</h1><p class="text-body-secondary mb-0">Agrega esta cuenta a tu aplicación de autenticación.</p></div>
-    <section class="card app-card"><div class="card-body p-4 p-md-5">
-        <div class="text-center mb-4"><img class="img-fluid border rounded-3 p-2 bg-white" src="{{ qr_data_uri }}" alt="Código QR para configurar MFA" width="240" height="240"></div>
-        <p class="small mb-2"><strong>Clave manual:</strong></p><div class="bg-light border rounded p-2 mb-3 text-break"><code>{{ secret }}</code></div>
-        <details class="small mb-4"><summary>URI para código QR</summary><div class="mt-2 text-break"><code>{{ provisioning_uri }}</code></div></details>
-        <form method="post" novalidate>{% csrf_token %}{% include "includes/form_fields.html" %}<button class="btn btn-primary w-100" type="submit">Verificar y activar</button></form>
-        <form class="mt-3" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button class="btn btn-link text-secondary w-100" type="submit">Cancelar acceso</button></form>
-    </div></section>
+<div class="auth-heading auth-heading--center"><p class="section-kicker">Protección de la cuenta</p><h1>Configurar verificación en dos pasos</h1><p>Agrega esta cuenta a tu aplicación autenticadora y confirma el primer código.</p></div>
+<div class="mfa-enrollment">
+    <img src="{{ qr_data_uri }}" alt="Código QR para configurar MFA" width="210" height="210">
+    <div><p><strong>Clave manual</strong></p><code>{{ secret }}</code><details><summary>Mostrar URI de configuración</summary><code>{{ provisioning_uri }}</code></details></div>
 </div>
+<form class="auth-form" method="post" novalidate>{% csrf_token %}{% if form.non_field_errors %}<div class="portal-alert portal-alert--danger" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}{% for field in form.visible_fields %}{% include "includes/public_field.html" with field=field %}{% endfor %}<button class="button button--primary auth-form__submit" type="submit">Verificar y activar</button></form>
+<form class="auth-cancel" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit">Cancelar acceso</button></form>
 {% endblock %}

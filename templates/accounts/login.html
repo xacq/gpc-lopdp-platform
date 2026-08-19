@@ -1,10 +1,13 @@
-{% extends "base.html" %}
+{% extends "auth_base.html" %}
 {% block title %}Acceso administrativo{% endblock %}
 {% block content %}
-<div class="auth-shell">
-    <div class="page-heading text-center"><p class="page-kicker">Acceso seguro</p><h1 class="h2">Acceso administrativo</h1><p class="text-body-secondary mb-0">Ingresa tus credenciales para continuar.</p></div>
-    <section class="card app-card"><div class="card-body p-4 p-md-5">
-        <form method="post" novalidate>{% csrf_token %}{% include "includes/form_fields.html" %}<button class="btn btn-primary w-100" type="submit">Continuar</button></form>
-    </div></section>
-</div>
+<div class="auth-heading"><p class="section-kicker">Acceso administrativo</p><h1>Iniciar sesión</h1><p>Ingresa tus credenciales institucionales para continuar.</p></div>
+<form class="auth-form" method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="portal-alert portal-alert--danger" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+    {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}
+    {% for field in form.visible_fields %}{% include "includes/public_field.html" with field=field %}{% endfor %}
+    <button class="button button--primary auth-form__submit" type="submit">Iniciar sesión</button>
+</form>
+<p class="auth-security-note"><span aria-hidden="true">◉</span> Acceso protegido con verificación en dos pasos.</p>
 {% endblock %}

@@ -9,59 +9,60 @@
     <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/app.css' %}">
 </head>
-<body class="{% block body_class %}{% endblock %}">
-    <nav class="navbar navbar-expand-lg navbar-dark app-navbar" aria-label="Navegación principal">
-        <div class="container">
-            <a class="navbar-brand fw-semibold" href="{% if nav_can_access_cases %}{% url 'cases:request_list' %}{% else %}{% url 'cases:public_tracking' %}{% endif %}">
-                <span class="brand-mark" aria-hidden="true">GPC</span>
-                <span>LOPDP</span>
+<body class="admin-body {% block body_class %}{% endblock %}">
+    <a class="skip-link" href="#adminContent">Saltar al contenido</a>
+    <div class="admin-shell">
+        <aside class="admin-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="adminNavigation" aria-labelledby="adminNavigationLabel">
+            <div class="admin-sidebar__mobile-heading"><span id="adminNavigationLabel">Navegación</span><button type="button" data-bs-dismiss="offcanvas" data-bs-target="#adminNavigation" aria-label="Cerrar">×</button></div>
+            <a class="admin-sidebar__brand" href="{% if nav_can_access_cases %}{% url 'cases:request_list' %}{% else %}{% url 'core:home' %}{% endif %}" aria-label="VINESA, inicio administrativo">
+                {% include "includes/vinesa_brand.html" with compact=True %}
             </a>
+            <nav class="admin-sidebar__nav" aria-label="Navegación administrativa">
+                {% if nav_can_access_cases %}
+                    <a class="admin-nav-link{% if request.resolver_match.namespace == 'cases' %} admin-nav-link--active{% endif %}" href="{% url 'cases:request_list' %}"><span aria-hidden="true">▢</span> Expedientes</a>
+                {% endif %}
+                {% if nav_can_manage_users %}
+                    <a class="admin-nav-link{% if request.resolver_match.url_name == 'user_list' or request.resolver_match.url_name == 'user_create' or request.resolver_match.url_name == 'user_change_role' or request.resolver_match.url_name == 'user_reset_password' %} admin-nav-link--active{% endif %}" href="{% url 'accounts:user_list' %}"><span aria-hidden="true">♙</span> Usuarios</a>
+                {% endif %}
+                {% if nav_can_manage_settings %}
+                    <a class="admin-nav-link{% if request.resolver_match.namespace == 'organization' %} admin-nav-link--active{% endif %}" href="{% url 'organization:system_settings' %}"><span aria-hidden="true">⚙</span> Configuración</a>
+                {% endif %}
+                <a class="admin-nav-link" href="{% url 'core:home' %}" target="_blank" rel="noopener"><span aria-hidden="true">↗</span> Sitio público</a>
+            </nav>
             {% if user.is_authenticated %}
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavigation" aria-controls="mainNavigation" aria-expanded="false" aria-label="Mostrar navegación">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="mainNavigation">
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                        {% if nav_can_access_cases %}
-                            <li class="nav-item"><a class="nav-link" href="{% url 'cases:request_list' %}">Solicitudes</a></li>
-                        {% endif %}
-                        {% if nav_can_manage_users %}
-                            <li class="nav-item"><a class="nav-link" href="{% url 'accounts:user_list' %}">Usuarios</a></li>
-                        {% endif %}
-                        {% if nav_can_manage_settings %}
-                            <li class="nav-item"><a class="nav-link" href="{% url 'organization:system_settings' %}">Configuración</a></li>
-                        {% endif %}
-                    </ul>
-                    <div class="d-lg-flex align-items-lg-center gap-3">
-                        <span class="navbar-text small">{{ user.full_name|default:user.email }}</span>
-                        <form method="post" action="{% url 'accounts:logout' %}">
-                            {% csrf_token %}
-                            <button class="btn btn-sm btn-outline-light" type="submit">Cerrar sesión</button>
-                        </form>
-                    </div>
-                </div>
+                <form class="admin-sidebar__logout" method="post" action="{% url 'accounts:logout' %}">
+                    {% csrf_token %}
+                    <button type="submit"><span aria-hidden="true">←</span> Cerrar sesión</button>
+                </form>
             {% else %}
-                <div class="d-flex gap-2">
-                    <a class="btn btn-sm btn-light" href="{% url 'cases:public_request_create' %}">Presentar solicitud</a>
-                    <a class="btn btn-sm btn-outline-light" href="{% url 'accounts:login' %}">Acceso institucional</a>
-                </div>
+                <a class="admin-sidebar__login" href="{% url 'accounts:login' %}">Volver a iniciar sesión</a>
             {% endif %}
+        </aside>
+        <div class="admin-workspace">
+            <header class="admin-topbar">
+                <button class="admin-menu-button" type="button" data-bs-toggle="offcanvas" data-bs-target="#adminNavigation" aria-controls="adminNavigation" aria-label="Abrir navegación"><span></span><span></span><span></span></button>
+                <div class="admin-topbar__title">Plataforma de Privacidad y Gestión de Solicitudes LOPDP</div>
+                {% if user.is_authenticated %}
+                    <div class="admin-user">
+                        <span class="admin-user__avatar" aria-hidden="true">{% if user.full_name %}{{ user.full_name|slice:":1"|upper }}{% else %}{{ user.email|slice:":1"|upper }}{% endif %}</span>
+                        <span><strong>{% if user.full_name %}{{ user.full_name }}{% else %}{{ user.email }}{% endif %}</strong><small>Usuario institucional</small></span>
+                    </div>
+                {% else %}
+                    <div class="admin-user admin-user--anonymous"><span><strong>Sesión finalizada</strong><small>Vuelve a iniciar sesión para continuar</small></span></div>
+                {% endif %}
+            </header>
+            <main class="admin-main" id="adminContent">
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="status">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
+                    </div>
+                {% endfor %}
+                {% block content %}{% endblock %}
+                <footer class="admin-footer"><span>© {% now "Y" %} VINESA S.A.</span><span>Gestión responsable de datos personales</span></footer>
+            </main>
         </div>
-    </nav>
-
-    <main class="container py-4 py-lg-5">
-        {% for message in messages %}
-            <div class="alert alert-{{ message.tags|default:'info' }} alert-dismissible fade show" role="status">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Cerrar"></button>
-            </div>
-        {% endfor %}
-        {% block content %}{% endblock %}
-    </main>
-
-    <footer class="container pb-4 text-center text-body-secondary small">
-        Gestión responsable de solicitudes de derechos de datos personales
-    </footer>
+    </div>
     <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
 </body>
 </html>

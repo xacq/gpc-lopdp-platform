@@ -1,7 +1,7 @@
-{% extends "base.html" %}
+{% extends "public_base.html" %}
 {% block title %}Descargar documento{% endblock %}
 {% block content %}
-<div class="auth-shell">
+<div class="portal-page"><div class="public-container portal-narrow"><div class="auth-shell">
     <div class="page-heading text-center">
         <p class="page-kicker">Portal de privacidad</p>
         <h1 class="h2">Descargar documento</h1>
@@ -18,5 +18,5 @@
             <div class="text-center mt-3"><a class="small" href="{% url 'cases:public_tracking' %}">Volver al seguimiento</a></div>
         </div>
     </section>
-</div>
+</div></div></div>
 {% endblock %}

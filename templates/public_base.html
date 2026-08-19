@@ -1,0 +1,47 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Plataforma de privacidad y gestión de solicitudes LOPDP de VINESA">
+    <title>{% block title %}Privacidad{% endblock %} | VINESA</title>
+    <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body class="public-site {% block body_class %}{% endblock %}">
+    <a class="skip-link" href="#contenido">Saltar al contenido</a>
+    <header class="public-header">
+        <div class="public-container public-header__inner">
+            <a class="public-header__brand" href="{% url 'core:home' %}" aria-label="VINESA, inicio">
+                {% include "includes/vinesa_brand.html" %}
+            </a>
+            <button class="public-menu-button" type="button" data-bs-toggle="collapse" data-bs-target="#publicNavigation" aria-controls="publicNavigation" aria-expanded="false" aria-label="Abrir menú">
+                <span></span><span></span><span></span>
+            </button>
+            <nav class="collapse public-nav" id="publicNavigation" aria-label="Navegación pública">
+                <a class="public-nav__link public-nav__link--active" href="{% url 'core:home' %}">Inicio</a>
+                <a class="public-nav__link" href="{% url 'core:home' %}#derechos">Sobre derechos</a>
+                <a class="public-nav__link" href="{% url 'core:home' %}#avisos">Avisos</a>
+                <a class="public-nav__link" href="{% url 'core:home' %}#contacto">Contacto</a>
+                <a class="button button--primary public-nav__cta" href="{% url 'cases:public_request_create' %}">Presentar solicitud</a>
+            </nav>
+        </div>
+    </header>
+
+    <main id="contenido">{% block content %}{% endblock %}</main>
+
+    <footer class="public-footer" id="contacto">
+        <div class="public-container public-footer__inner">
+            <p>© {% now "Y" %} VINESA S.A. <span aria-hidden="true">|</span> Todos los derechos reservados.</p>
+            <nav class="public-footer__links" aria-label="Enlaces legales" id="avisos">
+                <a href="{% url 'legal_content:public_document' 'privacidad' %}">Política de Privacidad</a>
+                <a href="{% url 'legal_content:public_document' 'derechos' %}">Derechos y contacto</a>
+                <a href="{% url 'legal_content:public_document' 'cookies' %}">Política de Cookies</a>
+                <a href="{% url 'accounts:login' %}">Acceso institucional</a>
+            </nav>
+        </div>
+    </footer>
+    <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+{% load static %}
+<!doctype html>
+<html lang="es">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex,nofollow">
+    <title>{% block title %}Acceso seguro{% endblock %} | VINESA</title>
+    <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+</head>
+<body class="auth-page {% block body_class %}{% endblock %}">
+    <a class="skip-link" href="#authContent">Saltar al formulario</a>
+    <main class="auth-layout">
+        <section class="auth-layout__brand" aria-label="VINESA">
+            <a href="{% url 'core:home' %}" aria-label="VINESA, volver al sitio público">{% include "includes/vinesa_brand.html" %}</a>
+            <p>Plataforma administrativa</p>
+            <div class="auth-layout__shield">{% include "includes/privacy_shield.html" %}</div>
+            <small>© {% now "Y" %} VINESA S.A.</small>
+        </section>
+        <section class="auth-layout__content" id="authContent">
+            <div class="auth-content__inner">{% block content %}{% endblock %}</div>
+        </section>
+    </main>
+</body>
+</html>

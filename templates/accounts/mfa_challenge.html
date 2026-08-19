@@ -1,11 +1,12 @@
-{% extends "base.html" %}
+{% extends "auth_base.html" %}
 {% block title %}Verificación en dos pasos{% endblock %}
 {% block content %}
-<div class="auth-shell">
-    <div class="page-heading text-center"><p class="page-kicker">Segundo factor</p><h1 class="h2">Verificación en dos pasos</h1><p class="text-body-secondary mb-0">Usa tu aplicación de autenticación o un código de recuperación.</p></div>
-    <section class="card app-card"><div class="card-body p-4 p-md-5">
-        <form method="post" novalidate>{% csrf_token %}{% include "includes/form_fields.html" %}<button class="btn btn-primary w-100" type="submit">Completar acceso</button></form>
-        <form class="mt-3" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button class="btn btn-link text-secondary w-100" type="submit">Cancelar acceso</button></form>
-    </div></section>
-</div>
+<div class="auth-heading auth-heading--center"><p class="section-kicker">Segundo factor</p><h1>Verificación en dos pasos</h1><p>Ingresa el código de 6 dígitos generado por tu aplicación autenticadora o utiliza un código de respaldo.</p></div>
+<form class="auth-form auth-form--mfa" method="post" novalidate>
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="portal-alert portal-alert--danger" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}
+    {% for field in form.visible_fields %}{% include "includes/public_field.html" with field=field %}{% endfor %}
+    <button class="button button--primary auth-form__submit" type="submit">Verificar</button>
+</form>
+<form class="auth-cancel" method="post" action="{% url 'accounts:logout' %}">{% csrf_token %}<button type="submit">Cancelar acceso</button></form>
 {% endblock %}
