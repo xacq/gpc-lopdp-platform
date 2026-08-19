@@ -1,11 +1,11 @@
-from django.test import SimpleTestCase, TestCase
+from django.test import TestCase
 from django.urls import reverse
 
 from apps.legal_content.models import RightCatalog
 from apps.organization.models import SystemSetting
 
 
-class PublicHomeTests(SimpleTestCase):
+class PublicHomeTests(TestCase):
     def test_root_renders_public_home(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
@@ -22,6 +22,33 @@ class PublicHomeTests(SimpleTestCase):
             response,
             reverse("cases:public_tracking"),
         )
+
+    def test_home_uses_confirmed_rights_without_hardcoded_portability(self):
+        response = self.client.get(reverse("core:home"))
+
+        for right in ("Acceso", "Rectificación", "Eliminación", "Oposición"):
+            self.assertContains(response, right)
+        self.assertNotContains(response, "Portabilidad")
+
+    def test_home_prefers_active_rights_catalog(self):
+        RightCatalog.objects.create(
+            code="APPROVED",
+            name="Derecho aprobado para inicio",
+            description="Descripción configurada para inicio.",
+            is_active=True,
+        )
+        RightCatalog.objects.create(
+            code="INACTIVE",
+            name="Derecho inactivo",
+            is_active=False,
+        )
+
+        response = self.client.get(reverse("core:home"))
+
+        self.assertContains(response, "Derecho aprobado para inicio")
+        self.assertContains(response, "Descripción configurada para inicio")
+        self.assertNotContains(response, "Derecho inactivo")
+        self.assertNotContains(response, "Eliminación")
 
     def test_uses_official_logo_and_favicon_assets(self):
         response = self.client.get(reverse("core:home"))
@@ -41,9 +68,12 @@ class PublicInformationPageTests(TestCase):
         response = self.client.get(reverse("core:rights"))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "core/rights.html")
-        self.assertContains(response, "Catálogo preliminar orientativo")
-        self.assertContains(response, "Suspensión")
-        self.assertContains(response, "No constituyen todavía el catálogo oficial")
+        self.assertContains(response, "Derechos actualmente comunicados")
+        self.assertContains(response, "Eliminación")
+        self.assertContains(
+            response,
+            "No constituyen todavía el catálogo jurídico completo",
+        )
 
     def test_rights_page_uses_active_catalog_data(self):
         RightCatalog.objects.create(
@@ -64,7 +94,7 @@ class PublicInformationPageTests(TestCase):
         self.assertContains(response, "Derecho de prueba aprobado")
         self.assertContains(response, "Descripción pública configurada.")
         self.assertNotContains(response, "No publicar")
-        self.assertNotContains(response, "Catálogo preliminar orientativo")
+        self.assertNotContains(response, "Derechos actualmente comunicados")
 
     def test_contact_page_marks_missing_settings_as_pending(self):
         response = self.client.get(reverse("core:contact"))
@@ -72,7 +102,11 @@ class PublicInformationPageTests(TestCase):
         self.assertTemplateUsed(response, "core/contact.html")
         self.assertContains(response, "Datos institucionales pendientes")
         self.assertContains(response, "María Elena Terán")
-        self.assertContains(response, "no debe considerarse un contacto oficial")
+        self.assertContains(response, "VINOS Y ESPIRITUOSOS VINESA S.A.")
+        self.assertContains(response, "1792049598001")
+        self.assertContains(response, "privacidad@vinesa.com.ec")
+        self.assertContains(response, "formato pendiente de normalización")
+        self.assertContains(response, "no se atribuye personalmente al DPD")
 
     def test_contact_page_uses_configured_institutional_channels(self):
         SystemSetting.objects.create(

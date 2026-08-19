@@ -16,10 +16,13 @@
                     <p class="section-kicker">Contacto general</p>
                     <h2>{{ settings.trade_name|default:settings.legal_name }}</h2>
                     <dl>
+                        <div><dt>Razón social</dt><dd>{{ settings.legal_name }}</dd></div>
+                        <div><dt>RUC</dt><dd>{{ settings.ruc }}</dd></div>
                         <div><dt>Correo</dt><dd><a href="mailto:{{ settings.contact_email }}">{{ settings.contact_email }}</a></dd></div>
-                        {% if settings.phone %}<div><dt>Teléfono</dt><dd>{{ settings.phone }}</dd></div>{% endif %}
+                        {% if settings.phone %}<div><dt>Teléfono</dt><dd>{{ settings.phone }}{% if settings.phone == provisional_settings.phone %} <small>(formato pendiente de normalización)</small>{% endif %}</dd></div>{% endif %}
                         {% if settings.address %}<div><dt>Dirección</dt><dd>{{ settings.address }}</dd></div>{% endif %}
                     </dl>
+                    <a class="contact-card__link" href="{{ privacy_policy_url }}" rel="noopener">Política publicada por VINESA <span aria-hidden="true">→</span></a>
                 </article>
                 <article class="contact-card">
                     <p class="section-kicker">Responsable del tratamiento</p>
@@ -39,7 +42,9 @@
                             {% if settings.dpd_email %}<div><dt>Correo</dt><dd><a href="mailto:{{ settings.dpd_email }}">{{ settings.dpd_email }}</a></dd></div>{% endif %}
                             {% if settings.dpd_phone %}<div><dt>Teléfono</dt><dd>{{ settings.dpd_phone }}</dd></div>{% endif %}
                         </dl>
-                    {% else %}<p class="contact-card__pending">Designación vigente y canales oficiales pendientes de confirmación.</p>{% endif %}
+                    {% else %}
+                        <p class="contact-card__pending"><strong>{{ provisional_dpd_name }}</strong> consta como posible DPD en la referencia interna, pero su designación, vigencia y canales oficiales están pendientes de confirmación.</p>
+                    {% endif %}
                 </article>
                 <article class="contact-card">
                     <p class="section-kicker">Reclamaciones</p>
@@ -49,21 +54,35 @@
                 </article>
             </section>
         {% else %}
+            <section class="contact-grid" aria-label="Datos institucionales disponibles">
+                <article class="contact-card">
+                    <span class="preliminary-badge">Datos respaldados</span>
+                    <p class="section-kicker">Contacto general y de derechos</p>
+                    <h2>{{ provisional_settings.legal_name }}</h2>
+                    <dl>
+                        <div><dt>RUC</dt><dd>{{ provisional_settings.ruc }}</dd></div>
+                        <div><dt>Correo de privacidad</dt><dd><a href="mailto:{{ provisional_settings.contact_email }}">{{ provisional_settings.contact_email }}</a></dd></div>
+                        <div><dt>Teléfono</dt><dd>{{ provisional_settings.phone }} <small>(formato pendiente de normalización)</small></dd></div>
+                        <div><dt>Dirección matriz</dt><dd>{{ provisional_settings.address }}</dd></div>
+                        <div><dt>Zona horaria</dt><dd>{{ provisional_settings.timezone }}</dd></div>
+                    </dl>
+                    <a class="contact-card__link" href="{{ privacy_policy_url }}" rel="noopener">Política publicada por VINESA <span aria-hidden="true">→</span></a>
+                </article>
+                <article class="contact-card">
+                    <span class="preliminary-badge">Referencia interna · por confirmar</span>
+                    <p class="section-kicker">Delegado de Protección de Datos</p>
+                    <h2>{{ provisional_dpd_name }}</h2>
+                    <p>La designación y vigencia deben confirmarse. El correo de privacidad es un canal corporativo para ejercer derechos, pero no se atribuye personalmente al DPD.</p>
+                </article>
+            </section>
             <section class="pending-content" role="status">
                 <div class="pending-content__icon" aria-hidden="true">i</div>
                 <div>
                     <p class="section-kicker">Información requerida</p>
                     <h2>Datos institucionales pendientes del cliente</h2>
                     <p>No existe una configuración institucional activa. La página se completará automáticamente cuando se registren los datos aprobados.</p>
-                    <aside class="provisional-contact">
-                        <span class="preliminary-badge">Referencia interna · por confirmar</span>
-                        <h3>Posible Delegada de Protección de Datos</h3>
-                        <p>{{ provisional_dpd_name }}</p>
-                        <small>La designación, vigencia y canales de contacto no están confirmados. Este nombre no debe considerarse un contacto oficial.</small>
-                    </aside>
                     <ul class="requirement-list">
-                        <li>Razón social, RUC, dirección, teléfono y correo general.</li>
-                        <li>Responsable del tratamiento y canales oficiales.</li>
+                        <li>Confirmación formal del responsable del tratamiento.</li>
                         <li>Designación vigente, correo y teléfono del DPD.</li>
                         <li>Autoridad, canal e instrucciones para reclamaciones.</li>
                     </ul>

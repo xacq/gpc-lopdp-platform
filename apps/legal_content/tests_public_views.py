@@ -101,5 +101,16 @@ class PublicLegalDocumentTests(TestCase):
 
         self.assertContains(privacy_response, "Compromiso institucional")
         self.assertContains(privacy_response, "selección y contratación")
+        self.assertContains(privacy_response, "privacidad@vinesa.com.ec")
         self.assertContains(cookies_response, "Gestión de preferencias")
         self.assertContains(cookies_response, "aceptar, rechazar o personalizar")
+
+    def test_rights_notice_uses_confirmed_corporate_channel(self):
+        response = self.client.get(self.url("derechos"))
+
+        self.assertContains(response, "privacidad@vinesa.com.ec")
+        self.assertContains(
+            response,
+            "acceso, rectificación, eliminación y oposición",
+        )
+        self.assertNotContains(response, "portabilidad, suspensión")

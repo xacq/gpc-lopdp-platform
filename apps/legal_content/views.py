@@ -4,6 +4,7 @@ from django.views.decorators.http import require_GET
 
 from apps.legal_content.models import LegalDocument
 from apps.legal_content.services.documents import LegalDocumentService
+from apps.organization.defaults import VINESA_PRIVACY_POLICY_URL
 
 
 PUBLIC_DOCUMENTS = (
@@ -24,6 +25,8 @@ PUBLIC_DOCUMENTS = (
                 "paragraphs": (
                     "VINESA mantiene un programa de protección de datos personales orientado al cumplimiento de la LOPDP mediante medidas técnicas y organizativas.",
                     "Este portal centraliza información de privacidad, avisos y mecanismos para presentar y consultar solicitudes de ejercicio de derechos.",
+                    "VINESA comunica privacidad@vinesa.com.ec como canal para ejercer derechos y mantiene una política publicada en "
+                    f"{VINESA_PRIVACY_POLICY_URL}.",
                 ),
             },
             {
@@ -51,13 +54,13 @@ PUBLIC_DOCUMENTS = (
                 "title": "Ejercicio de derechos",
                 "paragraphs": (
                     "El portal permitirá presentar solicitudes y consultar su estado mediante una referencia y un código de seguimiento enviados al titular.",
-                    "Como estructura orientativa se consideran acceso, rectificación o actualización, eliminación, oposición, portabilidad, suspensión y garantías frente a decisiones exclusivamente automatizadas. Este listado no constituye todavía el catálogo oficial de VINESA.",
+                    "La información corporativa revisada comunica actualmente los derechos de acceso, rectificación, eliminación y oposición. Otros derechos permanecerán fuera del contenido público fijo hasta aprobar el catálogo jurídico definitivo.",
                 ),
             },
             {
                 "title": "Canales y reclamaciones",
                 "paragraphs": (
-                    "La identidad y los datos de contacto vigentes del responsable, del Delegado de Protección de Datos y de la autoridad competente están pendientes de confirmación.",
+                    "Las solicitudes pueden dirigirse a privacidad@vinesa.com.ec. La identidad y los datos de contacto vigentes del Delegado de Protección de Datos y el canal de reclamaciones todavía deben confirmarse.",
                 ),
             },
         ),
@@ -141,6 +144,7 @@ PUBLIC_DOCUMENTS = (
                 "title": "Ámbito preliminar",
                 "paragraphs": (
                     "La documentación revisada contempla procesos de calificación de clientes y vendedores en los que puede tratarse información personal de titulares o representantes.",
+                    "En documentación corporativa, VINESA declara como finalidades conocidas la facturación y las comunicaciones de servicio, con conservación vinculada al cumplimiento de obligaciones legales y privacidad@vinesa.com.ec como canal de derechos.",
                     "Las finalidades, bases jurídicas, destinatarios y periodos de conservación todavía deben ser confirmados.",
                 ),
             },
@@ -160,6 +164,7 @@ PUBLIC_DOCUMENTS = (
                 "title": "Ámbito preliminar",
                 "paragraphs": (
                     "La documentación revisada contempla la calificación de proveedores y la gestión de contratos de servicios, incluyendo datos de personas naturales y representantes.",
+                    "En documentación de facturación se identifican las finalidades de facturación y comunicaciones de servicio, conservación para obligaciones legales y privacidad@vinesa.com.ec como canal de derechos.",
                     "Las finalidades, bases jurídicas, destinatarios, transferencias y conservación requieren validación antes de publicar el aviso definitivo.",
                 ),
             },

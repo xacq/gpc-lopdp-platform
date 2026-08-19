@@ -26,11 +26,11 @@
                 <div class="pending-content__icon" aria-hidden="true">i</div>
                 <div>
                     <p class="section-kicker">Contenido de trabajo</p>
-                    <h2>Catálogo preliminar orientativo</h2>
-                    <p>El consolidado permite mostrar estas categorías como referencia temporal. No constituyen todavía el catálogo oficial de VINESA y deben ser validadas por el cliente y su asesoría jurídica.</p>
+                    <h2>Derechos actualmente comunicados por VINESA</h2>
+                    <p>La documentación corporativa disponible comunica acceso, rectificación, eliminación y oposición. No constituyen todavía el catálogo jurídico completo del portal; cualquier derecho adicional se publicará desde el catálogo administrativo una vez aprobado.</p>
                     <div class="preliminary-rights">
-                        {% for name, description in preliminary_rights %}
-                            <article><h3>{{ name }}</h3><p>{{ description }}</p></article>
+                        {% for right in preliminary_rights %}
+                            <article><h3>{{ right.name }}</h3><p>{{ right.description }}</p></article>
                         {% endfor %}
                     </div>
                     <ul class="requirement-list">

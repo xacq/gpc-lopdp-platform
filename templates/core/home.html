@@ -33,31 +33,13 @@
         <p class="section-kicker">Ley Orgánica de Protección de Datos Personales</p>
         <h2>¿Cuáles son tus derechos?</h2>
         <div class="rights-grid">
-            <article class="right-item">
-                <span class="right-item__icon" aria-hidden="true">⌕</span>
-                <h3>Acceso</h3>
-                <p>Conoce qué datos personales tratamos y cómo los utilizamos.</p>
-            </article>
-            <article class="right-item">
-                <span class="right-item__icon" aria-hidden="true">✎</span>
-                <h3>Rectificación</h3>
-                <p>Corrige información personal inexacta o incompleta.</p>
-            </article>
-            <article class="right-item">
-                <span class="right-item__icon" aria-hidden="true">⌫</span>
-                <h3>Eliminación</h3>
-                <p>Solicita la supresión de datos cuando corresponda.</p>
-            </article>
-            <article class="right-item">
-                <span class="right-item__icon" aria-hidden="true">⊘</span>
-                <h3>Oposición</h3>
-                <p>Opónte al tratamiento en los casos previstos por la ley.</p>
-            </article>
-            <article class="right-item">
-                <span class="right-item__icon" aria-hidden="true">⇧</span>
-                <h3>Portabilidad</h3>
-                <p>Recibe tus datos en un formato estructurado y seguro.</p>
-            </article>
+            {% for right in rights %}
+                <article class="right-item">
+                    <span class="right-item__icon" aria-hidden="true">{{ forloop.counter|stringformat:"02d" }}</span>
+                    <h3>{{ right.name }}</h3>
+                    <p>{{ right.description|default:"Descripción institucional pendiente de completar." }}</p>
+                </article>
+            {% endfor %}
         </div>
         <div class="rights-section__closing">
             <p>Ejércelos de manera sencilla, segura y confidencial.</p>
