@@ -1251,6 +1251,31 @@ body {
 .case-section h3 { margin: 1.5rem 0 1rem; color: #4a302c; font-family: Georgia, serif; font-size: 1.1rem; }
 .case-request-text { margin: 0; color: #4f4642; line-height: 1.7; white-space: pre-wrap; }
 .privacy-restriction { padding: 1rem; border: 1px solid #efd9d3; border-radius: 0.5rem; background: #fff8f6; color: #73534c; font-size: 0.78rem; }
+.case-record-list { display: grid; gap: 0.75rem; }
+.case-record-list article { display: grid; align-items: center; padding: 0.85rem; border: 1px solid #eee3df; border-radius: 0.5rem; background: #fffdfc; grid-template-columns: minmax(8rem, 1fr) minmax(12rem, 1.4fr) auto; gap: 0.8rem; }
+.case-record-list article > div { display: grid; }
+.case-record-list article strong { color: #493d39; font-size: 0.76rem; }
+.case-record-list article small { color: #8b807c; font-size: 0.66rem; }
+.case-record-list dl { display: grid; margin: 0; grid-template-columns: auto 1fr; gap: 0.2rem 0.6rem; font-size: 0.68rem; }
+.case-record-list dt { color: #817672; font-weight: 500; }
+.case-record-list dd { margin: 0; }
+.case-empty-state { margin: 0; color: #837773; font-size: 0.74rem; }
+.case-links-card,
+.case-deadline-card { padding: 1.35rem; }
+.case-links-card header,
+.case-deadline-card header { margin-bottom: 1rem; padding-bottom: 0.85rem; border-bottom: 1px solid var(--vinesa-line); }
+.case-links-card h2,
+.case-deadline-card h2 { margin: 0; color: #351411; font-family: Georgia, "Times New Roman", serif; font-size: 1.3rem; font-weight: 500; }
+.case-links-card > div { display: grid; gap: 0.55rem; }
+.case-links-card a { display: grid; padding: 0.75rem; border: 1px solid #eee3df; border-radius: 0.5rem; color: #493d39; text-decoration: none; grid-template-columns: 1.8rem 1fr; }
+.case-links-card a > span { grid-row: span 2; color: var(--vinesa-red); }
+.case-links-card a strong { font-size: 0.74rem; }
+.case-links-card a small { color: #837773; font-size: 0.66rem; }
+.case-deadline-card ul { display: grid; gap: 0.65rem; margin: 0; padding: 0; list-style: none; }
+.case-deadline-card li { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; padding-bottom: 0.65rem; border-bottom: 1px solid #f0e7e3; }
+.case-deadline-card li > div { display: grid; }
+.case-deadline-card li strong { font-size: 0.72rem; }
+.case-deadline-card li small { color: #837773; font-size: 0.64rem; }
 .workflow-card > div { display: grid; gap: 0.7rem; }
 .workflow-card > div > p { margin: 0; color: #837773; font-size: 0.76rem; }
 .timeline-card ol { margin: 0; padding: 0; list-style: none; }
@@ -1402,6 +1427,7 @@ body {
     .case-detail-heading > div { align-items: flex-start; flex-direction: column; }
     .case-tabs { gap: 1rem; overflow-x: auto; }
     .case-summary dl { grid-template-columns: 1fr; }
+    .case-record-list article { grid-template-columns: 1fr; }
     .settings-card__grid,
     .settings-card__grid--three { grid-template-columns: 1fr; }
     .settings-card__full { grid-column: auto; }

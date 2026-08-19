@@ -191,6 +191,8 @@ class RequestHttpTests(TestCase):
         self.assertTrue(response.context["sensitive_data"])
         self.assertContains(response, "Titular Prueba")
         self.assertContains(response, "Solicitud reservada uno")
+        self.assertContains(response, "Plazos y aclaraciones")
+        self.assertContains(response, "Canales relacionados")
 
     def test_operator_cannot_assign_case(self):
         force_mfa_login(self.client, self.operator)

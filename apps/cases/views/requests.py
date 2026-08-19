@@ -396,6 +396,11 @@ def request_detail(
                     RightsRequest.Status.EXTENDED,
                 }
             ),
+            "can_receive_clarification": (
+                workflow_actor
+                and case.status
+                == RightsRequest.Status.AWAITING_INFORMATION
+            ),
             "can_extend": (
                 workflow_manager
                 and not case.extension_applied
