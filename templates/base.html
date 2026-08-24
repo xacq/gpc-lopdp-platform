@@ -5,10 +5,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Plataforma de gestión de solicitudes LOPDP">
-    <title>{% block title %}GPC LOPDP{% endblock %} | VINESA</title>
-    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/vinesa-favicon.png' %}">
+    <title>{% block title %}GPC LOPDP{% endblock %} | {{ branding.trade_name|default:'VINESA' }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{% if branding.favicon_url %}{{ branding.favicon_url }}{% else %}{% static 'images/vinesa-favicon.png' %}{% endif %}">
     <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    {% if branding.custom_css %}<style>{{ branding.custom_css|safe }}</style>{% endif %}
 </head>
 <body class="admin-body {% block body_class %}{% endblock %}">
     <a class="skip-link" href="#adminContent">Saltar al contenido</a>
@@ -74,6 +75,84 @@
         </div>
     </div>
     <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+    <script>
+    (function() {
+        function positionMenu(details) {
+            var summary = details.querySelector('summary');
+            var menu = details.querySelector('div');
+            if (!summary || !menu) return;
+
+            var rect = summary.getBoundingClientRect();
+            var menuWidth = menu.offsetWidth || 216;
+            var menuHeight = menu.offsetHeight || 160;
+
+            var top = rect.bottom + 4;
+            var right = window.innerWidth - rect.right;
+
+            // Open upwards if near bottom of screen
+            if (top + menuHeight > window.innerHeight - 10 && rect.top > menuHeight + 10) {
+                top = rect.top - menuHeight - 4;
+            }
+
+            menu.style.position = 'fixed';
+            menu.style.top = top + 'px';
+            menu.style.right = Math.max(10, right) + 'px';
+            menu.style.left = 'auto';
+            menu.style.zIndex = '99999';
+        }
+
+        function resetMenu(details) {
+            var menu = details.querySelector('div');
+            if (menu) {
+                menu.style.position = '';
+                menu.style.top = '';
+                menu.style.right = '';
+                menu.style.left = '';
+                menu.style.zIndex = '';
+            }
+        }
+
+        document.addEventListener('click', function(event) {
+            var openDetails = document.querySelectorAll('details.row-actions[open]');
+            openDetails.forEach(function(details) {
+                if (!details.contains(event.target)) {
+                    details.removeAttribute('open');
+                    resetMenu(details);
+                }
+            });
+        });
+
+        document.addEventListener('toggle', function(event) {
+            if (event.target.matches && event.target.matches('details.row-actions')) {
+                if (event.target.open) {
+                    document.querySelectorAll('details.row-actions[open]').forEach(function(other) {
+                        if (other !== event.target) {
+                            other.removeAttribute('open');
+                            resetMenu(other);
+                        }
+                    });
+                    positionMenu(event.target);
+                } else {
+                    resetMenu(event.target);
+                }
+            }
+        }, true);
+
+        window.addEventListener('scroll', function() {
+            var openDetails = document.querySelectorAll('details.row-actions[open]');
+            openDetails.forEach(function(details) {
+                positionMenu(details);
+            });
+        }, true);
+
+        window.addEventListener('resize', function() {
+            var openDetails = document.querySelectorAll('details.row-actions[open]');
+            openDetails.forEach(function(details) {
+                positionMenu(details);
+            });
+        });
+    })();
+    </script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

@@ -1,9 +1,11 @@
+import os
 import uuid
 
 from django.contrib.postgres.functions import (
     RandomUUID,
     TransactionNow,
 )
+from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 from django.db.models import Q
@@ -23,6 +25,27 @@ hex_color_validator = RegexValidator(
         "#RRGGBB."
     ),
 )
+
+VALID_BRANDING_IMAGE_EXTENSIONS = {
+    ".png",
+    ".jpg",
+    ".jpeg",
+    ".svg",
+    ".webp",
+    ".ico",
+    ".gif",
+}
+
+
+def validate_branding_image(value):
+    if not value or not hasattr(value, "name") or not value.name:
+        return
+    ext = os.path.splitext(value.name)[1].lower()
+    if ext not in VALID_BRANDING_IMAGE_EXTENSIONS:
+        allowed = ", ".join(sorted(VALID_BRANDING_IMAGE_EXTENSIONS))
+        raise ValidationError(
+            f"Formato no permitido. Solo se permiten imágenes ({allowed})."
+        )
 
 
 class SystemSetting(models.Model):
@@ -141,6 +164,20 @@ class SystemSetting(models.Model):
         db_default="America/Guayaquil",
     )
 
+    logo_image = models.FileField(
+        upload_to="branding/",
+        null=True,
+        blank=True,
+        validators=[validate_branding_image],
+    )
+
+    favicon_image = models.FileField(
+        upload_to="branding/",
+        null=True,
+        blank=True,
+        validators=[validate_branding_image],
+    )
+
     logo_url = models.TextField(
         null=True,
         blank=True,
@@ -150,6 +187,24 @@ class SystemSetting(models.Model):
         null=True,
         blank=True,
     )
+
+    @property
+    def effective_logo_url(self) -> str | None:
+        if self.logo_image:
+            try:
+                return self.logo_image.url
+            except ValueError:
+                pass
+        return self.logo_url or None
+
+    @property
+    def effective_favicon_url(self) -> str | None:
+        if self.favicon_image:
+            try:
+                return self.favicon_image.url
+            except ValueError:
+                pass
+        return self.favicon_url or None
 
     primary_color = models.CharField(
         max_length=7,

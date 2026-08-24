@@ -62,6 +62,15 @@ class PublicHomeTests(TestCase):
         self.assertContains(response, reverse("legal_content:public_index"))
         self.assertContains(response, reverse("core:contact"))
 
+    def test_cookie_banner_is_present_on_public_pages(self):
+        response = self.client.get(reverse("core:home"))
+        self.assertContains(response, 'id="cookieBanner"')
+        self.assertContains(response, "Uso de cookies y protección de datos")
+        self.assertContains(response, "LOPDP del Ecuador")
+        self.assertContains(response, reverse("legal_content:public_document", args=["cookies"]))
+        self.assertContains(response, "/static/js/cookie-consent.js")
+        self.assertContains(response, "Gestión de cookies")
+
 
 class PublicInformationPageTests(TestCase):
     def test_rights_page_uses_preliminary_catalog_when_database_is_empty(self):

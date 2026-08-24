@@ -1,0 +1,30 @@
+<div id="cookieBanner" class="cookie-banner" role="region" aria-label="Aviso sobre cookies y privacidad" hidden>
+    <div class="cookie-banner__inner">
+        <div class="cookie-banner__icon" aria-hidden="true">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <path d="M12 2a10 10 0 0 0-1.5 19.89"></path>
+                <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"></circle>
+                <circle cx="15.5" cy="9.5" r="1" fill="currentColor"></circle>
+                <circle cx="10.5" cy="14.5" r="1.5" fill="currentColor"></circle>
+                <circle cx="16" cy="15" r="1" fill="currentColor"></circle>
+            </svg>
+        </div>
+        <div class="cookie-banner__content">
+            <h3 class="cookie-banner__title">Uso de cookies y protección de datos</h3>
+            <p class="cookie-banner__text">
+                En cumplimiento de la <strong>LOPDP del Ecuador</strong>, le informamos que este portal utiliza cookies técnicas y estrictamente necesarias para la seguridad y navegación en la plataforma. Para conocer más detalles y sus derechos, consulte nuestra
+                <a href="{% url 'legal_content:public_document' 'cookies' %}" class="cookie-banner__link">Política de Cookies</a> y la
+                <a href="{% url 'legal_content:public_document' 'privacidad' %}" class="cookie-banner__link">Política de Privacidad</a>.
+            </p>
+        </div>
+        <div class="cookie-banner__actions">
+            <a href="{% url 'legal_content:public_document' 'cookies' %}" class="btn btn-outline-secondary btn-sm cookie-banner__btn-info">
+                Detalles
+            </a>
+            <button type="button" id="cookieAcceptBtn" class="btn btn-primary btn-sm cookie-banner__btn-accept">
+                Entendido y Aceptar
+            </button>
+        </div>
+    </div>
+</div>

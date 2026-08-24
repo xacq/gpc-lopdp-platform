@@ -56,12 +56,19 @@ class SystemSettingsService:
         "complaint_instructions",
         "request_prefix",
         "timezone",
+        "logo_image",
+        "favicon_image",
         "logo_url",
         "favicon_url",
         "primary_color",
         "secondary_color",
         "accent_color",
     )
+
+    OPTIONAL_PAYLOAD_FIELDS = {
+        "logo_image",
+        "favicon_image",
+    }
 
     @classmethod
     def _require_actor(cls, actor):
@@ -73,8 +80,10 @@ class SystemSettingsService:
 
     @staticmethod
     def _optional(value):
-        if value is None:
-            return None
+        if value is None or value is False:
+            return value
+        if hasattr(value, "read") or hasattr(value, "chunks") or hasattr(value, "file"):
+            return value
         normalized = str(value).strip()
         return normalized or None
 
@@ -83,7 +92,7 @@ class SystemSettingsService:
         missing = [
             field
             for field in cls.EDITABLE_FIELDS
-            if field not in values
+            if field not in values and field not in cls.OPTIONAL_PAYLOAD_FIELDS
         ]
         if missing:
             raise SystemSettingsValidationError(
@@ -91,7 +100,7 @@ class SystemSettingsService:
             )
 
         normalized = {
-            field: cls._optional(values[field])
+            field: cls._optional(values.get(field))
             for field in cls.EDITABLE_FIELDS
         }
         for required in (
@@ -202,6 +211,14 @@ class SystemSettingsService:
         changed_fields = []
         for field in cls.EDITABLE_FIELDS:
             value = normalized[field]
+            if field in ("logo_image", "favicon_image"):
+                if value is None and not created:
+                    continue
+                if value is False:
+                    if getattr(setting, field):
+                        setattr(setting, field, None)
+                        changed_fields.append(field)
+                    continue
             if getattr(setting, field, None) != value:
                 setattr(setting, field, value)
                 changed_fields.append(field)

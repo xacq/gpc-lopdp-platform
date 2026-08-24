@@ -25,6 +25,7 @@ def system_settings(request):
     ).first()
     form = SystemSettingForm(
         request.POST or None,
+        request.FILES or None,
         instance=setting,
     )
     saved = False

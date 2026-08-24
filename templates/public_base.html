@@ -5,10 +5,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Plataforma de privacidad y gestión de solicitudes LOPDP de VINESA">
-    <title>{% block title %}Privacidad{% endblock %} | VINESA</title>
-    <link rel="icon" type="image/png" sizes="32x32" href="{% static 'images/vinesa-favicon.png' %}">
+    <title>{% block title %}Privacidad{% endblock %} | {{ branding.trade_name|default:'VINESA' }}</title>
+    <link rel="icon" type="image/png" sizes="32x32" href="{% if branding.favicon_url %}{{ branding.favicon_url }}{% else %}{% static 'images/vinesa-favicon.png' %}{% endif %}">
     <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    {% if branding.custom_css %}<style>{{ branding.custom_css|safe }}</style>{% endif %}
 </head>
 <body class="public-site {% block body_class %}{% endblock %}">
     <a class="skip-link" href="#contenido">Saltar al contenido</a>
@@ -39,12 +40,15 @@
                 <a href="{% url 'legal_content:public_document' 'privacidad' %}">Política de Privacidad</a>
                 <a href="{% url 'legal_content:public_document' 'derechos' %}">Derechos y contacto</a>
                 <a href="{% url 'legal_content:public_document' 'cookies' %}">Política de Cookies</a>
+                <button type="button" class="public-footer__link-btn" onclick="if(window.openCookieNotice){window.openCookieNotice();}" aria-label="Abrir aviso de cookies">Gestión de cookies</button>
                 <a href="{% url 'core:contact' %}">Contacto</a>
                 <a href="{% url 'accounts:login' %}">Acceso institucional</a>
             </nav>
         </div>
     </footer>
+    {% include "includes/cookie_banner.html" %}
     <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
+    <script src="{% static 'js/cookie-consent.js' %}"></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

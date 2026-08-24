@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test import Client, TestCase
 from django.urls import reverse
 
@@ -251,3 +252,37 @@ class SystemSettingsHttpTests(SystemSettingsBase):
             self.post_values(),
         )
         self.assertEqual(response.status_code, 403)
+
+    def test_admin_can_upload_branding_images(self):
+        force_mfa_login(self.client, self.admin)
+        logo_file = SimpleUploadedFile("custom_logo.png", b"fake_png_data", content_type="image/png")
+        favicon_file = SimpleUploadedFile("custom_favicon.ico", b"fake_ico_data", content_type="image/x-icon")
+
+        post_data = self.post_values(
+            primary_color="#112233",
+            secondary_color="#445566",
+            accent_color="#778899",
+        )
+        post_data["logo_image"] = logo_file
+        post_data["favicon_image"] = favicon_file
+
+        response = self.client.post(
+            reverse("organization:system_settings"),
+            post_data,
+        )
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "guardada correctamente")
+        self.setting.refresh_from_db()
+        self.assertTrue(self.setting.logo_image.name.startswith("branding/"))
+        self.assertTrue(self.setting.favicon_image.name.startswith("branding/"))
+        self.assertTrue(self.setting.effective_logo_url.startswith("/media/branding/"))
+        self.assertTrue(self.setting.effective_favicon_url.startswith("/media/branding/"))
+    def test_branding_context_processor(self):
+        from django.test import RequestFactory
+        from apps.organization.context_processors import branding
+
+        request = RequestFactory().get("/")
+        context = branding(request)
+        self.assertIn("branding", context)
+        self.assertEqual(context["branding"]["primary_color"], "#AABBCC")
+        self.assertIn("--vinesa-red: #AABBCC;", context["branding"]["custom_css"])
