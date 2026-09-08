@@ -58,12 +58,12 @@ archivos de esa empresa.
 
 ## Replicar otra empresa
 
-Copie el ejemplo a otro archivo, cambie todos los identificadores, secretos,
-puerto y URL, y levante otro proyecto Compose:
+Genere un entorno con secretos, puerto y base independientes, y levante el
+mismo código con otro nombre de proyecto Compose:
 
 ```powershell
-Copy-Item deploy/docker.env.example deploy/empresa2.env
-docker compose --env-file deploy/empresa2.env -p gpc-lopdp-empresa2 up --build -d
+.\deploy\init_docker_env.ps1 -OutputPath deploy/empresa2.env -HttpPort 8081 -TenantSlug empresa2 -MfaIssuer "EMPRESA 2" -DefaultFromEmail privacidad@empresa2.local
+docker compose --env-file deploy/empresa2.env up -d
 ```
 
 Ejemplo mínimo para la segunda empresa:
@@ -82,3 +82,9 @@ MFA_TOTP_ISSUER=EMPRESA2
 No ejecute `seed_vinesa_settings` para otras empresas. Cree el superusuario,
 ingrese a `/settings/` y registre los datos institucionales, colores y archivos
 de identidad visual correspondientes.
+
+Para una configuración provisional reproducible puede ejecutar:
+
+```powershell
+docker compose --env-file deploy/empresa2.env exec web python manage.py seed_tenant_settings --legal-name "Empresa 2 S.A." --trade-name "EMPRESA 2" --ruc 0000000000002 --domain empresa2.local --contact-email privacidad@empresa2.local --request-prefix E2
+```
