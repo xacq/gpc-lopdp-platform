@@ -5,11 +5,20 @@
     --vinesa-red: #c8393c;
     --vinesa-red-dark: #a02f30;
     --vinesa-wine: #552a2a;
+    --theme-background: #faf7f7;
+    --theme-active: #782224;
+    --theme-separator: #e8e3e3;
+    --theme-border: #978b8b;
+    --theme-text-secondary: #756c6c;
+    --theme-success: #5a6b43;
+    --theme-info: #24566b;
+    --theme-warning: #8a5b00;
+    --theme-error: #b42318;
     --vinesa-ink: #2d1512;
-    --vinesa-muted: #655e5b;
+    --vinesa-muted: var(--theme-text-secondary);
     --vinesa-blush: #f9efec;
-    --vinesa-line: #eadfda;
-    --vinesa-white: #fffdfc;
+    --vinesa-line: var(--theme-separator);
+    --vinesa-white: var(--theme-background);
 }
 
 body {

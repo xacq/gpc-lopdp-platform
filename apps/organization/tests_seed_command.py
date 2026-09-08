@@ -24,6 +24,7 @@ class SeedVinesaSettingsCommandTests(TestCase):
             "privacidad@vinesa.com.ec",
         )
         self.assertEqual(setting.primary_color, "#C8393C")
+        self.assertEqual(setting.background_color, "#FAF7F7")
         self.assertIn("creada", output.getvalue())
 
         response = self.client.get(reverse("core:contact"))

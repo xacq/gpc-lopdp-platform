@@ -80,6 +80,15 @@ class SystemSettingsBase(TestCase):
             "primary_color": "#aabbcc",
             "secondary_color": "#112233",
             "accent_color": "#445566",
+            "background_color": "#fafafa",
+            "active_color": "#223344",
+            "separator_color": "#dddddd",
+            "border_color": "#aaaaaa",
+            "secondary_text_color": "#666666",
+            "success_color": "#118833",
+            "info_color": "#225588",
+            "warning_color": "#aa7700",
+            "error_color": "#bb2211",
         }
         values.update(overrides)
         return values
@@ -98,6 +107,7 @@ class SystemSettingsServiceTests(SystemSettingsBase):
         self.assertEqual(setting.domain, "privacidad.vinesa.test")
         self.assertEqual(setting.request_prefix, "VINESA")
         self.assertEqual(setting.primary_color, "#AABBCC")
+        self.assertEqual(setting.background_color, "#FAFAFA")
         self.assertEqual(
             setting.contact_email,
             "privacidad@vinesa.com.ec",
@@ -138,6 +148,7 @@ class SystemSettingsServiceTests(SystemSettingsBase):
             {"timezone": "Mars/Olympus"},
             {"logo_url": "http://assets.vinesa.test/logo.svg"},
             {"primary_color": "blue"},
+            {"background_color": "white"},
         )
         for override in invalid_values:
             with self.subTest(override=override):
@@ -286,3 +297,4 @@ class SystemSettingsHttpTests(SystemSettingsBase):
         self.assertIn("branding", context)
         self.assertEqual(context["branding"]["primary_color"], "#AABBCC")
         self.assertIn("--vinesa-red: #AABBCC;", context["branding"]["custom_css"])
+        self.assertIn("--theme-background: #FAFAFA;", context["branding"]["custom_css"])

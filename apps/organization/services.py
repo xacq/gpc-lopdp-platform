@@ -63,6 +63,15 @@ class SystemSettingsService:
         "primary_color",
         "secondary_color",
         "accent_color",
+        "background_color",
+        "active_color",
+        "separator_color",
+        "border_color",
+        "secondary_text_color",
+        "success_color",
+        "info_color",
+        "warning_color",
+        "error_color",
     )
 
     OPTIONAL_PAYLOAD_FIELDS = {
@@ -129,6 +138,15 @@ class SystemSettingsService:
             "primary_color",
             "secondary_color",
             "accent_color",
+            "background_color",
+            "active_color",
+            "separator_color",
+            "border_color",
+            "secondary_text_color",
+            "success_color",
+            "info_color",
+            "warning_color",
+            "error_color",
         ):
             if normalized[field] is not None:
                 normalized[field] = normalized[field].upper()

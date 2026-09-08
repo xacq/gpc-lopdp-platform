@@ -1,0 +1,9 @@
+<div class="admin-form-field color-field-group{% if field.errors %} admin-form-field--error{% endif %}">
+    <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+    <div class="color-picker-wrapper">
+        <input type="color" class="color-picker-input js-color-picker" id="picker_{{ field.name }}" data-hex-input="{{ field.id_for_label }}" value="{{ field.value|default:default_color }}" aria-label="Seleccionar {{ field.label|lower }}" title="Seleccionar {{ field.label|lower }}">
+        {{ field }}
+    </div>
+    {% if field.help_text %}<small>{{ field.help_text }}</small>{% endif %}
+    {% for error in field.errors %}<div class="admin-form-field__error">{{ error }}</div>{% endfor %}
+</div>

@@ -16,6 +16,7 @@ def branding(request):
                 "primary_color": None,
                 "secondary_color": None,
                 "accent_color": None,
+                "background_color": None,
                 "legal_name": "VINESA",
                 "trade_name": "VINESA",
                 "custom_css": "",
@@ -30,6 +31,22 @@ def branding(request):
     if setting.accent_color:
         css_parts.append(f"--vinesa-red-dark: {setting.accent_color};")
 
+    css_variables = {
+        "background_color": "--theme-background",
+        "active_color": "--theme-active",
+        "separator_color": "--theme-separator",
+        "border_color": "--theme-border",
+        "secondary_text_color": "--theme-text-secondary",
+        "success_color": "--theme-success",
+        "info_color": "--theme-info",
+        "warning_color": "--theme-warning",
+        "error_color": "--theme-error",
+    }
+    for field, variable in css_variables.items():
+        value = getattr(setting, field)
+        if value:
+            css_parts.append(f"{variable}: {value};")
+
     custom_css = f":root {{ {' '.join(css_parts)} }}" if css_parts else ""
 
     return {
@@ -39,6 +56,7 @@ def branding(request):
             "primary_color": setting.primary_color,
             "secondary_color": setting.secondary_color,
             "accent_color": setting.accent_color,
+            **{field: getattr(setting, field) for field in css_variables},
             "legal_name": setting.legal_name,
             "trade_name": setting.trade_name or setting.legal_name,
             "custom_css": custom_css,

@@ -227,6 +227,16 @@ class SystemSetting(models.Model):
         validators=[hex_color_validator],
     )
 
+    background_color = models.CharField(max_length=7, null=True, blank=True, validators=[hex_color_validator])
+    active_color = models.CharField(max_length=7, null=True, blank=True, validators=[hex_color_validator])
+    separator_color = models.CharField(max_length=7, null=True, blank=True, validators=[hex_color_validator])
+    border_color = models.CharField(max_length=7, null=True, blank=True, validators=[hex_color_validator])
+    secondary_text_color = models.CharField(max_length=7, null=True, blank=True, validators=[hex_color_validator])
+    success_color = models.CharField(max_length=7, null=True, blank=True, validators=[hex_color_validator])
+    info_color = models.CharField(max_length=7, null=True, blank=True, validators=[hex_color_validator])
+    warning_color = models.CharField(max_length=7, null=True, blank=True, validators=[hex_color_validator])
+    error_color = models.CharField(max_length=7, null=True, blank=True, validators=[hex_color_validator])
+
     created_at = models.DateTimeField(
         db_default=TransactionNow(),
         editable=False,
@@ -281,6 +291,16 @@ class SystemSetting(models.Model):
                 ),
                 name="ck_system_settings_accent_color",
             ),
+            *[
+                models.CheckConstraint(
+                    condition=Q(**{f"{field}__isnull": True}) | Q(**{f"{field}__regex": HEX_COLOR_PATTERN}),
+                    name=f"ck_system_settings_{field}",
+                )
+                for field in (
+                    "background_color", "active_color", "separator_color", "border_color",
+                    "secondary_text_color", "success_color", "info_color", "warning_color", "error_color",
+                )
+            ],
         ]
 
     def __str__(self):
