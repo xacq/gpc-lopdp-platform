@@ -62,6 +62,16 @@ ALLOWED_HOSTS = env.list(
     default=[],
 )
 
+CSRF_TRUSTED_ORIGINS = env.list(
+    "DJANGO_CSRF_TRUSTED_ORIGINS",
+    default=[],
+)
+
+PUBLIC_SITE_URL = env(
+    "PUBLIC_SITE_URL",
+    default="",
+).rstrip("/")
+
 
 # ---------------------------------------------------------------------
 # Applications
@@ -317,7 +327,9 @@ USE_TZ = True
 
 STATIC_URL = "/static/"
 
-STATIC_ROOT = BASE_DIR / "staticfiles"
+STATIC_ROOT = Path(
+    env("STATIC_ROOT", default=str(BASE_DIR / "staticfiles"))
+)
 
 STATICFILES_DIRS = [
     BASE_DIR / "static",
@@ -325,7 +337,9 @@ STATICFILES_DIRS = [
 
 MEDIA_URL = "/media/"
 
-MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_ROOT = Path(
+    env("MEDIA_ROOT", default=str(BASE_DIR / "media"))
+)
 
 PRIVATE_STORAGE_ROOT = env(
     "PRIVATE_STORAGE_ROOT",

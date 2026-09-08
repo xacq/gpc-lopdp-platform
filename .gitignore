@@ -21,6 +21,7 @@ staticfiles/
 .env
 .env.*
 !.env.example
+/deploy/*.env
 
 # Testing
 .pytest_cache/

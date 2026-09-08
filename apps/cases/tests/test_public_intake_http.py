@@ -173,6 +173,20 @@ class PublicIntakeTests(TestCase):
         ):
             self.assertNotIn(forbidden, serialized)
 
+    @override_settings(PUBLIC_SITE_URL="http://localhost:8080")
+    def test_acknowledgement_uses_configured_public_site_url(self):
+        result = self.submit()
+        payload = NotificationService.decrypt_payload(result.communication)
+
+        self.assertIn(
+            "http://localhost:8080/cases/public/verify-email/",
+            payload["body"],
+        )
+        self.assertIn(
+            "http://localhost:8080/cases/public/tracking/",
+            payload["body"],
+        )
+
 
 @override_settings(
     PII_ENCRYPTION_ACTIVE_VERSION=1,

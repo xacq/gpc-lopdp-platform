@@ -47,6 +47,12 @@ python manage.py test --keepdb -v 1
 
 En VS Code puede ejecutar las tareas `Django: verificar proyecto` y `Django: pruebas completas`.
 
+## Docker local
+
+La instalación Docker reutilizable por empresa incluye Django, PostgreSQL y
+Nginx con bases y volúmenes aislados. Consulte la guía
+[Docker local por empresa](docs/operations/docker_local.md).
+
 ## Procesos programados
 
 En producción, programe estos comandos con el usuario de servicio y las mismas variables de entorno que la aplicación:

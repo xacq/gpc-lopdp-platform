@@ -141,7 +141,10 @@ class PublicIntakeService:
                 )
 
             organization = SystemSetting.objects.get(singleton_key=1)
-            portal_base = f"https://{organization.domain}/cases/public"
+            public_site_url = settings.PUBLIC_SITE_URL or (
+                f"https://{organization.domain}"
+            )
+            portal_base = f"{public_site_url.rstrip('/')}/cases/public"
             recipient = normalize_email(email)
             message_subject = f"Solicitud recibida: {case.reference_number}"
             message_body = (
