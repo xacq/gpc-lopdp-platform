@@ -72,7 +72,7 @@
                     <div class="admin-form-field color-field-group{% if form.primary_color.errors %} admin-form-field--error{% endif %}">
                         <label for="{{ form.primary_color.id_for_label }}">{{ form.primary_color.label }}</label>
                         <div class="color-picker-wrapper">
-                            <input type="color" class="color-picker-input" id="picker_primary" value="{{ form.primary_color.value|default:'#C8393C' }}">
+                            <input type="color" class="color-picker-input" id="picker_primary" value="{{ form.primary_color.value|default:'#C8393C' }}" aria-label="Seleccionar color primario" title="Seleccionar color primario">
                             {{ form.primary_color }}
                         </div>
                         {% if form.primary_color.help_text %}<small>{{ form.primary_color.help_text }}</small>{% endif %}
@@ -83,7 +83,7 @@
                     <div class="admin-form-field color-field-group{% if form.secondary_color.errors %} admin-form-field--error{% endif %}">
                         <label for="{{ form.secondary_color.id_for_label }}">{{ form.secondary_color.label }}</label>
                         <div class="color-picker-wrapper">
-                            <input type="color" class="color-picker-input" id="picker_secondary" value="{{ form.secondary_color.value|default:'#552A2A' }}">
+                            <input type="color" class="color-picker-input" id="picker_secondary" value="{{ form.secondary_color.value|default:'#552A2A' }}" aria-label="Seleccionar color secundario" title="Seleccionar color secundario">
                             {{ form.secondary_color }}
                         </div>
                         {% if form.secondary_color.help_text %}<small>{{ form.secondary_color.help_text }}</small>{% endif %}
@@ -94,7 +94,7 @@
                     <div class="admin-form-field color-field-group{% if form.accent_color.errors %} admin-form-field--error{% endif %}">
                         <label for="{{ form.accent_color.id_for_label }}">{{ form.accent_color.label }}</label>
                         <div class="color-picker-wrapper">
-                            <input type="color" class="color-picker-input" id="picker_accent" value="{{ form.accent_color.value|default:'#A02F30' }}">
+                            <input type="color" class="color-picker-input" id="picker_accent" value="{{ form.accent_color.value|default:'#A02F30' }}" aria-label="Seleccionar color de acento" title="Seleccionar color de acento">
                             {{ form.accent_color }}
                         </div>
                         {% if form.accent_color.help_text %}<small>{{ form.accent_color.help_text }}</small>{% endif %}

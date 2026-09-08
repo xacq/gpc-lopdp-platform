@@ -45,9 +45,9 @@ class SystemSettingForm(forms.ModelForm):
         help_texts = {
             "logo_image": "Formatos aceptados: PNG, SVG, JPG, WebP. Si no se sube, se usará el logotipo por defecto.",
             "favicon_image": "Formatos aceptados: ICO, PNG, SVG. Si no se sube, se usará el favicon por defecto.",
-            "primary_color": "Formato hexadecimal #RRGGBB (ej. #C8393C)",
-            "secondary_color": "Formato hexadecimal #RRGGBB (ej. #552A2A)",
-            "accent_color": "Formato hexadecimal #RRGGBB (ej. #A02F30)",
+            "primary_color": "Escribe un código hexadecimal #RRGGBB (ej. #C8393C) o elige el color en el recuadro.",
+            "secondary_color": "Escribe un código hexadecimal #RRGGBB (ej. #552A2A) o elige el color en el recuadro.",
+            "accent_color": "Escribe un código hexadecimal #RRGGBB (ej. #A02F30) o elige el color en el recuadro.",
         }
         widgets = {
             "address": forms.Textarea(attrs={"rows": 3}),
