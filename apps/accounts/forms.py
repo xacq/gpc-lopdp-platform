@@ -11,7 +11,7 @@ class LoginForm(forms.Form):
             attrs={
                 "autocomplete": "username",
                 "autofocus": True,
-                "placeholder": "usuario@vinesa.com",
+                "placeholder": "usuario@empresa.com",
             }
         ),
     )
@@ -61,7 +61,7 @@ class MFAChallengeForm(forms.Form):
             attrs={
                 "autocomplete": "one-time-code",
                 "autofocus": True,
-                "placeholder": "Código MFA o de respaldo",
+                "placeholder": "Código de verificación o respaldo",
             }
         ),
     )

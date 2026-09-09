@@ -5,10 +5,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="description" content="Plataforma de gestión de solicitudes LOPDP">
-    <title>{% block title %}GPC LOPDP{% endblock %} | {{ branding.trade_name|default:'VINESA' }}</title>
+    <title>{% block title %}GPC LOPDP{% endblock %} | {{ branding.trade_name|default:'Organización' }}</title>
     <link rel="icon" type="image/png" sizes="32x32" href="{% if branding.favicon_url %}{{ branding.favicon_url }}{% else %}{% static 'images/vinesa-favicon.png' %}{% endif %}">
     <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
-    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=20260909-dynamic-palette">
     {% if branding.custom_css %}<style>{{ branding.custom_css|safe }}</style>{% endif %}
 </head>
 <body class="admin-body {% block body_class %}{% endblock %}">
@@ -16,12 +16,12 @@
     <div class="admin-shell">
         <aside class="admin-sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="adminNavigation" aria-labelledby="adminNavigationLabel">
             <div class="admin-sidebar__mobile-heading"><span id="adminNavigationLabel">Navegación</span><button type="button" data-bs-dismiss="offcanvas" data-bs-target="#adminNavigation" aria-label="Cerrar">×</button></div>
-            <a class="admin-sidebar__brand" href="{% if nav_can_access_cases %}{% url 'core:dashboard' %}{% else %}{% url 'core:home' %}{% endif %}" aria-label="VINESA, inicio administrativo">
+            <a class="admin-sidebar__brand" href="{% if nav_can_access_cases %}{% url 'core:dashboard' %}{% else %}{% url 'core:home' %}{% endif %}" aria-label="{{ branding.trade_name|default:'Organización' }}, inicio administrativo">
                 {% include "includes/vinesa_brand.html" with compact=True %}
             </a>
             <nav class="admin-sidebar__nav" aria-label="Navegación administrativa">
                 {% if nav_can_access_cases %}
-                    <a class="admin-nav-link{% if request.resolver_match.url_name == 'dashboard' %} admin-nav-link--active{% endif %}" href="{% url 'core:dashboard' %}"><span aria-hidden="true">⌂</span> Dashboard</a>
+                    <a class="admin-nav-link{% if request.resolver_match.url_name == 'dashboard' %} admin-nav-link--active{% endif %}" href="{% url 'core:dashboard' %}"><span aria-hidden="true">⌂</span> Panel de control</a>
                     <a class="admin-nav-link{% if request.resolver_match.namespace == 'cases' or request.resolver_match.namespace == 'evidence' %} admin-nav-link--active{% endif %}" href="{% url 'cases:request_list' %}"><span aria-hidden="true">▢</span> Expedientes</a>
                     {% if nav_can_assign_cases %}<a class="admin-nav-link{% if request.resolver_match.namespace == 'assignments' %} admin-nav-link--active{% endif %}" href="{% url 'assignments:index' %}"><span aria-hidden="true">♧</span> Asignaciones</a>{% endif %}
                     <a class="admin-nav-link{% if request.resolver_match.namespace == 'communications' %} admin-nav-link--active{% endif %}" href="{% url 'communications:panel' %}"><span aria-hidden="true">✉</span> Comunicaciones</a>
@@ -70,7 +70,7 @@
                     </div>
                 {% endfor %}
                 {% block content %}{% endblock %}
-                <footer class="admin-footer"><span>© {% now "Y" %} VINESA S.A.</span><span>Gestión responsable de datos personales</span></footer>
+                <footer class="admin-footer"><span>© {% now "Y" %} {{ branding.legal_name|default:branding.trade_name|default:'Organización' }}</span><span>Gestión responsable de datos personales</span></footer>
             </main>
         </div>
     </div>

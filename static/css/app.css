@@ -14,6 +14,16 @@
     --theme-info: #24566b;
     --theme-warning: #8a5b00;
     --theme-error: #b42318;
+    --theme-surface: color-mix(in srgb, var(--theme-background) 24%, white);
+    --theme-surface-muted: color-mix(in srgb, var(--theme-background) 72%, white);
+    --theme-primary-soft: color-mix(in srgb, var(--vinesa-red) 12%, var(--theme-surface));
+    --theme-secondary-soft: color-mix(in srgb, var(--vinesa-wine) 10%, var(--theme-surface));
+    --theme-active-soft: color-mix(in srgb, var(--theme-active) 14%, var(--theme-surface));
+    --theme-border-soft: color-mix(in srgb, var(--theme-border) 42%, var(--theme-surface));
+    --theme-success-soft: color-mix(in srgb, var(--theme-success) 13%, var(--theme-surface));
+    --theme-info-soft: color-mix(in srgb, var(--theme-info) 13%, var(--theme-surface));
+    --theme-warning-soft: color-mix(in srgb, var(--theme-warning) 14%, var(--theme-surface));
+    --theme-error-soft: color-mix(in srgb, var(--theme-error) 12%, var(--theme-surface));
     --vinesa-ink: #2d1512;
     --vinesa-muted: var(--theme-text-secondary);
     --vinesa-blush: #f9efec;
@@ -320,6 +330,13 @@ body {
 .hero__actions { display: flex; flex-wrap: wrap; gap: 1rem; }
 .hero__visual { display: grid; place-items: center; }
 .privacy-shield { width: min(100%, 20rem); height: auto; }
+.brand-hero-image {
+    display: block;
+    width: min(100%, 22rem);
+    max-height: 22rem;
+    object-fit: contain;
+    filter: drop-shadow(0 1rem 1.8rem rgb(48 16 16 / 14%));
+}
 
 .rights-section {
     padding-block: 4.5rem 5rem;
@@ -424,6 +441,10 @@ body {
     .hero__actions { justify-content: center; }
     .hero__visual { order: -1; }
     .privacy-shield { width: 10rem; }
+    .hero__visual .brand-hero-image {
+        width: min(70vw, 12rem);
+        max-height: 12rem;
+    }
     .rights-section__closing { flex-direction: column; gap: 0.8rem; }
 }
 
@@ -809,6 +830,37 @@ body {
         linear-gradient(180deg, #fff8f6, #fff 22rem);
 }
 .information-page__inner { display: grid; gap: 2rem; }
+.error-page__inner {
+    display: grid;
+    min-height: 30rem;
+    align-content: center;
+    justify-items: center;
+    gap: 1rem;
+    text-align: center;
+}
+.error-page__code {
+    margin: 0;
+    color: var(--vinesa-red);
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(4.5rem, 13vw, 8rem);
+    font-weight: 500;
+    letter-spacing: -0.05em;
+    line-height: 0.85;
+}
+.error-page h1 {
+    margin: 0;
+    color: #351411;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(2rem, 5vw, 3.4rem);
+    font-weight: 500;
+}
+.error-page__message {
+    max-width: 38rem;
+    margin: 0;
+    color: var(--vinesa-muted);
+    line-height: 1.7;
+}
+.error-page .information-actions { justify-content: center; margin-top: 0.75rem; }
 .information-hero { max-width: 52rem; }
 .information-hero h1 {
     margin: 0 0 0.8rem;
@@ -950,6 +1002,10 @@ body {
 .auth-layout__brand > p { position: relative; z-index: 2; margin: 1rem 0 0; color: var(--vinesa-muted); }
 .auth-layout__shield { position: relative; z-index: 2; display: grid; flex: 1; place-items: center; }
 .auth-layout__shield .privacy-shield { width: min(85%, 17rem); }
+.auth-layout__shield .brand-hero-image {
+    width: min(85%, 19rem);
+    max-height: 19rem;
+}
 .auth-layout__brand > small { position: relative; z-index: 2; color: #5d514d; }
 .auth-layout__content { display: grid; padding: clamp(2rem, 5vw, 4.8rem); place-items: center; }
 .auth-content__inner { width: min(100%, 31rem); }
@@ -1804,4 +1860,277 @@ body {
     .branding-colors-grid {
         grid-template-columns: 1fr;
     }
+}
+
+/* Dynamic tenant palette -------------------------------------------------- */
+body,
+.admin-body,
+.auth-page {
+    background: var(--theme-background);
+}
+
+.public-header,
+.public-nav,
+.portal-panel,
+.confirmation-reference,
+.tracking-result,
+.legal-document,
+.information-card,
+.notice-card,
+.contact-card,
+.process-panel,
+.provisional-contact,
+.auth-layout,
+.metric-card,
+.admin-main .app-card,
+.admin-auth-guard,
+.row-actions > div,
+.branding-preview-box,
+.recovery-grid li,
+.mfa-enrollment img {
+    background: var(--theme-surface);
+}
+
+.hero {
+    background:
+        radial-gradient(circle at 82% 36%, var(--theme-primary-soft), transparent 22rem),
+        linear-gradient(122deg, var(--theme-surface) 0%, var(--theme-secondary-soft) 100%);
+}
+
+.portal-page,
+.information-page {
+    background:
+        radial-gradient(circle at 90% 8%, var(--theme-primary-soft), transparent 22rem),
+        linear-gradient(180deg, var(--theme-surface-muted), var(--theme-surface) 22rem);
+}
+
+.institutional-intro,
+.rights-section {
+    background: var(--theme-surface);
+}
+
+.public-footer {
+    background: linear-gradient(
+        120deg,
+        var(--vinesa-wine),
+        color-mix(in srgb, var(--vinesa-wine) 72%, var(--vinesa-red))
+    );
+}
+
+.button--primary {
+    background: linear-gradient(135deg, var(--vinesa-red), var(--vinesa-red-dark));
+    box-shadow: 0 0.5rem 1.25rem color-mix(in srgb, var(--vinesa-red) 18%, transparent);
+}
+
+.button--primary:active,
+.admin-main .btn-primary:active {
+    border-color: var(--theme-active);
+    background: var(--theme-active);
+}
+
+.button--secondary,
+.public-field .form-control,
+.public-field .form-select,
+.admin-form-field input,
+.admin-form-field select,
+.admin-form-field textarea,
+.filter-grid .form-control,
+.filter-grid .form-select,
+.assignment-filter-grid .form-control,
+.assignment-filter-grid .form-select,
+.case-filter-grid .form-control,
+.case-filter-grid .form-select,
+.user-filter-grid .form-control,
+.user-filter-grid .form-select,
+.composer-form input:not([type="checkbox"]),
+.composer-form select,
+.composer-form textarea,
+.communication-filter-grid .form-control,
+.communication-filter-grid .form-select,
+.retention-filter-grid .form-control,
+.retention-filter-grid .form-select,
+.evidence-recorder select,
+.evidence-recorder textarea,
+.legal-editor input,
+.legal-editor select,
+.legal-editor textarea,
+.color-picker-wrapper .color-picker-input {
+    border-color: var(--theme-border);
+    background-color: var(--theme-surface);
+}
+
+.public-field .form-control:focus,
+.public-field .form-select:focus,
+.admin-form-field input:focus,
+.admin-form-field select:focus,
+.admin-form-field textarea:focus {
+    border-color: var(--theme-active);
+    box-shadow: 0 0 0 0.2rem color-mix(in srgb, var(--theme-active) 18%, transparent);
+}
+
+.auth-layout__brand {
+    background: linear-gradient(145deg, var(--theme-surface), var(--theme-primary-soft));
+}
+
+.admin-sidebar {
+    background:
+        radial-gradient(circle at 100% 25%, color-mix(in srgb, white 9%, transparent), transparent 18rem),
+        linear-gradient(
+            165deg,
+            var(--vinesa-wine),
+            color-mix(in srgb, var(--vinesa-wine) 72%, var(--vinesa-red)) 58%,
+            color-mix(in srgb, var(--vinesa-wine) 82%, black)
+        );
+}
+
+.admin-nav-link--active {
+    background: linear-gradient(105deg, var(--theme-active), var(--vinesa-red));
+    box-shadow: 0 0.45rem 1rem color-mix(in srgb, var(--theme-active) 22%, transparent);
+}
+
+.admin-topbar,
+.settings-actions {
+    border-color: var(--theme-separator);
+    background: color-mix(in srgb, var(--theme-surface) 94%, transparent);
+}
+
+.admin-main .app-card,
+.metric-card,
+.portal-panel,
+.legal-document,
+.information-card,
+.notice-card,
+.contact-card,
+.process-panel,
+.auth-layout {
+    border-color: var(--theme-border-soft);
+}
+
+.admin-main .table {
+    --bs-table-hover-bg: var(--theme-active-soft);
+}
+
+.admin-main .table thead th,
+.bulk-assignment,
+.composer-tabs button,
+.mfa-enrollment,
+.portal-panel--confirmation,
+.legal-document__empty,
+.contact-card__pending,
+.row-actions summary:hover,
+.row-actions[open] summary,
+.branding-asset-card,
+.branding-palette-preview {
+    background: var(--theme-primary-soft);
+}
+
+.monthly-chart__track,
+.completion > span,
+.workload-meter,
+.distribution-chart__donut--empty,
+.status-badge,
+.notice-card__status,
+.role-badge {
+    background: var(--theme-secondary-soft);
+}
+
+.monthly-chart__track i {
+    background: linear-gradient(180deg, var(--vinesa-red), var(--vinesa-red-dark));
+}
+
+.portal-alert--success,
+.alert-success,
+.status-pill,
+.notice-card__status--published,
+.status-badge--under_review,
+.status-badge--awaiting_information,
+.status-badge--extended,
+.metric-card--green .metric-card__icon {
+    border-color: var(--theme-success);
+    background: var(--theme-success-soft);
+    color: var(--theme-success);
+}
+
+.portal-alert--danger,
+.alert-danger,
+.admin-form-field--error input,
+.admin-form-field--error select,
+.admin-form-field--error textarea,
+.metric-card--red .metric-card__icon,
+.role-badge--admin {
+    border-color: var(--theme-error);
+    background: var(--theme-error-soft);
+    color: var(--theme-error);
+}
+
+.alert-info,
+.status-badge--responded,
+.status-badge--closed,
+.metric-card--blue .metric-card__icon,
+.role-badge--responsable {
+    border-color: var(--theme-info);
+    background: var(--theme-info-soft);
+    color: var(--theme-info);
+}
+
+.alert-warning,
+.retention-warning,
+.metric-card--amber .metric-card__icon,
+.role-badge--operador,
+.mfa-state {
+    border-color: var(--theme-warning);
+    background: var(--theme-warning-soft);
+    color: var(--theme-warning);
+}
+
+.retention-warning span {
+    background: var(--theme-warning);
+}
+
+.public-field__error,
+.admin-form-field__error,
+.bulk-assignment__feedback--error {
+    color: var(--theme-error);
+}
+
+.bulk-assignment__feedback--success,
+.mfa-state--on,
+.completion i {
+    color: var(--theme-success);
+}
+
+.completion i,
+.workload-meter i {
+    background: var(--theme-success);
+}
+
+.distribution-chart__donut {
+    background: conic-gradient(
+        var(--theme-success) 0 var(--finalized),
+        var(--theme-warning) var(--finalized) var(--in-process-end),
+        var(--theme-info) var(--in-process-end) 100%
+    );
+}
+
+.distribution-chart__key { background: var(--theme-info); }
+.distribution-chart__key--finalized { background: var(--theme-success); }
+.distribution-chart__key--process { background: var(--theme-warning); }
+
+.admin-page-heading p:last-child,
+.admin-topbar__title,
+.admin-user small,
+.metric-card p,
+.metric-card small,
+.status-summary__note,
+.table-pagination,
+.case-summary dt,
+.case-record-list small,
+.case-empty-state,
+.case-deadline-card li small,
+.workflow-card > div > p,
+.timeline-card li small,
+.admin-form-field > small,
+.legal-editor small,
+.branding-palette-preview__label {
+    color: var(--theme-text-secondary);
 }

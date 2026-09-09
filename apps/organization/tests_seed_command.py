@@ -1,7 +1,9 @@
 from io import StringIO
+from tempfile import TemporaryDirectory
 
+from django.conf import settings
 from django.core.management import call_command
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from apps.organization.models import SystemSetting
@@ -50,3 +52,38 @@ class SeedVinesaSettingsCommandTests(TestCase):
         setting = SystemSetting.objects.get(singleton_key=1)
         self.assertEqual(setting.legal_name, "Configuración aprobada")
         self.assertEqual(setting.contact_email, "approved@example.test")
+
+
+class ApplyTenantPaletteCommandTests(TestCase):
+    def setUp(self):
+        self.media_directory = TemporaryDirectory(dir=settings.BASE_DIR)
+        self.settings_override = override_settings(MEDIA_ROOT=self.media_directory.name)
+        self.settings_override.enable()
+        SystemSetting.objects.create(
+            legal_name="Empresa de prueba S.A.",
+            trade_name="Empresa 2",
+            ruc="0000000000002",
+            domain="empresa2.local",
+            contact_email="privacidad@empresa2.local",
+            request_prefix="E2",
+            timezone="America/Guayaquil",
+        )
+
+    def tearDown(self):
+        self.settings_override.disable()
+        self.media_directory.cleanup()
+
+    def test_command_applies_identity_palette_logo_and_favicon(self):
+        call_command("apply_tenant_palette", "plusbrand", stdout=StringIO())
+
+        setting = SystemSetting.objects.get(singleton_key=1)
+        self.assertEqual(setting.trade_name, "PLUSBRAND")
+        self.assertEqual(setting.primary_color, "#A24340")
+        self.assertTrue(setting.logo_image.name.startswith("branding/plusbrand-logo"))
+        self.assertTrue(setting.favicon_image.name.startswith("branding/plusbrand-favicon"))
+
+        response = self.client.get(reverse("core:home"))
+        self.assertContains(response, "PLUSBRAND mantiene un programa")
+        self.assertContains(response, setting.logo_image.url)
+        self.assertContains(response, setting.favicon_image.url)
+        self.assertNotContains(response, "VINESA S.A.")

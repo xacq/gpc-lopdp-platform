@@ -72,13 +72,17 @@ PUBLIC_SITE_URL = env(
     default="",
 ).rstrip("/")
 
+DJANGO_ADMIN_ENABLED = env.bool(
+    "DJANGO_ADMIN_ENABLED",
+    default=False,
+)
+
 
 # ---------------------------------------------------------------------
 # Applications
 # ---------------------------------------------------------------------
 
 DJANGO_APPS = [
-    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
@@ -86,6 +90,9 @@ DJANGO_APPS = [
     "django.contrib.staticfiles",
     "django.contrib.postgres",
 ]
+
+if DJANGO_ADMIN_ENABLED:
+    DJANGO_APPS.insert(0, "django.contrib.admin")
 
 
 LOCAL_APPS = [

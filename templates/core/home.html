@@ -13,8 +13,8 @@
                 <a class="button button--secondary" href="{% url 'core:rights' %}">Conocer más</a>
             </div>
         </div>
-        <div class="hero__visual" aria-hidden="true">
-            {% include "includes/privacy_shield.html" %}
+        <div class="hero__visual">
+            {% include "includes/brand_visual.html" %}
         </div>
     </div>
 </section>
@@ -23,7 +23,7 @@
     <div class="public-container institutional-intro__inner">
         <p class="section-kicker">Información institucional preliminar</p>
         <h2>Privacidad integrada a la gestión</h2>
-        <p>VINESA mantiene un programa de protección de datos personales orientado al cumplimiento de la LOPDP mediante medidas técnicas y organizativas. Este portal centraliza información, avisos y mecanismos para presentar y consultar solicitudes.</p>
+        <p>{{ branding.trade_name|default:'La organización' }} mantiene un programa de protección de datos personales orientado al cumplimiento de la LOPDP mediante medidas técnicas y organizativas. Este portal centraliza información, avisos y mecanismos para presentar y consultar solicitudes.</p>
         <small>Texto editorial temporal sujeto a validación y aprobación institucional.</small>
     </div>
 </section>
