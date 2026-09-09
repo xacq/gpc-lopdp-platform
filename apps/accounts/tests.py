@@ -58,6 +58,8 @@ class AuthenticationHttpTests(TestCase):
             response,
             "Correo electrónico",
         )
+        self.assertContains(response, 'class="brand-hero-image"')
+        self.assertNotContains(response, 'class="privacy-shield"')
 
     def test_correct_password_creates_pending_mfa_not_full_login(self):
         response = self._post_login()

@@ -4,6 +4,23 @@ La misma imagen se ejecuta una vez por empresa. Cada proyecto Compose crea su
 propia base PostgreSQL y sus propios volúmenes de archivos. No comparta archivos
 `.env`, claves criptográficas, bases ni volúmenes entre empresas.
 
+## Instancias locales configuradas
+
+| Marca | Archivo de entorno | Puerto | Proyecto/base interna |
+| --- | --- | ---: | --- |
+| VINESA | `deploy/docker.env` | 8080 | `gpc-lopdp-vinesa` |
+| PLUSBRAND | `deploy/plusbrand.env` | 8081 | `gpc-lopdp-empresa2` |
+| SERVMULTIMARC | `deploy/servmultimarc.env` | 8082 | `gpc-lopdp-empresa3` |
+| VINLITORAL | `deploy/vinlitoral.env` | 8083 | `gpc-lopdp-empresa4` |
+
+Los identificadores internos `empresa2`, `empresa3` y `empresa4` se conservan
+para reutilizar los volúmenes PostgreSQL existentes. La identidad visible, el
+emisor MFA, los recursos gráficos y la paleta corresponden a cada marca.
+
+El administrador nativo de Django (`/admin/`) está deshabilitado en todas las
+instancias Docker mediante `DJANGO_ADMIN_ENABLED=False`. La administración se
+realiza exclusivamente desde los paneles propios de la plataforma.
+
 ## VINESA piloto
 
 1. Genere el entorno local con secretos independientes:

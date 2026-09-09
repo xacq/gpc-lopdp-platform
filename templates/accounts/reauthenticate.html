@@ -3,7 +3,7 @@
 {% block content %}
 <section class="admin-auth-guard">
     <div class="admin-auth-guard__icon" aria-hidden="true">✓</div>
-    <div class="admin-auth-guard__heading"><p class="page-kicker">Operación sensible</p><h1>Confirma tu identidad</h1><p>Por seguridad, ingresa un código MFA o un código de recuperación antes de continuar.</p></div>
+    <div class="admin-auth-guard__heading"><p class="page-kicker">Operación sensible</p><h1>Confirma tu identidad</h1><p>Por seguridad, ingresa un código de verificación en dos pasos o un código de recuperación antes de continuar.</p></div>
     <form class="auth-form auth-form--mfa" method="post">
         {% csrf_token %}
         <input type="hidden" name="next" value="{{ next_url }}">

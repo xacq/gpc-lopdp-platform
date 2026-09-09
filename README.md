@@ -33,7 +33,7 @@ Rutas principales:
 - Portal público: <http://127.0.0.1:8000/>
 - Inicio de sesión: <http://127.0.0.1:8000/accounts/login/>
 - Dashboard: <http://127.0.0.1:8000/dashboard/>
-- Administración nativa: <http://127.0.0.1:8000/admin/>
+- Administración nativa (solo si `DJANGO_ADMIN_ENABLED=True`): <http://127.0.0.1:8000/admin/>
 
 ## Verificación
 
