@@ -1,5 +1,5 @@
 {% load static %}
 <span class="vinesa-brand{% if compact %} vinesa-brand--compact{% endif %}">
-    <img class="vinesa-brand__image" src="{% if branding.logo_url %}{{ branding.logo_url }}{% else %}{% static 'images/vinesa-logo.png' %}{% endif %}" alt="{{ branding.trade_name|default:'VINESA' }}">
+    <img class="vinesa-brand__image" src="{% if branding.logo_url %}{{ branding.logo_url }}{% else %}{% static 'images/vinesa-logo.png' %}{% endif %}" alt="{{ branding.trade_name|default:'Organización' }}">
     {% if not compact %}<span class="vinesa-brand__tagline">Plataforma de Privacidad y Gestión de Solicitudes LOPDP</span>{% endif %}
 </span>

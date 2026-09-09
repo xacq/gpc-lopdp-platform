@@ -17,8 +17,8 @@ def branding(request):
                 "secondary_color": None,
                 "accent_color": None,
                 "background_color": None,
-                "legal_name": "VINESA",
-                "trade_name": "VINESA",
+                "legal_name": "Organización",
+                "trade_name": "Organización",
                 "custom_css": "",
             }
         }
@@ -49,9 +49,13 @@ def branding(request):
 
     custom_css = f":root {{ {' '.join(css_parts)} }}" if css_parts else ""
 
+    logo_url = setting.effective_logo_url
+    if setting.logo_image and logo_url and setting.updated_at:
+        logo_url = f"{logo_url}?v={int(setting.updated_at.timestamp())}"
+
     return {
         "branding": {
-            "logo_url": setting.effective_logo_url,
+            "logo_url": logo_url,
             "favicon_url": setting.effective_favicon_url,
             "primary_color": setting.primary_color,
             "secondary_color": setting.secondary_color,

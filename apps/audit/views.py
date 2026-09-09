@@ -146,7 +146,7 @@ def audit_export_csv(request):
             "Entidad",
             "ID entidad",
             "Origen",
-            "Correlation ID",
+            "Identificador de correlación",
             "Cadena",
             "Posición",
         )
@@ -156,12 +156,12 @@ def audit_export_csv(request):
             (
                 event["created_at"].isoformat(),
                 event["actor"]["name"],
-                event["action"],
-                event["entity_type"],
+                event["action_label"],
+                event["entity_type_label"],
                 event["entity_pk"],
-                event["source"],
+                event["source_label"],
                 event["correlation_id"],
-                event["chain_scope"],
+                event["chain_scope_label"],
                 event["chain_position"],
             )
         )

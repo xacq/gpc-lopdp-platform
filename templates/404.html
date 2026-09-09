@@ -1,0 +1,21 @@
+{% extends "public_base.html" %}
+{% block title %}Página no encontrada{% endblock %}
+{% block body_class %}public-information-page error-page{% endblock %}
+{% block content %}
+<section class="information-page">
+    <div class="public-container error-page__inner">
+        <p class="section-kicker">Página no encontrada</p>
+        <p class="error-page__code" aria-hidden="true">404</p>
+        <h1>No encontramos la página que buscas</h1>
+        <p class="error-page__message">Es posible que la dirección esté incompleta, haya cambiado o ya no esté disponible. Puedes regresar al inicio o acceder al portal institucional.</p>
+        <div class="information-actions">
+            <a class="button button--primary" href="{% url 'core:home' %}">Volver al inicio</a>
+            {% if request.user.is_authenticated %}
+                <a class="button button--secondary" href="{% url 'core:dashboard' %}">Ir al panel de control</a>
+            {% else %}
+                <a class="button button--secondary" href="{% url 'accounts:login' %}">Acceso institucional</a>
+            {% endif %}
+        </div>
+    </div>
+</section>
+{% endblock %}

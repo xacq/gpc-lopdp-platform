@@ -22,7 +22,7 @@
                         {% if settings.phone %}<div><dt>Teléfono</dt><dd>{{ settings.phone }}{% if settings.phone == provisional_settings.phone %} <small>(formato pendiente de normalización)</small>{% endif %}</dd></div>{% endif %}
                         {% if settings.address %}<div><dt>Dirección</dt><dd>{{ settings.address }}</dd></div>{% endif %}
                     </dl>
-                    <a class="contact-card__link" href="{{ privacy_policy_url }}" rel="noopener">Política publicada por VINESA <span aria-hidden="true">→</span></a>
+                    <a class="contact-card__link" href="{% url 'legal_content:public_document' 'privacidad' %}">Política publicada por {{ settings.trade_name|default:settings.legal_name }} <span aria-hidden="true">→</span></a>
                 </article>
                 <article class="contact-card">
                     <p class="section-kicker">Responsable del tratamiento</p>
@@ -66,7 +66,7 @@
                         <div><dt>Dirección matriz</dt><dd>{{ provisional_settings.address }}</dd></div>
                         <div><dt>Zona horaria</dt><dd>{{ provisional_settings.timezone }}</dd></div>
                     </dl>
-                    <a class="contact-card__link" href="{{ privacy_policy_url }}" rel="noopener">Política publicada por VINESA <span aria-hidden="true">→</span></a>
+                    <a class="contact-card__link" href="{% url 'legal_content:public_document' 'privacidad' %}">Política publicada por {{ provisional_settings.trade_name|default:provisional_settings.legal_name }} <span aria-hidden="true">→</span></a>
                 </article>
                 <article class="contact-card">
                     <span class="preliminary-badge">Referencia interna · por confirmar</span>

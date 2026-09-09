@@ -17,7 +17,6 @@ from apps.cases.policies import can_access_case_panel, visible_requests_for
 from apps.cases.services.reports import CaseReportService, ReportPermissionError
 from apps.legal_content.models import RightCatalog
 from apps.organization.defaults import (
-    VINESA_PRIVACY_POLICY_URL,
     VINESA_SYSTEM_SETTINGS,
 )
 from apps.organization.models import SystemSetting
@@ -221,7 +220,6 @@ def contact(request):
         {
             "settings": SystemSetting.objects.first(),
             "provisional_settings": VINESA_SYSTEM_SETTINGS,
-            "privacy_policy_url": VINESA_PRIVACY_POLICY_URL,
             "provisional_dpd_name": PROVISIONAL_DPD_NAME,
         },
     )

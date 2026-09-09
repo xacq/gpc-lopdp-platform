@@ -3,7 +3,7 @@
 {% block content %}
 <div class="auth-heading auth-heading--center"><p class="section-kicker">Protección de la cuenta</p><h1>Configurar verificación en dos pasos</h1><p>Agrega esta cuenta a tu aplicación autenticadora y confirma el primer código.</p></div>
 <div class="mfa-enrollment">
-    <img src="{{ qr_data_uri }}" alt="Código QR para configurar MFA" width="210" height="210">
+    <img src="{{ qr_data_uri }}" alt="Código QR para configurar la verificación en dos pasos" width="210" height="210">
     <div><p><strong>Clave manual</strong></p><code>{{ secret }}</code><details><summary>Mostrar URI de configuración</summary><code>{{ provisioning_uri }}</code></details></div>
 </div>
 <form class="auth-form auth-form--mfa" method="post">{% csrf_token %}{% if form.non_field_errors %}<div class="portal-alert portal-alert--danger" role="alert">{% for error in form.non_field_errors %}<p>{{ error }}</p>{% endfor %}</div>{% endif %}{% for field in form.visible_fields %}{% include "includes/public_field.html" with field=field %}{% endfor %}<button class="button button--primary auth-form__submit" type="submit">Verificar y activar</button></form>

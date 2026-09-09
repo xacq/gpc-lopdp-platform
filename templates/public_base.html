@@ -4,18 +4,18 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="description" content="Plataforma de privacidad y gestión de solicitudes LOPDP de VINESA">
-    <title>{% block title %}Privacidad{% endblock %} | {{ branding.trade_name|default:'VINESA' }}</title>
+    <meta name="description" content="Plataforma de privacidad y gestión de solicitudes LOPDP de {{ branding.trade_name|default:'la organización' }}">
+    <title>{% block title %}Privacidad{% endblock %} | {{ branding.trade_name|default:'Organización' }}</title>
     <link rel="icon" type="image/png" sizes="32x32" href="{% if branding.favicon_url %}{{ branding.favicon_url }}{% else %}{% static 'images/vinesa-favicon.png' %}{% endif %}">
     <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
-    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    <link rel="stylesheet" href="{% static 'css/app.css' %}?v=20260909-dynamic-palette">
     {% if branding.custom_css %}<style>{{ branding.custom_css|safe }}</style>{% endif %}
 </head>
 <body class="public-site {% block body_class %}{% endblock %}">
     <a class="skip-link" href="#contenido">Saltar al contenido</a>
     <header class="public-header">
         <div class="public-container public-header__inner">
-            <a class="public-header__brand" href="{% url 'core:home' %}" aria-label="VINESA, inicio">
+            <a class="public-header__brand" href="{% url 'core:home' %}" aria-label="{{ branding.trade_name|default:'Organización' }}, inicio">
                 {% include "includes/vinesa_brand.html" %}
             </a>
             <button class="public-menu-button" type="button" data-bs-toggle="collapse" data-bs-target="#publicNavigation" aria-controls="publicNavigation" aria-expanded="false" aria-label="Abrir menú">
@@ -35,7 +35,7 @@
 
     <footer class="public-footer">
         <div class="public-container public-footer__inner">
-            <p>© {% now "Y" %} VINESA S.A. <span aria-hidden="true">|</span> Todos los derechos reservados.</p>
+            <p>© {% now "Y" %} {{ branding.legal_name|default:branding.trade_name|default:'Organización' }} <span aria-hidden="true">|</span> Todos los derechos reservados.</p>
             <nav class="public-footer__links" aria-label="Enlaces legales">
                 <a href="{% url 'legal_content:public_document' 'privacidad' %}">Política de Privacidad</a>
                 <a href="{% url 'legal_content:public_document' 'derechos' %}">Derechos y contacto</a>

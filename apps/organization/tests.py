@@ -298,3 +298,16 @@ class SystemSettingsHttpTests(SystemSettingsBase):
         self.assertEqual(context["branding"]["primary_color"], "#AABBCC")
         self.assertIn("--vinesa-red: #AABBCC;", context["branding"]["custom_css"])
         self.assertIn("--theme-background: #FAFAFA;", context["branding"]["custom_css"])
+
+    def test_branding_versions_uploaded_logo_url(self):
+        from django.test import RequestFactory
+        from apps.organization.context_processors import branding
+
+        SystemSetting.objects.filter(pk=self.setting.pk).update(
+            logo_image="branding/logo.png",
+        )
+        self.setting.refresh_from_db()
+
+        logo_url = branding(RequestFactory().get("/"))["branding"]["logo_url"]
+
+        self.assertIn("?v=", logo_url)
