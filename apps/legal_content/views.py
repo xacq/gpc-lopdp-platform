@@ -19,6 +19,7 @@ from apps.legal_content.services.documents import (
     LegalDocumentService,
 )
 from apps.organization.defaults import VINESA_PRIVACY_POLICY_URL
+from apps.organization.models import SystemSetting
 
 
 PUBLIC_DOCUMENTS = (
@@ -212,6 +213,22 @@ PUBLIC_DOCUMENT_TYPES = {
 PUBLIC_DOCUMENT_CONFIG = {item["key"]: item for item in PUBLIC_DOCUMENTS}
 
 
+def _personalize_preliminary_content(value, setting):
+    """Substitutes provisional VINESA references with the active tenant identity."""
+    if isinstance(value, str):
+        trade_name = setting.trade_name or setting.legal_name
+        return (
+            value.replace("privacidad@vinesa.com.ec", setting.contact_email)
+            .replace(VINESA_PRIVACY_POLICY_URL, "/legal/privacidad/")
+            .replace("VINESA", trade_name)
+        )
+    if isinstance(value, tuple):
+        return tuple(_personalize_preliminary_content(item, setting) for item in value)
+    if isinstance(value, dict):
+        return {key: _personalize_preliminary_content(item, setting) for key, item in value.items()}
+    return value
+
+
 def _legal_payload(document):
     return {
         "id": str(document.id),
@@ -393,6 +410,9 @@ def public_legal_document(request, document_key):
     document = LegalDocumentService.current(document_type=document_type)
     title = LegalDocument.DocumentType(document_type).label
     document_config = PUBLIC_DOCUMENT_CONFIG[document_key]
+    setting = SystemSetting.objects.filter(singleton_key=1).first()
+    if setting is not None:
+        document_config = _personalize_preliminary_content(document_config, setting)
     return render(
         request,
         "legal_content/public_document.html",

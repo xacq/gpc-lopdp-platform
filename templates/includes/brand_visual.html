@@ -1,0 +1,6 @@
+{% load static %}
+<img
+    class="brand-hero-image"
+    src="{% if branding.logo_url %}{{ branding.logo_url }}{% else %}{% static 'images/vinesa-logo.png' %}{% endif %}"
+    alt="Logotipo de {{ branding.trade_name|default:'la organización' }}"
+>

@@ -1,4 +1,4 @@
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from apps.legal_content.models import RightCatalog
@@ -6,11 +6,30 @@ from apps.organization.models import SystemSetting
 
 
 class PublicHomeTests(TestCase):
+    @override_settings(DEBUG=False)
+    def test_unknown_route_uses_branded_404_page(self):
+        response = self.client.get("/ruta-que-no-existe/")
+
+        self.assertEqual(response.status_code, 404)
+        self.assertTemplateUsed(response, "404.html")
+        self.assertContains(
+            response,
+            "No encontramos la página que buscas",
+            status_code=404,
+        )
+        self.assertNotContains(
+            response,
+            "Using the URLconf",
+            status_code=404,
+        )
+
     def test_root_renders_public_home(self):
         response = self.client.get("/")
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "core/home.html")
         self.assertContains(response, "Tus datos")
+        self.assertContains(response, 'class="brand-hero-image"')
+        self.assertNotContains(response, 'class="privacy-shield"')
 
     def test_primary_actions_use_existing_public_routes(self):
         response = self.client.get(reverse("core:home"))

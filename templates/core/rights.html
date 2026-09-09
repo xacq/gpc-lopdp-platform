@@ -7,7 +7,7 @@
         <header class="information-hero">
             <p class="section-kicker">Protección de datos personales</p>
             <h1>Sobre tus derechos</h1>
-            <p>Consulta los derechos habilitados por VINESA y utiliza el canal seguro para presentar y dar seguimiento a tu solicitud.</p>
+            <p>Consulta los derechos habilitados por {{ branding.trade_name|default:'la organización' }} y utiliza el canal seguro para presentar y dar seguimiento a tu solicitud.</p>
         </header>
 
         {% if rights %}
@@ -26,7 +26,7 @@
                 <div class="pending-content__icon" aria-hidden="true">i</div>
                 <div>
                     <p class="section-kicker">Contenido de trabajo</p>
-                    <h2>Derechos actualmente comunicados por VINESA</h2>
+                    <h2>Derechos actualmente comunicados por {{ branding.trade_name|default:'la organización' }}</h2>
                     <p>La documentación corporativa disponible comunica acceso, rectificación, eliminación y oposición. No constituyen todavía el catálogo jurídico completo del portal; cualquier derecho adicional se publicará desde el catálogo administrativo una vez aprobado.</p>
                     <div class="preliminary-rights">
                         {% for right in preliminary_rights %}
@@ -35,7 +35,7 @@
                     </div>
                     <ul class="requirement-list">
                         <li>Nombre y descripción oficial de cada derecho.</li>
-                        <li>Referencia legal y alcance aprobado para VINESA.</li>
+                        <li>Referencia legal y alcance aprobado para {{ branding.trade_name|default:'la organización' }}.</li>
                         <li>Plazos, extensiones y reglas de atención aplicables.</li>
                     </ul>
                 </div>
