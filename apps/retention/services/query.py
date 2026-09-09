@@ -2,6 +2,7 @@ from django.core.paginator import Paginator
 from django.db.models import Count, Q
 
 from apps.cases.policies import can_assign_case
+from apps.audit.presentation import entity_label
 from apps.retention.models import DataDisposalEvent
 
 
@@ -69,6 +70,7 @@ class RetentionQueryService:
         return {
             "id": str(item.id),
             "entity_type": item.entity_type,
+            "entity_type_label": entity_label(item.entity_type),
             "entity_pk": item.entity_pk,
             "action": {"code": item.action, "label": item.get_action_display()},
             "status": {"code": item.status, "label": item.get_status_display()},

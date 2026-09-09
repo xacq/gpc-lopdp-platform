@@ -3,6 +3,12 @@ from __future__ import annotations
 from math import ceil
 
 from apps.audit.models import AuditLog
+from apps.audit.presentation import (
+    action_label,
+    chain_scope_label,
+    entity_label,
+    source_label,
+)
 from apps.audit.policies import can_read_audit
 from apps.audit.services.audit import LogSanitizer
 
@@ -60,11 +66,15 @@ class AuditQueryService:
             "created_at": entry.created_at,
             "actor": cls._actor(entry),
             "action": entry.action,
+            "action_label": action_label(entry.action),
             "entity_type": entry.entity_type,
+            "entity_type_label": entity_label(entry.entity_type),
             "entity_pk": entry.entity_pk,
             "source": entry.source,
+            "source_label": source_label(entry.source),
             "correlation_id": str(entry.correlation_id),
             "chain_scope": entry.chain_scope,
+            "chain_scope_label": chain_scope_label(entry.chain_scope),
             "chain_position": entry.chain_position,
         }
         if detail:

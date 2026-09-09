@@ -116,7 +116,7 @@ class DashboardSummaryTests(TestCase):
         response = self.client.get(reverse("core:dashboard"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "Dashboard")
+        self.assertContains(response, "Panel de control")
         self.assertContains(response, "Total expedientes")
         self.assertContains(response, "VS-DASH-001")
         self.assertIn("no-cache", response["Cache-Control"])
