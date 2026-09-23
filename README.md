@@ -1,14 +1,40 @@
-# VINESA — Plataforma de Privacidad y Solicitudes LOPDP
+# GPC LOPDP Platform
 
-Aplicación Django para recepción, seguimiento y gestión interna de solicitudes de derechos de protección de datos. Incluye portal público, autenticación con MFA, expedientes, asignaciones, comunicaciones cifradas, evidencias, retención, reportes, auditoría y administración segura de usuarios y configuración.
+Plataforma Django para recibir, dar seguimiento y gestionar internamente
+solicitudes de ejercicio de derechos previstos en la LOPDP ecuatoriana.
 
-## Estado actual
+Incluye portal público, expedientes, verificación de identidad, evidencias,
+plazos, resoluciones, comunicaciones cifradas, auditoría, reportes y gestión
+segura de usuarios. Puede operar varias empresas con bases de datos,
+volúmenes y archivos de configuración aislados.
 
-El backend funcional previo a la aplicación final del diseño UI está implementado. La rama activa incluye los flujos públicos y administrativos, controles de permisos, auditoría y paneles operativos. La última regresión completa aprobó 468 pruebas.
+## Funcionalidades principales
 
-## Arranque local en Windows y VS Code
+- Solicitudes públicas de acceso, rectificación y actualización, eliminación,
+  oposición, portabilidad y suspensión del tratamiento.
+- Referencia y códigos seguros para verificar correo y consultar solicitudes.
+- Gestión de expedientes: asignación, revisión, aclaraciones, extensión,
+  resolución y cierre.
+- Causales de resolución LOPDP según el tipo de resultado.
+- Cola de correos SMTP, comunicaciones y trazabilidad de entrega.
+- Evidencias protegidas, cifrado de datos sensibles, auditoría y MFA.
 
-Requisitos: Python 3.13, PostgreSQL y PowerShell. ClamAV es necesario para probar cargas públicas reales; si no está disponible, el sistema rechaza esos archivos de forma segura.
+## Documentación
+
+- [Docker local por empresa](docs/operations/docker_local.md)
+- [Despacho de correo](docs/operations/email_outbox.md)
+- [Cargas públicas](docs/operations/public_uploads.md)
+- [Checklist de publicación](docs/operations/release_checklist.md)
+
+El manual operativo para propietarios y personal de cada empresa debe
+mantenerse separado de este README. No incluya en el repositorio credenciales,
+datos personales, respaldos ni información de acceso a servidores.
+
+## Inicio local en Windows
+
+Requiere Python 3.13, PostgreSQL y PowerShell. ClamAV es necesario para probar
+cargas públicas reales; si no está disponible, el sistema rechaza los archivos
+por seguridad.
 
 ```powershell
 python -m venv .venv
@@ -17,23 +43,23 @@ python -m pip install -r requirements\base.txt
 Copy-Item .env.example .env
 ```
 
-Edite `.env` y configure como mínimo una clave secreta y `DATABASE_URL`. No use credenciales reales en archivos versionados.
+Configure en `.env` al menos `DJANGO_SECRET_KEY` y `DATABASE_URL`. No use
+credenciales reales en archivos versionados.
 
 ```powershell
 python manage.py migrate
-python manage.py seed_vinesa_settings
+python manage.py seed_lopdp_rights
+python manage.py seed_resolution_reasons
 python manage.py createsuperuser
 python manage.py runserver
 ```
-
-También puede abrir **Ejecutar y depurar** en VS Code y seleccionar `Django: servidor local`. El repositorio incluye esa configuración y tareas de verificación.
 
 Rutas principales:
 
 - Portal público: <http://127.0.0.1:8000/>
 - Inicio de sesión: <http://127.0.0.1:8000/accounts/login/>
-- Dashboard: <http://127.0.0.1:8000/dashboard/>
-- Administración nativa (solo si `DJANGO_ADMIN_ENABLED=True`): <http://127.0.0.1:8000/admin/>
+- Panel: <http://127.0.0.1:8000/dashboard/>
+- Administración nativa, si está habilitada: <http://127.0.0.1:8000/admin/>
 
 ## Verificación
 
@@ -45,29 +71,51 @@ python manage.py collectstatic --noinput --dry-run --verbosity 0
 python manage.py test --keepdb -v 1
 ```
 
-En VS Code puede ejecutar las tareas `Django: verificar proyecto` y `Django: pruebas completas`.
+## Docker multiempresa
 
-## Docker local
+Cada empresa usa su propio archivo de entorno y sus propios volúmenes. En la
+instalación actual los archivos son:
 
-La instalación Docker reutilizable por empresa incluye Django, PostgreSQL y
-Nginx con bases y volúmenes aislados. Consulte la guía
-[Docker local por empresa](docs/operations/docker_local.md).
+- `deploy/vinesa.env`
+- `deploy/plusbrand.env`
+- `deploy/servmultimarc.env`
+- `deploy/vinlitoral.env`
 
-## Procesos programados
+Ejemplo de operación para una empresa:
 
-En producción, programe estos comandos con el usuario de servicio y las mismas variables de entorno que la aplicación:
-
-```powershell
-python manage.py process_email_outbox --batch-size 100 --drain
-python manage.py queue_deadline_alerts --limit 500
-python manage.py detect_retention_events
-python manage.py cleanup_temporary_uploads --batch-size 100
+```bash
+docker compose --env-file deploy/vinesa.env up --build -d
+docker compose --env-file deploy/vinesa.env exec web python manage.py check
 ```
 
-El outbox se recomienda cada minuto. Los otros procesos deben programarse según el acuerdo operativo; alertas y retención son idempotentes. Consulte [despacho de correo](docs/operations/email_outbox.md) y [cargas públicas](docs/operations/public_uploads.md).
+Tras una instalación nueva o una actualización de catálogo, ejecute:
 
-## Producción
+```bash
+python manage.py seed_lopdp_rights
+python manage.py seed_resolution_reasons
+```
 
-Use `config.settings.production`, PostgreSQL, un servidor WSGI/ASGI y un proxy HTTPS. `runserver` es exclusivamente local. Antes de publicar, ejecute `collectstatic`, configure SMTP y ClamAV, proteja `PRIVATE_STORAGE_ROOT`, aplique migraciones y complete el [checklist de publicación](docs/operations/release_checklist.md).
+Consulte la guía Docker para operaciones completas, respaldos y actualización
+de instancias.
 
-`SECURE_HSTS_INCLUDE_SUBDOMAINS` y `SECURE_HSTS_PRELOAD` permanecen deshabilitados de manera intencional hasta confirmar que todos los subdominios operan permanentemente bajo HTTPS.
+## Correo y procesos programados
+
+Cada empresa debe configurar su propio SMTP y `DEFAULT_FROM_EMAIL` en su
+archivo `.env`. Los correos salientes se almacenan primero en una cola y se
+envían mediante:
+
+```bash
+python manage.py process_email_outbox --batch-size 100 --drain
+```
+
+En producción, programe este proceso periódicamente. También deben
+programarse las alertas de plazo, retención y limpieza de cargas temporales
+según el procedimiento operativo definido para cada empresa.
+
+## Producción y seguridad
+
+Use `config.settings.production`, PostgreSQL, HTTPS y un proxy inverso. Antes
+de publicar, configure SMTP y ClamAV, proteja el almacenamiento privado,
+aplique migraciones, realice respaldos y complete el checklist de publicación.
+
+No ejecute `docker compose down -v` en producción: elimina volúmenes de datos.
