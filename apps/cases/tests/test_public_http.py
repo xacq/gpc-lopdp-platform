@@ -103,7 +103,7 @@ class PublicCaseHttpTests(TestCase):
     def assert_private_headers(self, response):
         self.assertEqual(response["Cache-Control"], "no-store, max-age=0")
         self.assertEqual(response["Pragma"], "no-cache")
-        self.assertEqual(response["Referrer-Policy"], "no-referrer")
+        self.assertEqual(response["Referrer-Policy"], "same-origin")
         self.assertEqual(response["X-Robots-Tag"], "noindex, nofollow")
 
     def tracking_post(self, **overrides):

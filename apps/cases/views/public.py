@@ -67,7 +67,10 @@ GENERIC_VERIFICATION_ERROR = (
 def _private_response(response: HttpResponse) -> HttpResponse:
     response["Cache-Control"] = "no-store, max-age=0"
     response["Pragma"] = "no-cache"
-    response["Referrer-Policy"] = "no-referrer"
+    # A strict no-referrer policy turns the Origin header into "null" for
+    # same-origin HTML form submissions in Firefox, which Django must reject
+    # to preserve CSRF protection. Keep referrers within this portal only.
+    response["Referrer-Policy"] = "same-origin"
     response["X-Robots-Tag"] = "noindex, nofollow"
     return response
 

@@ -234,7 +234,7 @@ class PublicIntakeHttpTests(TestCase):
 
     def assert_private_headers(self, response):
         self.assertEqual(response["Cache-Control"], "no-store, max-age=0")
-        self.assertEqual(response["Referrer-Policy"], "no-referrer")
+        self.assertEqual(response["Referrer-Policy"], "same-origin")
 
     def test_public_request_form_is_anonymous_and_excludes_source_channel(self):
         response = self.client.get(reverse("cases:public_request_create"))
