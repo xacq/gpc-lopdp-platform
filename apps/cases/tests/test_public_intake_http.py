@@ -1,9 +1,11 @@
 import base64
+from datetime import timedelta
 import re
 from unittest.mock import patch
 
 from django.test import Client, TestCase, override_settings
 from django.urls import reverse
+from django.utils import timezone
 
 from apps.audit.models import AuditLog
 from apps.cases.models import RequestAccessToken, RightsRequest
@@ -238,6 +240,8 @@ class PublicIntakeHttpTests(TestCase):
         response = self.client.get(reverse("cases:public_request_create"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Presentar una solicitud")
+        self.assertContains(response, "Seleccionar archivo", count=3)
+        self.assertContains(response, "Ningún archivo seleccionado", count=3)
         self.assertNotContains(response, 'name="source_channel"')
         self.assertContains(response, 'name="website"', html=False)
         self.assertNotContains(response, "novalidate")
@@ -379,6 +383,31 @@ class PublicIntakeHttpTests(TestCase):
         self.assertContains(response, "No fue posible verificar")
         self.assertNotContains(response, invalid_code)
         self.assertNotContains(response, "VINESA-2099-999999")
+        self.assert_private_headers(response)
+
+    @override_settings(PUBLIC_TRACKING_RESEND_COOLDOWN_SECONDS=60)
+    def test_tracking_code_resend_queues_email_without_echoing_pii(self):
+        self.client.post(reverse("cases:public_request_create"), self.post_data)
+        first = RequestCommunication.objects.get()
+        tracking_token = first.request.access_tokens.get(
+            purpose=RequestAccessToken.Purpose.TRACKING
+        )
+        tracking_token.created_at = timezone.now() - timedelta(minutes=2)
+        tracking_token.save(update_fields=["created_at"])
+
+        response = self.client.post(
+            reverse("cases:public_tracking_code_resend"),
+            {
+                "reference_number": first.request.reference_number,
+                "email": self.post_data["email"],
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "recibirás un nuevo código")
+        self.assertNotContains(response, first.request.reference_number)
+        self.assertNotContains(response, self.post_data["email"])
+        self.assertEqual(RequestCommunication.objects.count(), 2)
         self.assert_private_headers(response)
 
     def test_public_intake_and_verification_require_csrf(self):

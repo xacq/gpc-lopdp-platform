@@ -5,6 +5,7 @@ from django.test import (
     TestCase,
     override_settings,
 )
+from django.utils import timezone
 
 from apps.audit.models import AuditLog
 from apps.cases.models import (
@@ -16,6 +17,7 @@ from apps.cases.services.cases import (
 )
 from apps.cases.services.public_tracking import (
     PublicTrackingAccessError,
+    PublicTrackingCodeResendService,
     PublicTrackingService,
 )
 from apps.cases.services.tokens import (
@@ -27,6 +29,8 @@ from apps.legal_content.models import (
 from apps.organization.models import (
     SystemSetting,
 )
+from apps.communications.models import RequestCommunication
+from apps.communications.services.notifications import NotificationService
 from apps.subjects.services.subjects import (
     SubjectService,
 )
@@ -317,6 +321,42 @@ class PublicTrackingServiceTests(
             "Solicitud de prueba",
             serialized,
         )
+
+    @override_settings(PUBLIC_TRACKING_RESEND_COOLDOWN_SECONDS=60)
+    def test_matching_email_reissues_tracking_code_in_encrypted_outbox(self):
+        RequestAccessToken.objects.filter(pk=self.issued.record.pk).update(
+            created_at=timezone.now() - timedelta(minutes=2)
+        )
+
+        result = PublicTrackingCodeResendService.resend(
+            reference_number=self.request.reference_number.lower(),
+            email="SUBJECT@example.com",
+        )
+
+        self.assertTrue(result.queued)
+        self.assertEqual(RequestCommunication.objects.count(), 1)
+        communication = RequestCommunication.objects.get()
+        payload = NotificationService.decrypt_payload(communication)
+        self.assertEqual(payload["recipient"], "subject@example.com")
+        self.assertIn(self.request.reference_number, payload["body"])
+        self.assertIn("Código de seguimiento:", payload["body"])
+        self.assertNotIn(
+            self.request.reference_number.encode(),
+            bytes(communication.body_encrypted),
+        )
+        self.issued.record.refresh_from_db()
+        self.assertIsNotNone(self.issued.record.revoked_at)
+
+    def test_wrong_email_does_not_reissue_or_queue_a_code(self):
+        result = PublicTrackingCodeResendService.resend(
+            reference_number=self.request.reference_number,
+            email="wrong@example.com",
+        )
+
+        self.assertFalse(result.queued)
+        self.assertEqual(RequestCommunication.objects.count(), 0)
+        self.issued.record.refresh_from_db()
+        self.assertIsNone(self.issued.record.revoked_at)
 
     def test_audit_does_not_store_token_or_subject_pii(self):
         (

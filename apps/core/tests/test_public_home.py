@@ -42,12 +42,18 @@ class PublicHomeTests(TestCase):
             reverse("cases:public_tracking"),
         )
 
-    def test_home_uses_confirmed_rights_without_hardcoded_portability(self):
+    def test_home_uses_lopdp_rights_when_catalog_is_empty(self):
         response = self.client.get(reverse("core:home"))
 
-        for right in ("Acceso", "Rectificación", "Eliminación", "Oposición"):
+        for right in (
+            "Acceso",
+            "Rectificación y actualización",
+            "Eliminación",
+            "Oposición",
+            "Portabilidad",
+            "Suspensión del tratamiento",
+        ):
             self.assertContains(response, right)
-        self.assertNotContains(response, "Portabilidad")
 
     def test_home_prefers_active_rights_catalog(self):
         RightCatalog.objects.create(
@@ -92,16 +98,20 @@ class PublicHomeTests(TestCase):
 
 
 class PublicInformationPageTests(TestCase):
-    def test_rights_page_uses_preliminary_catalog_when_database_is_empty(self):
+    def test_rights_page_uses_lopdp_catalog_when_database_is_empty(self):
         response = self.client.get(reverse("core:rights"))
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "core/rights.html")
-        self.assertContains(response, "Derechos actualmente comunicados")
-        self.assertContains(response, "Eliminación")
-        self.assertContains(
-            response,
-            "No constituyen todavía el catálogo jurídico completo",
-        )
+        self.assertContains(response, "Derechos reconocidos por la LOPDP")
+        for right in (
+            "Acceso",
+            "Rectificación y actualización",
+            "Eliminación",
+            "Oposición",
+            "Portabilidad",
+            "Suspensión del tratamiento",
+        ):
+            self.assertContains(response, right)
 
     def test_rights_page_uses_active_catalog_data(self):
         RightCatalog.objects.create(
@@ -122,7 +132,7 @@ class PublicInformationPageTests(TestCase):
         self.assertContains(response, "Derecho de prueba aprobado")
         self.assertContains(response, "Descripción pública configurada.")
         self.assertNotContains(response, "No publicar")
-        self.assertNotContains(response, "Derechos actualmente comunicados")
+        self.assertNotContains(response, "Derechos reconocidos por la LOPDP")
 
     def test_contact_page_marks_missing_settings_as_pending(self):
         response = self.client.get(reverse("core:contact"))

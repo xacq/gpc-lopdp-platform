@@ -18,6 +18,7 @@ from .public import (
     public_request_create,
     public_request_received,
     public_tracking,
+    public_tracking_code_resend,
 )
 
 __all__ = [
@@ -38,4 +39,5 @@ __all__ = [
     "public_request_create",
     "public_request_received",
     "public_tracking",
+    "public_tracking_code_resend",
 ]

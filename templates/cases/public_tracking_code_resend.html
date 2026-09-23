@@ -1,0 +1,26 @@
+{% extends "public_base.html" %}
+{% block title %}Reenviar código de seguimiento{% endblock %}
+{% block body_class %}public-tracking-page{% endblock %}
+{% block content %}
+<div class="portal-page">
+    <div class="public-container portal-page__inner">
+        <div class="portal-heading">
+            <div><p class="section-kicker">Seguimiento público</p><h1>Reenviar código de seguimiento</h1><p>Ingresa la referencia y el correo registrado en la solicitud.</p></div>
+            <a class="button button--secondary" href="{% url 'cases:public_tracking' %}">← Volver al seguimiento</a>
+        </div>
+        <section class="portal-panel tracking-query">
+            {% if validation_error %}<div class="alert alert-danger" role="alert">Ingresa una referencia y un correo electrónico válidos.</div>{% endif %}
+            {% if submitted %}
+                <div class="portal-alert portal-alert--success" role="status"><p>Si los datos coinciden, recibirás un nuevo código de seguimiento en tu correo.</p></div>
+            {% endif %}
+            <form method="post" action="{% url 'cases:public_tracking_code_resend' %}">
+                {% csrf_token %}
+                {% include "includes/public_field.html" with field=form.reference_number %}
+                {% include "includes/public_field.html" with field=form.email %}
+                <button class="button button--primary tracking-query__submit" type="submit">Enviar nuevo código</button>
+            </form>
+            <p class="portal-note">Para proteger tu privacidad, la confirmación no indica si los datos existen o coinciden.</p>
+        </section>
+    </div>
+</div>
+{% endblock %}

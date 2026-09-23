@@ -66,9 +66,9 @@
                     {% include "includes/public_field.html" with field=form.representative_email %}
                 </div>
                 <div class="upload-grid">
-                    {% include "includes/public_field.html" with field=form.identity_document %}
-                    {% include "includes/public_field.html" with field=form.authority_document %}
-                    {% include "includes/public_field.html" with field=form.supporting_document %}
+                    {% include "includes/public_file_field.html" with field=form.identity_document %}
+                    {% include "includes/public_file_field.html" with field=form.authority_document %}
+                    {% include "includes/public_file_field.html" with field=form.supporting_document %}
                 </div>
                 <div class="wizard-actions"><button class="button button--secondary" type="button" data-wizard-back>← Anterior</button><button class="button button--primary" type="button" data-wizard-next>Revisar solicitud <span aria-hidden="true">→</span></button></div>
             </section>

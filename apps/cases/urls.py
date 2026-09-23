@@ -7,6 +7,7 @@ from apps.cases.views import (
     public_request_create,
     public_request_received,
     public_tracking,
+    public_tracking_code_resend,
     request_assign,
     request_clarification_create,
     request_clarification_receive,
@@ -44,6 +45,11 @@ urlpatterns = [
         "public/tracking/",
         public_tracking,
         name="public_tracking",
+    ),
+    path(
+        "public/tracking/resend-code/",
+        public_tracking_code_resend,
+        name="public_tracking_code_resend",
     ),
     path(
         "public/download/",

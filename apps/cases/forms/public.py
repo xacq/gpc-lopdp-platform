@@ -86,6 +86,30 @@ class PublicTrackingForm(forms.Form):
     )
 
 
+class PublicTrackingCodeResendForm(forms.Form):
+    reference_number = forms.CharField(
+        label="Número de referencia",
+        max_length=50,
+        widget=forms.TextInput(
+            attrs={
+                "autocomplete": "off",
+                "autocapitalize": "characters",
+                "spellcheck": "false",
+            }
+        ),
+    )
+    email = forms.EmailField(
+        label="Correo electrónico registrado",
+        max_length=254,
+        widget=forms.EmailInput(
+            attrs={
+                "autocomplete": "email",
+                "spellcheck": "false",
+            }
+        ),
+    )
+
+
 class PublicDownloadForm(forms.Form):
     reference_number = forms.CharField(
         label="Número de referencia",

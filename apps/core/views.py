@@ -26,29 +26,50 @@ PRELIMINARY_RIGHTS = (
     {
         "name": "Acceso",
         "description": (
-            "Solicitar información sobre los datos personales tratados y "
-            "la forma en que se utilizan."
+            "Conocer y obtener gratuitamente los datos personales tratados "
+            "y la información legalmente exigida."
         ),
+        "legal_reference": "LOPDP, art. 13",
     },
     {
-        "name": "Rectificación",
+        "name": "Rectificación y actualización",
         "description": (
-            "Solicitar la corrección de datos inexactos o incompletos."
+            "Corregir o actualizar datos personales inexactos o incompletos."
         ),
+        "legal_reference": "LOPDP, art. 14",
     },
     {
         "name": "Eliminación",
         "description": (
-            "Solicitar la supresión de datos cuando se cumplan las "
-            "condiciones aplicables."
+            "Solicitar la supresión de datos personales cuando proceda "
+            "conforme a la ley."
         ),
+        "legal_reference": "LOPDP, art. 15",
     },
     {
         "name": "Oposición",
         "description": (
-            "Oponerse a determinados tratamientos en los casos previstos "
-            "por la normativa."
+            "Oponerse o negarse al tratamiento en los casos previstos por "
+            "la ley."
         ),
+        "legal_reference": "LOPDP, art. 16",
+    },
+    {
+        "name": "Portabilidad",
+        "description": (
+            "Recibir los datos en formato compatible, actualizado, "
+            "estructurado, común, interoperable y de lectura mecánica, o "
+            "pedir su transmisión."
+        ),
+        "legal_reference": "LOPDP, art. 17",
+    },
+    {
+        "name": "Suspensión del tratamiento",
+        "description": (
+            "Solicitar el cese temporal del tratamiento en los casos "
+            "previstos por la ley."
+        ),
+        "legal_reference": "LOPDP, art. 18",
     },
 )
 

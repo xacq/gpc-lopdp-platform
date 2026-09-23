@@ -20,7 +20,7 @@
                     {% include "includes/public_field.html" with field=form.token %}
                     <button class="button button--primary tracking-query__submit" type="submit">Consultar estado</button>
                 </form>
-                <div class="tracking-query__links"><a href="{% url 'cases:public_email_verification' %}">Verificar correo</a><a href="{% url 'cases:public_download_form' %}">Descargar documento</a></div>
+                <div class="tracking-query__links"><a href="{% url 'cases:public_tracking_code_resend' %}">Reenviar código</a><a href="{% url 'cases:public_email_verification' %}">Verificar correo</a><a href="{% url 'cases:public_download_form' %}">Descargar documento</a></div>
             </section>
             <section class="portal-panel tracking-result" aria-live="polite">
                 <div class="tracking-result__heading"><h2>Estado actual</h2>{% if result %}<span class="status-pill">{{ status_label }}</span>{% else %}<span class="status-pill status-pill--muted">Pendiente de consulta</span>{% endif %}</div>

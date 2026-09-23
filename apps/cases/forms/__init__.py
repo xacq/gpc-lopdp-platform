@@ -6,6 +6,7 @@ from .public import (
     PublicDownloadForm,
     PublicEmailVerificationForm,
     PublicRequestForm,
+    PublicTrackingCodeResendForm,
     PublicTrackingForm,
 )
 
@@ -15,5 +16,6 @@ __all__ = [
     "PublicDownloadForm",
     "PublicEmailVerificationForm",
     "PublicRequestForm",
+    "PublicTrackingCodeResendForm",
     "PublicTrackingForm",
 ]

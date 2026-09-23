@@ -25,19 +25,14 @@
             <section class="pending-content" role="status">
                 <div class="pending-content__icon" aria-hidden="true">i</div>
                 <div>
-                    <p class="section-kicker">Contenido de trabajo</p>
-                    <h2>Derechos actualmente comunicados por {{ branding.trade_name|default:'la organización' }}</h2>
-                    <p>La documentación corporativa disponible comunica acceso, rectificación, eliminación y oposición. No constituyen todavía el catálogo jurídico completo del portal; cualquier derecho adicional se publicará desde el catálogo administrativo una vez aprobado.</p>
+                    <p class="section-kicker">Derechos reconocidos por la LOPDP</p>
+                    <h2>Derechos de los titulares de datos personales</h2>
+                    <p>El portal habilita el ejercicio de los derechos de acceso, rectificación y actualización, eliminación, oposición, portabilidad y suspensión del tratamiento.</p>
                     <div class="preliminary-rights">
                         {% for right in preliminary_rights %}
-                            <article><h3>{{ right.name }}</h3><p>{{ right.description }}</p></article>
+                            <article><h3>{{ right.name }}</h3><p>{{ right.description }}</p><small>{{ right.legal_reference }}</small></article>
                         {% endfor %}
                     </div>
-                    <ul class="requirement-list">
-                        <li>Nombre y descripción oficial de cada derecho.</li>
-                        <li>Referencia legal y alcance aprobado para {{ branding.trade_name|default:'la organización' }}.</li>
-                        <li>Plazos, extensiones y reglas de atención aplicables.</li>
-                    </ul>
                 </div>
             </section>
         {% endif %}

@@ -12,6 +12,7 @@ from apps.cases.forms import (
     PublicDownloadForm,
     PublicEmailVerificationForm,
     PublicRequestForm,
+    PublicTrackingCodeResendForm,
     PublicTrackingForm,
 )
 from apps.cases.models import RightsRequest
@@ -23,6 +24,8 @@ from apps.cases.services.public_downloads import (
 )
 from apps.cases.services.public_tracking import (
     PublicTrackingAccessError,
+    PublicTrackingCodeResendError,
+    PublicTrackingCodeResendService,
     PublicTrackingService,
 )
 from apps.cases.services.public_intake import (
@@ -314,6 +317,49 @@ def public_tracking(request):
             ),
             "history": history,
             "access_error": access_error,
+        },
+    )
+    return _private_response(response)
+
+
+@require_http_methods(["GET", "POST"])
+def public_tracking_code_resend(request):
+    form = PublicTrackingCodeResendForm()
+    submitted = False
+    validation_error = False
+
+    if request.method == "POST":
+        submitted_form = PublicTrackingCodeResendForm(request.POST)
+        if submitted_form.is_valid():
+            submitted = True
+            try:
+                PublicTrackingCodeResendService.resend(
+                    reference_number=(
+                        submitted_form.cleaned_data["reference_number"]
+                    ),
+                    email=submitted_form.cleaned_data["email"],
+                    correlation_id=uuid.uuid4(),
+                )
+            except (
+                PublicTrackingCodeResendError,
+                NotificationServiceError,
+                CryptoError,
+                SystemSetting.DoesNotExist,
+                ValueError,
+            ):
+                pass
+        else:
+            validation_error = True
+        # Do not render submitted reference numbers or email addresses.
+        form = PublicTrackingCodeResendForm()
+
+    response = render(
+        request,
+        "cases/public_tracking_code_resend.html",
+        {
+            "form": form,
+            "submitted": submitted,
+            "validation_error": validation_error,
         },
     )
     return _private_response(response)

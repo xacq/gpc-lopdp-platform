@@ -116,6 +116,12 @@
     representativeToggle?.addEventListener("change", setRepresentativeState);
     representativeFields?.addEventListener("input", setRepresentativeState);
     control("authority_document")?.addEventListener("change", setRepresentativeState);
+    form.querySelectorAll("[data-file-picker] input[type=file]").forEach((input) => {
+        input.addEventListener("change", () => {
+            const name = input.closest("[data-file-picker]")?.querySelector("[data-file-picker-name]");
+            if (name) name.textContent = input.files?.[0]?.name || "Ningún archivo seleccionado";
+        });
+    });
     setRepresentativeState();
 
     const firstError = form.querySelector(".is-invalid, .public-field__error");

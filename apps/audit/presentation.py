@@ -17,6 +17,7 @@ ACTION_LABELS = {
     "USER_PASSWORD_RESET": "Contraseña del usuario restablecida",
     "RIGHTS_REQUEST_ASSIGNED": "Solicitud de derechos asignada",
     "PUBLIC_REQUEST_EMAIL_VERIFIED": "Correo de la solicitud pública verificado",
+    "PUBLIC_TRACKING_CODE_REISSUED": "Código público de seguimiento reenviado",
     "REQUEST_COMMUNICATION_RECEIVED": "Comunicación de la solicitud recibida",
     "PORTABILITY_EXPORT_GENERATED": "Exportación de portabilidad generada",
     "PORTABILITY_EXPORT_DOWNLOADED": "Exportación de portabilidad descargada",
