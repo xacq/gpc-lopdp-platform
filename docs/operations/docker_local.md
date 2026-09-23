@@ -70,6 +70,32 @@ docker compose --env-file deploy/docker.env exec web python manage.py test -v 1
 docker compose --env-file deploy/docker.env down
 ```
 
+## Actualizar las cuatro empresas
+
+Después de actualizar el código, reconstruya cada instancia sin ejecutar
+`down` ni eliminar volúmenes. El entrypoint aplica las migraciones y recopila
+los archivos estáticos al iniciar el contenedor web. Luego cargue el catálogo
+LOPDP en cada base de datos:
+
+```powershell
+$tenants = @(
+    "deploy/docker.env",
+    "deploy/plusbrand.env",
+    "deploy/servmultimarc.env",
+    "deploy/vinlitoral.env"
+)
+
+foreach ($tenant in $tenants) {
+    docker compose --env-file $tenant up --build -d
+    docker compose --env-file $tenant exec web python manage.py seed_lopdp_rights
+    docker compose --env-file $tenant ps
+}
+```
+
+Revise previamente el correo SMTP y `DEFAULT_FROM_EMAIL` en cada archivo de
+entorno. Esos archivos, sus bases de datos y sus volúmenes no se comparten ni
+se sobrescriben durante la actualización.
+
 No utilice `down -v` salvo que quiera eliminar definitivamente la base y los
 archivos de esa empresa.
 
