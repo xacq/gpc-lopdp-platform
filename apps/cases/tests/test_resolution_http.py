@@ -346,6 +346,10 @@ class ResolutionHttpTests(TestCase):
             self.inactive_reason,
             queryset,
         )
+        self.assertContains(
+            response,
+            f'data-reason-type="{self.rejection_reason.reason_type}"',
+        )
 
     def test_manager_can_approve(self):
         case = self.create_request()

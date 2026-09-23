@@ -21,6 +21,34 @@ from apps.subjects.models import (
 )
 
 
+class OutcomeReasonSelect(forms.Select):
+    """Expose the reason category so the resolution form can filter it."""
+
+    def create_option(
+        self,
+        name,
+        value,
+        label,
+        selected,
+        index,
+        subindex=None,
+        attrs=None,
+    ):
+        option = super().create_option(
+            name,
+            value,
+            label,
+            selected,
+            index,
+            subindex=subindex,
+            attrs=attrs,
+        )
+        instance = getattr(value, "instance", None)
+        if instance is not None:
+            option["attrs"]["data-reason-type"] = instance.reason_type
+        return option
+
+
 class RequestListFilterForm(forms.Form):
     search = forms.CharField(required=False, max_length=100)
     right = forms.ModelChoiceField(
@@ -414,6 +442,7 @@ class RequestResolutionForm(forms.Form):
                 CaseOutcomeReason.objects.none()
             ),
             required=False,
+            widget=OutcomeReasonSelect,
             empty_label=(
                 "Seleccione una causal"
             ),
