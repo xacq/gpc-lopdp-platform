@@ -21,10 +21,17 @@ volúmenes y archivos de configuración aislados.
 
 ## Documentación
 
+- [Manual operativo para la empresa](docs/manual_propietario_empresa.md)
 - [Docker local por empresa](docs/operations/docker_local.md)
 - [Despacho de correo](docs/operations/email_outbox.md)
 - [Cargas públicas](docs/operations/public_uploads.md)
 - [Checklist de publicación](docs/operations/release_checklist.md)
+
+### Entrega formal
+
+- [Acta de entrega y aceptación](docs/entrega/acta_entrega_aceptacion.md)
+- [Ficha técnica confidencial por empresa](docs/entrega/ficha_tecnica_empresa.md)
+- [Checklist de puesta en producción](docs/entrega/checklist_puesta_produccion.md)
 
 El manual operativo para propietarios y personal de cada empresa debe
 mantenerse separado de este README. No incluya en el repositorio credenciales,
