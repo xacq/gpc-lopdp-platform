@@ -55,7 +55,7 @@ class ImportPublicLegalDocumentsCommandTests(TestCase):
 
         call_command(
             "import_public_legal_documents",
-            version="1.0",
+            legal_version="1.0",
             publish=True,
             stdout=output,
         )
@@ -76,12 +76,12 @@ class ImportPublicLegalDocumentsCommandTests(TestCase):
         )
 
     def test_import_is_idempotent_for_same_version(self):
-        call_command("import_public_legal_documents", version="1.0", publish=True)
+        call_command("import_public_legal_documents", legal_version="1.0", publish=True)
         output = StringIO()
 
         call_command(
             "import_public_legal_documents",
-            version="1.0",
+            legal_version="1.0",
             publish=True,
             stdout=output,
         )

@@ -20,7 +20,7 @@ documentos se rendericen con el correo correcto.
 ## Comando de importacion
 
 ```bash
-python manage.py import_public_legal_documents --version 1.0 --publish
+python manage.py import_public_legal_documents --legal-version 1.0 --publish
 ```
 
 El comando crea y publica:
@@ -40,8 +40,8 @@ preliminar hasta contar con textos aprobados.
 Ejecute una vez por instancia:
 
 ```bash
-docker compose --env-file deploy/vinesa.env exec web python manage.py import_public_legal_documents --version 1.0 --publish
-docker compose --env-file deploy/vinlitoral.env exec web python manage.py import_public_legal_documents --version 1.0 --publish
-docker compose --env-file deploy/plusbrand.env exec web python manage.py import_public_legal_documents --version 1.0 --publish
-docker compose --env-file deploy/servmultimarc.env exec web python manage.py import_public_legal_documents --version 1.0 --publish
+docker compose --env-file deploy/vinesa.env exec web python manage.py import_public_legal_documents --legal-version 1.0 --publish
+docker compose --env-file deploy/vinlitoral.env exec web python manage.py import_public_legal_documents --legal-version 1.0 --publish
+docker compose --env-file deploy/plusbrand.env exec web python manage.py import_public_legal_documents --legal-version 1.0 --publish
+docker compose --env-file deploy/servmultimarc.env exec web python manage.py import_public_legal_documents --legal-version 1.0 --publish
 ```

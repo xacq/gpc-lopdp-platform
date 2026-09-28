@@ -60,7 +60,8 @@ class Command(BaseCommand):
 
     def add_arguments(self, parser):
         parser.add_argument(
-            "--version",
+            "--legal-version",
+            dest="legal_version",
             default="1.0",
             help="Version legal a crear para todos los documentos.",
         )
@@ -110,7 +111,7 @@ class Command(BaseCommand):
         for item in DOCUMENTS:
             existing = LegalDocument.objects.filter(
                 document_type=item["type"],
-                version=options["version"],
+                version=options["legal_version"],
             ).first()
             if existing is not None:
                 skipped += 1
@@ -132,7 +133,7 @@ class Command(BaseCommand):
                 document_type=item["type"],
                 title=item["title"],
                 slug=item["slug"],
-                version=options["version"],
+                version=options["legal_version"],
                 content_html=content_html,
                 effective_from=effective_from,
                 actor=actor,
