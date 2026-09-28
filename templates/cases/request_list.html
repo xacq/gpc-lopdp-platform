@@ -1,9 +1,10 @@
 {% extends "base.html" %}
+{% load section_help %}
 {% block title %}Expedientes{% endblock %}
 {% block content %}
 <header class="page-heading admin-page-heading">
     <div><p class="page-kicker">Gestión de derechos</p><h1>Expedientes</h1><p>Seguimiento de solicitudes, responsables y plazos institucionales.</p></div>
-    {% if can_create %}<a class="btn btn-primary" href="{% url 'cases:request_create' %}">+ Nuevo expediente</a>{% endif %}
+    <div class="section-heading-actions">{% section_help "cases" %}{% if can_create %}<a class="btn btn-primary" href="{% url 'cases:request_create' %}">+ Nuevo expediente</a>{% endif %}</div>
 </header>
 <section class="metric-grid metric-grid--compact">
     <article class="metric-card"><span class="metric-card__icon" aria-hidden="true">▢</span><p>Total expedientes</p><strong>{{ metrics.total }}</strong><small>Visibles para tu perfil</small></article>

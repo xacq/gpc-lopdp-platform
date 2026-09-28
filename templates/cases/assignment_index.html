@@ -1,10 +1,11 @@
 {% extends "base.html" %}
 {% load static %}
+{% load section_help %}
 {% block title %}Asignaciones{% endblock %}
 {% block content %}
 <header class="page-heading admin-page-heading">
     <div><p class="page-kicker">Distribución de trabajo</p><h1>Asignaciones</h1><p>Supervisa la carga operativa y asigna responsables a los expedientes.</p></div>
-    <a class="btn btn-primary" href="{% url 'cases:request_list' %}">Seleccionar expediente</a>
+    <div class="section-heading-actions">{% section_help "assignments" %}<a class="btn btn-primary" href="{% url 'cases:request_list' %}">Seleccionar expediente</a></div>
 </header>
 
 {% if summary %}<section class="metric-grid">

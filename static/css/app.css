@@ -1188,6 +1188,21 @@ body {
 .admin-page-heading { display: flex; align-items: flex-end; justify-content: space-between; gap: 1.5rem; }
 .admin-page-heading h1 { margin: 0 0 0.25rem; }
 .admin-page-heading p:last-child { margin: 0; color: #776d69; }
+.section-heading-actions { display: flex; align-items: center; justify-content: flex-end; gap: 0.75rem; flex-wrap: wrap; }
+.section-help-trigger { border-color: var(--vinesa-line); color: var(--vinesa-ink); font-weight: 700; }
+.section-help-trigger span { display: inline-grid; place-items: center; width: 1.15rem; height: 1.15rem; margin-right: 0.25rem; border-radius: 999px; background: var(--vinesa-red); color: #fff; font-size: 0.75rem; line-height: 1; }
+.section-help-modal .modal-content { border: 1px solid var(--vinesa-line); border-radius: 1rem; box-shadow: 0 1.25rem 3rem rgb(70 27 22 / 16%); }
+.section-help-modal .modal-header,
+.section-help-modal .modal-footer { border-color: var(--vinesa-line); }
+.section-help-modal .modal-footer { align-items: center; justify-content: space-between; gap: 1rem; }
+.section-help-modal .modal-footer small { max-width: 34rem; color: var(--vinesa-muted); line-height: 1.45; }
+.section-help-modal__body { display: grid; gap: 1rem; }
+.section-help-modal__body section { padding: 1rem; border: 1px solid var(--vinesa-line); border-radius: 0.85rem; background: var(--theme-surface-muted); }
+.section-help-modal__body h3 { margin: 0 0 0.5rem; color: var(--vinesa-ink); font-size: 1rem; }
+.section-help-modal__body p,
+.section-help-modal__body ol,
+.section-help-modal__body ul { margin-bottom: 0; color: var(--vinesa-muted); line-height: 1.55; }
+.section-help-modal__body li + li { margin-top: 0.35rem; }
 .metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.15rem; margin-bottom: 1.4rem; }
 .metric-card { position: relative; min-height: 9.25rem; padding: 1.35rem; overflow: hidden; border: 1px solid var(--vinesa-line); border-radius: 0.75rem; background: #fff; box-shadow: 0 0.6rem 2rem rgb(70 27 22 / 5%); }
 .metric-card p { margin: 0 3.5rem 0.5rem 0; color: #554b47; font-size: 0.78rem; }

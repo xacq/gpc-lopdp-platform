@@ -1,9 +1,10 @@
 {% extends "base.html" %}
+{% load section_help %}
 {% block title %}Panel de control{% endblock %}
 {% block content %}
 <header class="page-heading admin-page-heading">
     <div><p class="page-kicker">Resumen operativo</p><h1>Panel de control</h1><p>Estado general de los expedientes visibles para tu perfil.</p></div>
-    <a class="btn btn-primary" href="{% url 'cases:request_list' %}">Ver expedientes</a>
+    <div class="section-heading-actions">{% section_help "dashboard" %}<a class="btn btn-primary" href="{% url 'cases:request_list' %}">Ver expedientes</a></div>
 </header>
 
 <section class="metric-grid" aria-label="Indicadores principales">

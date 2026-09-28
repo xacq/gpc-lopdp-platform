@@ -1,9 +1,10 @@
 {% extends "base.html" %}
+{% load section_help %}
 {% block title %}Auditoría{% endblock %}
 {% block content %}
 <header class="page-heading admin-page-heading">
     <div><p class="page-kicker">Trazabilidad y cumplimiento</p><h1>Auditoría</h1><p>Registro inmutable de eventos relevantes del sistema.</p></div>
-    <a class="btn btn-outline-primary" href="{% url 'audit:export_csv' %}?{{ request.GET.urlencode }}">Exportar CSV</a>
+    <div class="section-heading-actions">{% section_help "audit" %}<a class="btn btn-outline-primary" href="{% url 'audit:export_csv' %}?{{ request.GET.urlencode }}">Exportar CSV</a></div>
 </header>
 
 <form class="card app-card filter-panel" method="get">

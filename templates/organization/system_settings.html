@@ -1,7 +1,8 @@
 {% extends "base.html" %}
+{% load section_help %}
 {% block title %}Configuración{% endblock %}
 {% block content %}
-<header class="page-heading admin-page-heading"><div><p class="page-kicker">Administración</p><h1>Configuración</h1><p>Administra la identidad, canales oficiales y parámetros institucionales.</p></div></header>
+<header class="page-heading admin-page-heading"><div><p class="page-kicker">Administración</p><h1>Configuración</h1><p>Administra la identidad, canales oficiales y parámetros institucionales.</p></div><div class="section-heading-actions">{% section_help "settings" %}</div></header>
 {% if saved %}<div class="alert alert-success" role="status">La configuración fue guardada correctamente.</div>{% endif %}
 <nav class="settings-tabs" aria-label="Secciones de configuración"><a class="active" href="#institucional">Configuración institucional</a><a href="#responsables">Responsables</a><a href="#branding">Branding</a><a href="#legal">Canal de reclamos</a></nav>
 {% load static %}

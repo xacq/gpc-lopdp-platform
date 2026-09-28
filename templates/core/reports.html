@@ -1,9 +1,10 @@
 {% extends "base.html" %}
+{% load section_help %}
 {% block title %}Reportes{% endblock %}
 {% block content %}
 <header class="page-heading admin-page-heading">
     <div><p class="page-kicker">Análisis consolidado</p><h1>Reportes</h1><p>Consulta métricas agregadas sin exponer datos personales.</p></div>
-    {% if report %}<a class="btn btn-outline-primary" href="{% url 'core:report_export_csv' %}?{{ request.GET.urlencode }}">Exportar CSV</a>{% endif %}
+    <div class="section-heading-actions">{% section_help "reports" %}{% if report %}<a class="btn btn-outline-primary" href="{% url 'core:report_export_csv' %}?{{ request.GET.urlencode }}">Exportar CSV</a>{% endif %}</div>
 </header>
 
 <form class="card app-card filter-panel" method="get">

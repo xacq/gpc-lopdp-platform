@@ -1,9 +1,10 @@
 {% extends "base.html" %}
+{% load section_help %}
 {% block title %}{{ case.reference_number }}{% endblock %}
 {% block content %}
 <header class="case-detail-heading">
     <a href="{% url 'cases:request_list' %}">← Volver al listado</a>
-    <div><section><p class="page-kicker">Expediente</p><h1>{{ case.reference_number }}</h1></section><div>{% if can_assign %}<a class="btn btn-outline-primary" href="{% url 'cases:request_assign' case.id %}">Asignar o reasignar</a>{% endif %}</div></div>
+    <div><section><p class="page-kicker">Expediente</p><h1>{{ case.reference_number }}</h1></section><div class="section-heading-actions">{% section_help "case_detail" %}{% if can_assign %}<a class="btn btn-outline-primary" href="{% url 'cases:request_assign' case.id %}">Asignar o reasignar</a>{% endif %}</div></div>
 </header>
 <nav class="case-tabs" aria-label="Secciones del expediente"><a class="active" href="#resumen">Resumen</a><a href="#identidad">Identidad</a><a href="#solicitud">Solicitud</a><a href="#aclaraciones">Aclaraciones</a><a href="{% url 'evidence:case_panel' case.id %}">Evidencias</a><a href="#historial">Historial</a></nav>
 <div class="case-detail-layout">

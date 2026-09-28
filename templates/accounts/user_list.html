@@ -1,7 +1,8 @@
 {% extends "base.html" %}
+{% load section_help %}
 {% block title %}Usuarios{% endblock %}
 {% block content %}
-<header class="page-heading admin-page-heading"><div><p class="page-kicker">Seguridad y acceso</p><h1>Usuarios</h1><p>Gestiona cuentas, roles, verificación en dos pasos y estado de acceso.</p></div><a class="btn btn-primary" href="{% url 'accounts:user_create' %}">+ Nuevo usuario</a></header>
+<header class="page-heading admin-page-heading"><div><p class="page-kicker">Seguridad y acceso</p><h1>Usuarios</h1><p>Gestiona cuentas, roles, verificación en dos pasos y estado de acceso.</p></div><div class="section-heading-actions">{% section_help "users" %}<a class="btn btn-primary" href="{% url 'accounts:user_create' %}">+ Nuevo usuario</a></div></header>
 <section class="metric-grid metric-grid--compact">
     <article class="metric-card"><p>Total usuarios</p><strong>{{ metrics.total }}</strong><small>Cuentas registradas</small></article>
     <article class="metric-card metric-card--green"><p>Activos</p><strong>{{ metrics.active }}</strong><small>{{ metrics.inactive }} inactivos</small></article>

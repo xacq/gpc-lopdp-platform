@@ -1,7 +1,8 @@
 {% extends "base.html" %}
+{% load section_help %}
 {% block title %}Comunicaciones{% endblock %}
 {% block content %}
-<header class="page-heading admin-page-heading"><div><p class="page-kicker">Atención y seguimiento</p><h1>Comunicaciones</h1><p>Historial cifrado de mensajes vinculados a expedientes.</p></div></header>
+<header class="page-heading admin-page-heading"><div><p class="page-kicker">Atención y seguimiento</p><h1>Comunicaciones</h1><p>Historial cifrado de mensajes vinculados a expedientes.</p></div><div class="section-heading-actions">{% section_help "communications" %}</div></header>
 <section class="metric-grid metric-grid--compact"><article class="metric-card"><p>Total comunicaciones</p><strong>{{ summary.metrics.total }}</strong><small>Registro acumulado</small></article><article class="metric-card metric-card--green"><p>Recibidas</p><strong>{{ summary.metrics.inbound }}</strong><small>Entrantes</small></article><article class="metric-card metric-card--blue"><p>Enviadas</p><strong>{{ summary.metrics.sent }}</strong><small>{{ summary.metrics.outbound }} salientes</small></article><article class="metric-card metric-card--red"><p>Con error</p><strong>{{ summary.metrics.failed }}</strong><small>{{ summary.metrics.pending }} pendientes</small></article></section>
 {% if manageable_cases %}<details class="card app-card communication-composer"{% if create_form.errors %} open{% endif %}><summary>+ Registrar comunicación</summary><div><nav class="composer-tabs"><button type="button" data-composer="outbound">Correo saliente</button><button type="button" data-composer="inbound">Comunicación entrante</button></nav>
     {% if create_form.non_field_errors %}<div class="alert alert-danger">{{ create_form.non_field_errors }}</div>{% endif %}

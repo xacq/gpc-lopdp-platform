@@ -1,0 +1,40 @@
+{% if help %}
+<button class="btn btn-light section-help-trigger" type="button" data-bs-toggle="modal" data-bs-target="#{{ modal_id }}">
+    <span aria-hidden="true">?</span> Guía rápida
+</button>
+<div class="modal fade section-help-modal" id="{{ modal_id }}" tabindex="-1" aria-labelledby="{{ modal_id }}Label" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div>
+                    <p class="page-kicker mb-1">Ayuda funcional</p>
+                    <h2 class="modal-title h4" id="{{ modal_id }}Label">{{ help.title }}</h2>
+                </div>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body section-help-modal__body">
+                <section>
+                    <h3>¿Para qué sirve?</h3>
+                    <p>{{ help.purpose }}</p>
+                </section>
+                <section>
+                    <h3>Proceso recomendado</h3>
+                    <ol>
+                        {% for item in help.process %}<li>{{ item }}</li>{% endfor %}
+                    </ol>
+                </section>
+                <section>
+                    <h3>Puntos de control</h3>
+                    <ul>
+                        {% for item in help.checks %}<li>{{ item }}</li>{% endfor %}
+                    </ul>
+                </section>
+            </div>
+            <div class="modal-footer">
+                <small>Guía estática de apoyo operativo. No reemplaza la revisión del expediente ni los criterios jurídicos aprobados.</small>
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">Entendido</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
