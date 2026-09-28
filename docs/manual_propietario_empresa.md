@@ -9,7 +9,7 @@ La plataforma recibe, atiende y conserva la trazabilidad de solicitudes de derec
 Derechos disponibles:
 
 - Acceso.
-- Rectificación y actualización.
+- Rectificación.
 - Eliminación.
 - Oposición.
 - Portabilidad.

@@ -8,28 +8,37 @@ RIGHTS = (
         "ACCESS",
         "Acceso",
         (
-            "Conocer y obtener gratuitamente los datos personales tratados "
-            "y la información legalmente exigida."
+            "Conocer qué datos suyos tiene la organización, "
+            "para qué los usa y con quién los comparte."
         ),
-        "LOPDP, art. 13",
+        "LOPDP, art. 19",
     ),
     (
         "RECTIFICATION_UPDATE",
-        "Rectificación y actualización",
-        "Corregir o actualizar datos personales inexactos o incompletos.",
-        "LOPDP, art. 14",
+        "Rectificación",
+        (
+            "Solicitar la corrección de datos incorrectos, "
+            "incompletos o desactualizados."
+        ),
+        "LOPDP, art. 20",
     ),
     (
         "ELIMINATION",
         "Eliminación",
-        "Solicitar la supresión de datos personales cuando proceda conforme a la ley.",
-        "LOPDP, art. 15",
+        (
+            "Pedir la eliminación de sus datos cuando ya no sean "
+            "necesarios o el tratamiento carezca de base legal."
+        ),
+        "LOPDP, art. 21",
     ),
     (
         "OPPOSITION",
         "Oposición",
-        "Oponerse o negarse al tratamiento en los casos previstos por la ley.",
-        "LOPDP, art. 16",
+        (
+            "Oponerse al tratamiento de sus datos, especialmente "
+            "para fines de mercadotecnia directa."
+        ),
+        "LOPDP, art. 22",
     ),
     (
         "PORTABILITY",
@@ -39,13 +48,13 @@ RIGHTS = (
             "estructurado, común, interoperable y de lectura mecánica, o "
             "pedir su transmisión."
         ),
-        "LOPDP, art. 17",
+        "LOPDP, art. 23",
     ),
     (
         "SUSPENSION",
         "Suspensión del tratamiento",
         "Solicitar el cese temporal del tratamiento en los casos previstos por la ley.",
-        "LOPDP, art. 18",
+        "LOPDP, art. 24",
     ),
 )
 

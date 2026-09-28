@@ -47,19 +47,25 @@ class PublicHomeTests(TestCase):
 
         for right in (
             "Acceso",
-            "Rectificación y actualización",
+            "Rectificación",
             "Eliminación",
             "Oposición",
-            "Portabilidad",
-            "Suspensión del tratamiento",
         ):
             self.assertContains(response, right)
+        self.assertNotContains(response, "Portabilidad")
+        self.assertNotContains(response, "Suspensión del tratamiento")
 
     def test_home_prefers_active_rights_catalog(self):
         RightCatalog.objects.create(
-            code="APPROVED",
+            code="ACCESS",
             name="Derecho aprobado para inicio",
             description="Descripción configurada para inicio.",
+            is_active=True,
+        )
+        RightCatalog.objects.create(
+            code="PORTABILITY",
+            name="Portabilidad",
+            description="Derecho interno no destacado en página principal.",
             is_active=True,
         )
         RightCatalog.objects.create(
@@ -73,6 +79,7 @@ class PublicHomeTests(TestCase):
         self.assertContains(response, "Derecho aprobado para inicio")
         self.assertContains(response, "Descripción configurada para inicio")
         self.assertNotContains(response, "Derecho inactivo")
+        self.assertNotContains(response, "Portabilidad")
         self.assertNotContains(response, "Eliminación")
 
     def test_uses_official_logo_and_favicon_assets(self):
@@ -105,13 +112,13 @@ class PublicInformationPageTests(TestCase):
         self.assertContains(response, "Derechos reconocidos por la LOPDP")
         for right in (
             "Acceso",
-            "Rectificación y actualización",
+            "Rectificación",
             "Eliminación",
             "Oposición",
-            "Portabilidad",
-            "Suspensión del tratamiento",
         ):
             self.assertContains(response, right)
+        self.assertNotContains(response, "Portabilidad")
+        self.assertNotContains(response, "Suspensión del tratamiento")
 
     def test_rights_page_uses_active_catalog_data(self):
         RightCatalog.objects.create(
@@ -119,6 +126,11 @@ class PublicInformationPageTests(TestCase):
             name="Derecho de prueba aprobado",
             description="Descripción pública configurada.",
             legal_reference="Referencia aprobada",
+            is_active=True,
+        )
+        RightCatalog.objects.create(
+            code="PORTABILITY",
+            name="Portabilidad",
             is_active=True,
         )
         RightCatalog.objects.create(
@@ -131,6 +143,7 @@ class PublicInformationPageTests(TestCase):
 
         self.assertContains(response, "Derecho de prueba aprobado")
         self.assertContains(response, "Descripción pública configurada.")
+        self.assertNotContains(response, "Portabilidad")
         self.assertNotContains(response, "No publicar")
         self.assertNotContains(response, "Derechos reconocidos por la LOPDP")
 

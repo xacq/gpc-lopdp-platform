@@ -22,58 +22,63 @@ from apps.organization.defaults import (
 from apps.organization.models import SystemSetting
 
 
+PUBLIC_RIGHT_CODES = (
+    "ACCESS",
+    "RECTIFICATION_UPDATE",
+    "ELIMINATION",
+    "OPPOSITION",
+)
+PUBLIC_RIGHT_ORDER = {
+    code: index for index, code in enumerate(PUBLIC_RIGHT_CODES)
+}
+
 PRELIMINARY_RIGHTS = (
     {
         "name": "Acceso",
         "description": (
-            "Conocer y obtener gratuitamente los datos personales tratados "
-            "y la información legalmente exigida."
+            "Conocer qué datos suyos tiene la organización, "
+            "para qué los usa y con quién los comparte."
         ),
-        "legal_reference": "LOPDP, art. 13",
+        "legal_reference": "LOPDP, art. 19",
     },
     {
-        "name": "Rectificación y actualización",
+        "name": "Rectificación",
         "description": (
-            "Corregir o actualizar datos personales inexactos o incompletos."
+            "Solicitar la corrección de datos incorrectos, "
+            "incompletos o desactualizados."
         ),
-        "legal_reference": "LOPDP, art. 14",
+        "legal_reference": "LOPDP, art. 20",
     },
     {
         "name": "Eliminación",
         "description": (
-            "Solicitar la supresión de datos personales cuando proceda "
-            "conforme a la ley."
+            "Pedir la eliminación de sus datos cuando ya no sean "
+            "necesarios o el tratamiento carezca de base legal."
         ),
-        "legal_reference": "LOPDP, art. 15",
+        "legal_reference": "LOPDP, art. 21",
     },
     {
         "name": "Oposición",
         "description": (
-            "Oponerse o negarse al tratamiento en los casos previstos por "
-            "la ley."
+            "Oponerse al tratamiento de sus datos, especialmente "
+            "para fines de mercadotecnia directa."
         ),
-        "legal_reference": "LOPDP, art. 16",
-    },
-    {
-        "name": "Portabilidad",
-        "description": (
-            "Recibir los datos en formato compatible, actualizado, "
-            "estructurado, común, interoperable y de lectura mecánica, o "
-            "pedir su transmisión."
-        ),
-        "legal_reference": "LOPDP, art. 17",
-    },
-    {
-        "name": "Suspensión del tratamiento",
-        "description": (
-            "Solicitar el cese temporal del tratamiento en los casos "
-            "previstos por la ley."
-        ),
-        "legal_reference": "LOPDP, art. 18",
+        "legal_reference": "LOPDP, art. 22",
     },
 )
 
 PROVISIONAL_DPD_NAME = "María Elena Terán"
+
+
+def _public_rights():
+    rights = RightCatalog.objects.filter(
+        code__in=PUBLIC_RIGHT_CODES,
+        is_active=True,
+    )
+    return sorted(
+        rights,
+        key=lambda right: PUBLIC_RIGHT_ORDER.get(right.code, 99),
+    )
 
 
 @never_cache
@@ -209,9 +214,7 @@ def report_export_csv(request):
 
 @require_GET
 def home(request):
-    rights = list(
-        RightCatalog.objects.filter(is_active=True).order_by("code")
-    )
+    rights = _public_rights()
     return render(
         request,
         "core/home.html",
@@ -221,13 +224,12 @@ def home(request):
 
 @require_GET
 def rights(request):
+    rights = _public_rights()
     return render(
         request,
         "core/rights.html",
         {
-            "rights": RightCatalog.objects.filter(is_active=True).order_by(
-                "code"
-            ),
+            "rights": rights,
             "preliminary_rights": PRELIMINARY_RIGHTS,
         },
     )

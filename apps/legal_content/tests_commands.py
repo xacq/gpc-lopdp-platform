@@ -28,6 +28,14 @@ class SeedLopdpRightsCommandTests(TestCase):
                 "SUSPENSION",
             ],
         )
+        self.assertEqual(
+            RightCatalog.objects.get(code="RECTIFICATION_UPDATE").name,
+            "Rectificación",
+        )
+        self.assertEqual(
+            RightCatalog.objects.get(code="ELIMINATION").name,
+            "Eliminación",
+        )
         self.assertIn("Catálogo LOPDP configurado: 6 derechos.", output.getvalue())
 
 
