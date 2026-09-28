@@ -15,6 +15,12 @@ from apps.cases.services.dashboard import (
 from apps.cases.forms.reports import CaseReportFilterForm
 from apps.cases.policies import can_access_case_panel, visible_requests_for
 from apps.cases.services.reports import CaseReportService, ReportPermissionError
+from apps.core.manuals import (
+    MANUALS,
+    get_manual,
+    read_manual_markdown,
+    render_manual_markdown,
+)
 from apps.legal_content.models import RightCatalog
 from apps.organization.defaults import (
     VINESA_SYSTEM_SETTINGS,
@@ -170,6 +176,25 @@ def reports(request):
         request,
         "core/reports.html",
         _report_page_context(request, report=payload),
+    )
+
+
+@never_cache
+@login_required
+@require_GET
+def manuals(request):
+    if not can_access_case_panel(request.user):
+        raise PermissionDenied
+    current_manual = get_manual(request.GET.get("manual"))
+    manual_markdown = read_manual_markdown(current_manual)
+    return render(
+        request,
+        "core/manuals.html",
+        {
+            "manuals": MANUALS,
+            "current_manual": current_manual,
+            "manual_html": render_manual_markdown(manual_markdown),
+        },
     )
 
 

@@ -5,6 +5,7 @@ from apps.core.views import (
     dashboard,
     dashboard_summary,
     home,
+    manuals,
     report_export_csv,
     reports,
     report_summary,
@@ -22,6 +23,7 @@ urlpatterns = [
     path("reports/summary/", report_summary, name="report_summary"),
     path("reports/", reports, name="reports"),
     path("reports/export.csv", report_export_csv, name="report_export_csv"),
+    path("manuales/", manuals, name="manuals"),
     path("derechos/", rights, name="rights"),
     path("contacto/", contact, name="contact"),
 ]

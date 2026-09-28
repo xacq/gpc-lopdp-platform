@@ -206,4 +206,21 @@ SECTION_HELP = {
             "Las decisiones quedan registradas para trazabilidad.",
         ],
     },
+    "manuals": {
+        "title": "Manuales",
+        "purpose": (
+            "Centraliza las guías operativas completas del sistema para que "
+            "el Delegado y los usuarios internos consulten procedimientos sin salir de la plataforma."
+        ),
+        "process": [
+            "Selecciona el manual en la lista lateral.",
+            "Lee la sección aplicable al proceso que vas a ejecutar.",
+            "Usa las guías rápidas de cada pantalla para apoyo inmediato durante la operación.",
+        ],
+        "checks": [
+            "Los manuales son referencia operativa y no reemplazan el criterio jurídico aprobado.",
+            "No guardes contraseñas ni información sensible fuera de los canales autorizados.",
+            "Si un proceso cambia, actualiza primero el manual en el repositorio.",
+        ],
+    },
 }

@@ -1203,6 +1203,49 @@ body {
 .section-help-modal__body ol,
 .section-help-modal__body ul { margin-bottom: 0; color: var(--vinesa-muted); line-height: 1.55; }
 .section-help-modal__body li + li { margin-top: 0.35rem; }
+.manuals-layout { display: grid; grid-template-columns: minmax(16rem, 22rem) minmax(0, 1fr); gap: 1.25rem; align-items: start; }
+.manuals-tabs { position: sticky; top: 1rem; padding: 1rem; }
+.manuals-tabs .page-kicker { margin-bottom: 0.8rem; }
+.manuals-tabs nav { display: grid; gap: 0.55rem; }
+.manuals-tabs a { display: grid; gap: 0.2rem; padding: 0.85rem; border: 1px solid var(--vinesa-line); border-radius: 0.65rem; background: #fff; color: var(--vinesa-ink); text-decoration: none; transition: border-color 0.15s ease, background 0.15s ease, transform 0.15s ease; }
+.manuals-tabs a:hover { border-color: var(--vinesa-red); background: var(--theme-primary-soft); transform: translateY(-1px); }
+.manuals-tabs a.active { border-color: var(--vinesa-red); background: var(--theme-primary-soft); box-shadow: inset 0.2rem 0 0 var(--vinesa-red); }
+.manuals-tabs strong { font-size: 0.86rem; }
+.manuals-tabs small { color: var(--vinesa-muted); font-size: 0.72rem; line-height: 1.45; }
+.manual-document { overflow: hidden; }
+.manual-document > header { padding: 1.35rem 1.5rem; border-bottom: 1px solid var(--vinesa-line); background: var(--theme-surface-muted); }
+.manual-document > header h2 { margin: 0 0 0.35rem; color: var(--vinesa-ink); font-family: Georgia, serif; font-size: clamp(1.6rem, 2vw, 2.35rem); font-weight: 500; }
+.manual-document > header p:last-child { margin: 0; color: var(--vinesa-muted); }
+.manual-content { padding: 1.5rem; color: #302623; line-height: 1.7; }
+.manual-content h2,
+.manual-content h3,
+.manual-content h4,
+.manual-content h5 { color: var(--vinesa-ink); }
+.manual-content h2 { margin: 0 0 1rem; font-family: Georgia, serif; font-size: clamp(1.7rem, 2.2vw, 2.6rem); font-weight: 500; }
+.manual-content h3 { margin: 2rem 0 0.85rem; padding-top: 1rem; border-top: 1px solid var(--vinesa-line); font-size: 1.25rem; }
+.manual-content h4,
+.manual-content h5 { margin: 1.35rem 0 0.65rem; font-size: 1rem; }
+.manual-content p { margin: 0 0 1rem; }
+.manual-content ul,
+.manual-content ol { margin: 0 0 1rem 1.2rem; padding: 0; }
+.manual-content li + li { margin-top: 0.35rem; }
+.manual-content code { padding: 0.12rem 0.35rem; border-radius: 0.3rem; background: #fff4f2; color: var(--vinesa-red-dark); font-size: 0.86em; }
+.manual-content pre { padding: 1rem; overflow-x: auto; border-radius: 0.65rem; background: #2d1512; color: #fff; }
+.manual-content pre code { padding: 0; background: transparent; color: inherit; }
+.manual-table-wrap { margin: 1rem 0 1.25rem; overflow-x: auto; border: 1px solid var(--vinesa-line); border-radius: 0.7rem; }
+.manual-table { margin: 0; min-width: 38rem; }
+.manual-table th { background: #fff8f6; color: var(--vinesa-ink); font-size: 0.78rem; }
+.manual-table td,
+.manual-table th { padding: 0.75rem 0.85rem; border-color: var(--vinesa-line); vertical-align: top; }
+@media (max-width: 992px) {
+    .manuals-layout { grid-template-columns: 1fr; }
+    .manuals-tabs { position: static; }
+    .manuals-tabs nav { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 640px) {
+    .manuals-tabs nav { grid-template-columns: 1fr; }
+    .manual-content { padding: 1rem; }
+}
 .metric-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1.15rem; margin-bottom: 1.4rem; }
 .metric-card { position: relative; min-height: 9.25rem; padding: 1.35rem; overflow: hidden; border: 1px solid var(--vinesa-line); border-radius: 0.75rem; background: #fff; box-shadow: 0 0.6rem 2rem rgb(70 27 22 / 5%); }
 .metric-card p { margin: 0 3.5rem 0.5rem 0; color: #554b47; font-size: 0.78rem; }

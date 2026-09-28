@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% load section_help %}
+{% block title %}Manuales{% endblock %}
+{% block content %}
+<header class="page-heading admin-page-heading">
+    <div>
+        <p class="page-kicker">Centro de ayuda</p>
+        <h1>Manuales</h1>
+        <p>Consulta las guías operativas completas sin salir del sistema.</p>
+    </div>
+    <div class="section-heading-actions">{% section_help "manuals" %}</div>
+</header>
+
+<section class="manuals-layout">
+    <aside class="card app-card manuals-tabs" aria-label="Manuales disponibles">
+        <p class="page-kicker">Guías disponibles</p>
+        <nav>
+            {% for manual in manuals %}
+                <a class="{% if manual.key == current_manual.key %}active{% endif %}" href="{% url 'core:manuals' %}?manual={{ manual.key }}">
+                    <strong>{{ manual.title }}</strong>
+                    <small>{{ manual.description }}</small>
+                </a>
+            {% endfor %}
+        </nav>
+    </aside>
+
+    <article class="card app-card manual-document">
+        <header>
+            <p class="page-kicker">Manual seleccionado</p>
+            <h2>{{ current_manual.title }}</h2>
+            <p>{{ current_manual.description }}</p>
+        </header>
+        <div class="manual-content">
+            {{ manual_html }}
+        </div>
+    </article>
+</section>
+{% endblock %}
