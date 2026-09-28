@@ -1,0 +1,14 @@
+<h2>Informacion sobre el tratamiento de sus datos personales</h2>
+<p><strong>Responsable:</strong> {{ legal_name }}{% if address %}, {{ address }}{% endif %}. Responsable de Proteccion de Datos: <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>.</p>
+<p><strong>Datos que tratamos:</strong> nombres y apellidos, numero de cedula, RUC o pasaporte, correo electronico, telefono, direccion de entrega y de facturacion, productos adquiridos, forma de pago y, si usted lo autoriza, su historial y preferencias de compra.</p>
+<p><strong>Finalidades y bases de legitimacion:</strong> gestionar su compra, facturacion, entrega, cobro y atencion de reclamos, sobre la base de la ejecucion del contrato de compraventa; cumplir obligaciones tributarias y verificar que usted es mayor de edad para la venta de bebidas alcoholicas, sobre la base del cumplimiento de obligaciones legales; enviarle promociones, publicidad e invitaciones a eventos y catas, y analizar sus preferencias de compra, unicamente si usted lo autoriza.</p>
+<p><strong>Destinatarios:</strong> empresas de transporte y entrega, pasarela de pago y entidades financieras, proveedores tecnologicos que alojan nuestros sistemas, incluso fuera del Ecuador, y autoridades cuando la ley lo exija. Solo si usted lo autoriza, los datos podran compartirse con companias relacionadas para fines promocionales.</p>
+<p><strong>Conservacion:</strong> los datos de facturacion se conservaran durante el plazo que exige la normativa tributaria; los datos para fines promocionales, hasta que usted retire su consentimiento o tras dos anos sin compras.</p>
+<p><strong>Sus derechos:</strong> puede ejercer sus derechos de acceso, rectificacion y actualizacion, eliminacion, oposicion, portabilidad y suspension, y retirar su consentimiento en cualquier momento, escribiendo a <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>. Tambien puede presentar un reclamo ante {{ complaint_authority_name }}.</p>
+<p>Mas informacion en nuestra <a href="{{ privacy_policy_url }}">Politica de Privacidad</a>.</p>
+
+<h2>Casillas del formulario</h2>
+<ul>
+    <li><strong>Obligatoria:</strong> He leido la Politica de Privacidad y entiendo que mis datos seran tratados para gestionar mi compra, facturacion y entrega. Declaro ser mayor de 18 anos.</li>
+    <li><strong>Opcional:</strong> Autorizo a {{ legal_name }} a enviarme promociones, publicidad e invitaciones a eventos y catas por correo electronico, SMS, WhatsApp o llamada, y a analizar mi historial de compras para ofrecerme productos acordes con mis preferencias.</li>
+</ul>
