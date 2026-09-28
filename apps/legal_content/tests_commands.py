@@ -60,7 +60,7 @@ class ImportPublicLegalDocumentsCommandTests(TestCase):
             stdout=output,
         )
 
-        self.assertEqual(LegalDocument.objects.filter(is_published=True).count(), 6)
+        self.assertEqual(LegalDocument.objects.filter(is_published=True).count(), 8)
         privacy = LegalDocument.objects.get(
             document_type=LegalDocument.DocumentType.PRIVACY_POLICY
         )
@@ -71,7 +71,7 @@ class ImportPublicLegalDocumentsCommandTests(TestCase):
         )
         self.assertNotIn("privacidad@cvl.com.ec", privacy.content_html)
         self.assertIn(
-            "6 creados, 6 publicados, 0 omitidos",
+            "8 creados, 8 publicados, 0 omitidos",
             output.getvalue(),
         )
 
@@ -86,8 +86,8 @@ class ImportPublicLegalDocumentsCommandTests(TestCase):
             stdout=output,
         )
 
-        self.assertEqual(LegalDocument.objects.count(), 6)
+        self.assertEqual(LegalDocument.objects.count(), 8)
         self.assertIn(
-            "0 creados, 0 publicados, 6 omitidos",
+            "0 creados, 0 publicados, 8 omitidos",
             output.getvalue(),
         )

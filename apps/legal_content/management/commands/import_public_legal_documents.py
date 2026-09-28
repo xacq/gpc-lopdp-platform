@@ -52,6 +52,18 @@ DOCUMENTS = (
         "slug": "videovigilancia",
         "template": "video_surveillance_notice.html",
     },
+    {
+        "type": LegalDocument.DocumentType.RIGHTS_NOTICE,
+        "title": "Derechos y Contacto",
+        "slug": "derechos",
+        "template": "rights_notice.html",
+    },
+    {
+        "type": LegalDocument.DocumentType.COOKIES_POLICY,
+        "title": "Politica de Cookies",
+        "slug": "cookies",
+        "template": "cookies_policy.html",
+    },
 )
 
 
@@ -197,5 +209,6 @@ class Command(BaseCommand):
             "dpd_email": setting.dpd_email or contact_email,
             "complaint_authority_name": setting.complaint_authority_name,
             "complaint_channel_url": setting.complaint_channel_url or "",
+            "complaint_instructions": setting.complaint_instructions or "",
             "privacy_policy_url": "/legal/privacidad/",
         }

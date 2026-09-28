@@ -1,0 +1,33 @@
+<h2>Canal oficial para ejercer derechos</h2>
+<p>{{ legal_name }} atiende solicitudes relacionadas con proteccion de datos personales a traves del correo <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>{% if phone %} y del telefono {{ phone }}{% endif %}{% if address %}. Tambien puede dirigir comunicaciones al domicilio ubicado en {{ address }}{% endif %}.</p>
+
+<h2>Derechos de los titulares</h2>
+<p>Los titulares de datos personales pueden ejercer los derechos reconocidos por la normativa aplicable, incluyendo informacion, acceso, rectificacion y actualizacion, eliminacion, oposicion, portabilidad, suspension del tratamiento y otros derechos que resulten aplicables segun el caso concreto.</p>
+
+<h2>Requisitos minimos de la solicitud</h2>
+<p>Para atender una solicitud, el titular o su representante debera incluir la informacion necesaria para verificar su identidad y comprender el alcance de su requerimiento.</p>
+<ul>
+    <li>Nombres y apellidos completos del titular.</li>
+    <li>Documento de identidad o informacion suficiente para validar la titularidad.</li>
+    <li>Correo electronico o canal de contacto para recibir respuesta.</li>
+    <li>Descripcion clara del derecho que desea ejercer.</li>
+    <li>Documentos de respaldo o representacion, cuando corresponda.</li>
+</ul>
+
+<h2>Procedimiento de atencion</h2>
+<p>Una vez recibida la solicitud, {{ trade_name }} verificara la identidad del solicitante, registrara el requerimiento y gestionara la respuesta dentro de los plazos legales aplicables. Si la solicitud requiere aclaracion o informacion adicional, se contactara al titular por el canal indicado.</p>
+
+<h2>Responsable y delegado de proteccion de datos</h2>
+<p>El responsable del tratamiento es {{ legal_name }}. Para consultas relacionadas con privacidad y proteccion de datos personales, puede escribir a <a href="mailto:{{ contact_email }}">{{ contact_email }}</a>.</p>
+{% if dpd_email and dpd_email != contact_email %}
+<p>El canal del Delegado de Proteccion de Datos es <a href="mailto:{{ dpd_email }}">{{ dpd_email }}</a>.</p>
+{% endif %}
+
+<h2>Reclamos ante la autoridad de control</h2>
+<p>Si considera que el tratamiento de sus datos personales no ha sido atendido conforme a la normativa aplicable, puede presentar un reclamo ante {{ complaint_authority_name }}.</p>
+{% if complaint_channel_url %}
+<p>Canal de reclamos: <a href="{{ complaint_channel_url }}">{{ complaint_channel_url }}</a>.</p>
+{% endif %}
+{% if complaint_instructions %}
+<p>{{ complaint_instructions }}</p>
+{% endif %}

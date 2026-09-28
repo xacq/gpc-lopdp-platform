@@ -31,9 +31,11 @@ El comando crea y publica:
 - Aviso Candidatos
 - Aviso Proveedores
 - Aviso Videovigilancia
+- Derechos y Contacto
+- Politica de Cookies
 
-Los documentos Derechos y Contacto, y Politica de Cookies, permanecen en estado
-preliminar hasta contar con textos aprobados.
+Si ya se importo la version indicada anteriormente, el comando omite los
+documentos existentes y crea solo los documentos faltantes de esa misma version.
 
 ## Servidor
 
