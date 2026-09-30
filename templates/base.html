@@ -26,7 +26,6 @@
                     {% if nav_can_assign_cases %}<a class="admin-nav-link{% if request.resolver_match.namespace == 'assignments' %} admin-nav-link--active{% endif %}" href="{% url 'assignments:index' %}"><span aria-hidden="true">♧</span> Asignaciones</a>{% endif %}
                     <a class="admin-nav-link{% if request.resolver_match.namespace == 'communications' %} admin-nav-link--active{% endif %}" href="{% url 'communications:panel' %}"><span aria-hidden="true">✉</span> Comunicaciones</a>
                     <a class="admin-nav-link{% if request.resolver_match.url_name == 'reports' %} admin-nav-link--active{% endif %}" href="{% url 'core:reports' %}"><span aria-hidden="true">▤</span> Reportes</a>
-                    <a class="admin-nav-link{% if request.resolver_match.url_name == 'manuals' %} admin-nav-link--active{% endif %}" href="{% url 'core:manuals' %}"><span aria-hidden="true">?</span> Manuales</a>
                     {% if nav_can_assign_cases %}<a class="admin-nav-link{% if request.resolver_match.namespace == 'retention' %} admin-nav-link--active{% endif %}" href="{% url 'retention:panel' %}"><span aria-hidden="true">⌛</span> Retención</a>{% endif %}
                 {% endif %}
                 {% if nav_can_read_audit %}
@@ -40,6 +39,7 @@
                 {% endif %}
                 {% if nav_can_manage_legal %}<a class="admin-nav-link{% if request.resolver_match.namespace == 'legal_content' and request.resolver_match.url_name == 'manage_panel' %} admin-nav-link--active{% endif %}" href="{% url 'legal_content:manage_panel' %}"><span aria-hidden="true">§</span> Contenido legal</a>{% endif %}
                 <a class="admin-nav-link" href="{% url 'core:home' %}" target="_blank" rel="noopener"><span aria-hidden="true">↗</span> Sitio público</a>
+                {% if nav_can_access_cases %}<a class="admin-nav-link{% if request.resolver_match.url_name == 'manuals' %} admin-nav-link--active{% endif %}" href="{% url 'core:manuals' %}"><span aria-hidden="true">?</span> Manuales</a>{% endif %}
             </nav>
             {% if user.is_authenticated %}
                 <form class="admin-sidebar__logout" method="post" action="{% url 'accounts:logout' %}">
