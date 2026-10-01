@@ -62,6 +62,11 @@ GENERIC_DOWNLOAD_ERROR = (
 GENERIC_VERIFICATION_ERROR = (
     "No fue posible verificar el correo. Revisa la referencia y el código."
 )
+PUBLIC_UPLOAD_REJECTION_ERROR = (
+    "No fue posible aceptar los documentos. Verifica que sean PDF, JPG o "
+    f"PNG, que no superen {AttachmentService.MAX_FILE_SIZE_MB} MB por "
+    "archivo y que el contenido corresponda al formato indicado."
+)
 
 
 def _private_response(response: HttpResponse) -> HttpResponse:
@@ -140,10 +145,7 @@ def public_request_create(request):
                         )
                     form.add_error(
                         None,
-                        (
-                            "No fue posible aceptar los documentos. "
-                            "Verifica el formato, tamaño y contenido."
-                        ),
+                        PUBLIC_UPLOAD_REJECTION_ERROR,
                     )
                     response = render(
                         request,

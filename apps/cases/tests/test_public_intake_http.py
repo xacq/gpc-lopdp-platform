@@ -252,6 +252,21 @@ class PublicIntakeHttpTests(TestCase):
         self.assertContains(response, "Presentar una solicitud")
         self.assertContains(response, "Seleccionar archivo", count=3)
         self.assertContains(response, "Ningún archivo seleccionado", count=3)
+        self.assertContains(
+            response,
+            "Tamaño máximo por archivo: 25 MB",
+            count=3,
+        )
+        self.assertContains(
+            response,
+            "También acepto la",
+        )
+        self.assertContains(response, "Política de Privacidad")
+        self.assertContains(response, "de VINESA y autorizo")
+        self.assertContains(
+            response,
+            "Si tienes más documentación que no puedas adjuntar",
+        )
         self.assertNotContains(response, 'name="source_channel"')
         self.assertContains(response, 'name="website"', html=False)
         self.assertNotContains(response, "novalidate")

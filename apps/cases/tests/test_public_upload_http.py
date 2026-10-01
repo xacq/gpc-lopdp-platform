@@ -119,6 +119,7 @@ class PublicUploadHttpTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "No fue posible aceptar los documentos")
+        self.assertContains(response, "25 MB por archivo")
         self.assertFalse(RightsRequest.objects.exists())
         self.assertFalse(TemporaryUpload.objects.exists())
         self.assertFalse(RequestAttachment.objects.exists())
@@ -139,6 +140,7 @@ class PublicUploadHttpTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "No fue posible aceptar los documentos")
+        self.assertContains(response, "25 MB por archivo")
         self.assertFalse(RightsRequest.objects.exists())
         self.assertFalse(TemporaryUpload.objects.exists())
 

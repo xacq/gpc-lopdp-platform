@@ -76,8 +76,9 @@ class AttachmentDownload:
 
 
 class AttachmentService:
+    MAX_FILE_SIZE_MB = 25
     MAX_FILE_SIZE = (
-        10 * 1024 * 1024
+        MAX_FILE_SIZE_MB * 1024 * 1024
     )
     MAX_ATTACHMENTS_PER_REQUEST = 5
 

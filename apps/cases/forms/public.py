@@ -1,23 +1,40 @@
 from django import forms
+from django.urls import reverse
+from django.utils.html import format_html
 
 from apps.cases.forms.requests import RequestCreateForm
+from apps.evidence.services.attachments import AttachmentService
+from apps.organization.models import SystemSetting
+
+
+PUBLIC_FILE_HELP_TEXT = (
+    "PDF, JPG o PNG. Tamaño máximo por archivo: "
+    f"{AttachmentService.MAX_FILE_SIZE_MB} MB."
+)
+
+ADDITIONAL_DOCUMENTATION_HELP_TEXT = (
+    "Si tienes más documentación que no puedas adjuntar por tamaño o cantidad, "
+    "indícalo en esta descripción y señala que enviarás el resto desde el "
+    "mismo correo electrónico registrado en la solicitud, para coordinarlo "
+    "con el Delegado de Protección de Datos."
+)
 
 
 class PublicRequestForm(RequestCreateForm):
     identity_document = forms.FileField(
         label="Documento de identidad (opcional)",
         required=False,
-        help_text="PDF, JPG o PNG. Máximo 10 MB.",
+        help_text=PUBLIC_FILE_HELP_TEXT,
     )
     authority_document = forms.FileField(
         label="Documento de representación (opcional)",
         required=False,
-        help_text="PDF, JPG o PNG. Máximo 10 MB.",
+        help_text=PUBLIC_FILE_HELP_TEXT,
     )
     supporting_document = forms.FileField(
         label="Documento de respaldo (opcional)",
         required=False,
-        help_text="PDF, JPG o PNG. Máximo 10 MB.",
+        help_text=PUBLIC_FILE_HELP_TEXT,
     )
     privacy_acknowledgement = forms.BooleanField(
         label=(
@@ -33,6 +50,26 @@ class PublicRequestForm(RequestCreateForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        setting = SystemSetting.objects.filter(singleton_key=1).first()
+        organization_name = "la empresa"
+        if setting is not None:
+            organization_name = setting.trade_name or setting.legal_name
+
+        self.fields["request_details"].help_text = (
+            ADDITIONAL_DOCUMENTATION_HELP_TEXT
+        )
+        self.fields["privacy_acknowledgement"].label = format_html(
+            (
+                "Confirmo que los datos proporcionados son correctos para "
+                "evitar retrasos en el proceso de verificación de esta "
+                "solicitud. También acepto la "
+                '<a href="{}" target="_blank" rel="noopener">'
+                "Política de Privacidad</a> de {} y autorizo recibir "
+                "comunicaciones relacionadas con esta solicitud."
+            ),
+            reverse("legal_content:public_document", args=["privacidad"]),
+            organization_name,
+        )
         self.fields.pop("source_channel")
         self.fields["subject_type"].choices = [
             ("", "Seleccione un tipo de titular"),
