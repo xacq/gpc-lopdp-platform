@@ -11,6 +11,7 @@ from apps.accounts.tests_helpers import force_mfa_login
 from apps.audit.models import AuditLog
 from apps.cases.models import RightsRequest
 from apps.communications.models import RequestCommunication
+from apps.core.services.crypto import CryptoService
 from apps.legal_content.models import RightCatalog
 from apps.subjects.models import DataSubject
 
@@ -49,6 +50,16 @@ class CommunicationHttpTests(TestCase):
         )
         self.assigned = self._request("VS-COMM-001", assigned_to=self.operator)
         self.unassigned = self._request("VS-COMM-002")
+        self.subject_with_email = self._encrypted_subject(
+            document_number="1700000001",
+            full_name="Titular con correo",
+            email="titular-comunicacion@example.test",
+        )
+        self.assigned_with_email = self._request(
+            "VS-COMM-003",
+            assigned_to=self.operator,
+            subject=self.subject_with_email,
+        )
 
     def _user(self, email, role_code):
         user = get_user_model().objects.create_user(
@@ -64,9 +75,34 @@ class CommunicationHttpTests(TestCase):
         UserRole.objects.create(user=user, role=role, is_primary=True)
         return user
 
-    def _request(self, reference, assigned_to=None):
+    def _encrypted_subject(self, *, document_number, full_name, email):
+        subject_id = uuid.uuid4()
+        return DataSubject.objects.create(
+            id=subject_id,
+            subject_type=DataSubject.SubjectType.CUSTOMER,
+            document_type=DataSubject.DocumentType.CEDULA,
+            document_number_encrypted=CryptoService.encrypt_text(
+                document_number,
+                aad=f"data_subjects:{subject_id}:document_number",
+                key_version=1,
+            ).data,
+            document_number_lookup_hash=uuid.uuid4().hex + uuid.uuid4().hex,
+            full_name_encrypted=CryptoService.encrypt_text(
+                full_name,
+                aad=f"data_subjects:{subject_id}:full_name",
+                key_version=1,
+            ).data,
+            email_encrypted=CryptoService.encrypt_text(
+                email,
+                aad=f"data_subjects:{subject_id}:email",
+                key_version=1,
+            ).data,
+            email_lookup_hash=uuid.uuid4().hex + uuid.uuid4().hex,
+        )
+
+    def _request(self, reference, assigned_to=None, subject=None):
         return RightsRequest.objects.create(
-            data_subject=self.subject,
+            data_subject=subject or self.subject,
             right=self.right,
             reference_number=reference,
             request_details_encrypted=b"encrypted-request",
@@ -258,6 +294,27 @@ class CommunicationHttpTests(TestCase):
         self.assertContains(panel, "Comunicaciones")
         self.assertContains(panel, self.assigned.reference_number)
         self.assertIn("no-cache", panel["Cache-Control"])
+
+    def test_panel_links_selected_case_to_subject_email_recipient(self):
+        force_mfa_login(self.client, self.manager)
+
+        response = self.client.get(reverse("communications:panel"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(
+            response,
+            (
+                f'value="{self.assigned_with_email.id}" '
+                'data-recipient-email="titular-comunicacion@example.test"'
+            ),
+            html=False,
+        )
+        self.assertContains(response, 'data-recipient-target')
+        self.assertContains(response, "/static/js/communications-panel.js")
+        self.assertContains(
+            response,
+            "Se completa automáticamente al elegir un expediente",
+        )
 
     def test_auditor_panel_has_no_composer(self):
         force_mfa_login(self.client, self.auditor)

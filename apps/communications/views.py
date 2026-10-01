@@ -36,6 +36,8 @@ from apps.communications.services.portability import (
     PortabilityService,
     PortabilityServiceError,
 )
+from apps.core.services.crypto import CryptoError
+from apps.subjects.services.subjects import SubjectService
 
 
 def _json_form(form_class, request):
@@ -75,16 +77,32 @@ def _manageable_case(user, request_id):
     return case
 
 
+def _manageable_cases_with_recipient_email(user):
+    cases = []
+    queryset = (
+        visible_requests_for(user)
+        .select_related("right", "data_subject")
+        .order_by("-received_at", "-id")
+    )
+    for case in queryset:
+        if not can_start_review(user, case):
+            continue
+        recipient_email = ""
+        try:
+            recipient_email = SubjectService.decrypt(case.data_subject).email
+        except CryptoError:
+            recipient_email = ""
+        case.subject_email = recipient_email
+        cases.append(case)
+    return cases
+
+
 @never_cache
 @login_required
 @require_http_methods(["GET", "POST"])
 def communication_panel(request):
     _require_panel(request.user)
-    manageable_cases = [
-        case
-        for case in visible_requests_for(request.user).select_related("right")
-        if can_start_review(request.user, case)
-    ]
+    manageable_cases = _manageable_cases_with_recipient_email(request.user)
     if request.method == "POST":
         mode = request.POST.get("mode")
         form_class = (
