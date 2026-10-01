@@ -101,7 +101,10 @@ def _attachment_payload(item, *, may_read):
         "filename": AttachmentService.decrypt_filename(item) if may_read else None,
         "mime_type": item.mime_type,
         "size_bytes": item.size_bytes,
-        "malware_scan_status": item.malware_scan_status,
+        "malware_scan_status": {
+            "code": item.malware_scan_status,
+            "label": item.get_malware_scan_status_display(),
+        },
         "uploaded_at": item.uploaded_at,
         "can_download": may_read,
     }

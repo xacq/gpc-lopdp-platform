@@ -198,9 +198,19 @@ class EvidenceHttpTests(TestCase):
         self.assertIsNone(auditor.json()["results"][0]["filename"])
         self.assertFalse(auditor.json()["results"][0]["can_download"])
         self.assertEqual(
+            auditor.json()["results"][0]["malware_scan_status"],
+            {"code": "CLEAN", "label": "Limpio"},
+        )
+        self.assertEqual(
             manager.json()["results"][0]["filename"],
             "identidad-confidencial.pdf",
         )
+
+        panel = self.client.get(
+            reverse("evidence:case_panel", args=[self.case.id])
+        )
+        self.assertContains(panel, "Limpio")
+        self.assertNotContains(panel, ">CLEAN<", html=False)
 
     def test_user_without_panel_role_is_forbidden(self):
         force_mfa_login(self.client, self.outsider)
