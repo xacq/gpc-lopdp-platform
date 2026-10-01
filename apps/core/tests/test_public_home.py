@@ -41,6 +41,7 @@ class PublicHomeTests(TestCase):
             response,
             reverse("cases:public_tracking"),
         )
+        self.assertContains(response, "Revisar solicitud")
 
     def test_home_uses_lopdp_rights_when_catalog_is_empty(self):
         response = self.client.get(reverse("core:home"))

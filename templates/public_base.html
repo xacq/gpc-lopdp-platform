@@ -26,6 +26,7 @@
                 <a class="public-nav__link{% if request.resolver_match.url_name == 'rights' %} public-nav__link--active{% endif %}" href="{% url 'core:rights' %}">Sobre derechos</a>
                 <a class="public-nav__link{% if request.resolver_match.namespace == 'legal_content' %} public-nav__link--active{% endif %}" href="{% url 'legal_content:public_index' %}">Avisos</a>
                 <a class="public-nav__link{% if request.resolver_match.url_name == 'contact' %} public-nav__link--active{% endif %}" href="{% url 'core:contact' %}">Contacto</a>
+                <a class="button button--secondary public-nav__cta" href="{% url 'cases:public_tracking' %}">Revisar solicitud</a>
                 <a class="button button--primary public-nav__cta" href="{% url 'cases:public_request_create' %}">Presentar solicitud</a>
             </nav>
         </div>
