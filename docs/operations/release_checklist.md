@@ -28,7 +28,7 @@
 
 ## 4. Procesos operativos
 
-- [ ] Programar `process_email_outbox --batch-size 100 --drain` cada minuto.
+- [ ] Confirmar que el servicio Docker `email-worker` está activo por cada instancia.
 - [ ] Programar `queue_deadline_alerts --limit 500` con frecuencia acordada.
 - [ ] Programar `detect_retention_events` diariamente.
 - [ ] Programar `cleanup_temporary_uploads --batch-size 100` diariamente.

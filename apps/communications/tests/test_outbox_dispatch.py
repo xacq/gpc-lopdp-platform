@@ -184,9 +184,41 @@ class OutboxDispatchTests(TestCase):
         ):
             self.assertNotIn(forbidden, rendered)
 
+    def test_worker_command_processes_due_messages_with_safe_output(self):
+        communication = self.queue()
+        output = StringIO()
+
+        call_command(
+            "run_email_outbox_worker",
+            batch_size=10,
+            interval_seconds=0,
+            max_loops=1,
+            stdout=output,
+            no_color=True,
+        )
+
+        communication.refresh_from_db()
+        rendered = output.getvalue()
+        self.assertEqual(communication.delivery_status, "SENT")
+        self.assertIn("Worker de correo iniciado", rendered)
+        self.assertIn("seleccionados=1", rendered)
+        self.assertIn("enviados=1", rendered)
+        self.assertIn("Worker de correo detenido", rendered)
+        for forbidden in (
+            "private-1@example.com",
+            "Asunto confidencial",
+            "Contenido confidencial",
+            str(self.case.id),
+            self.case.reference_number,
+        ):
+            self.assertNotIn(forbidden, rendered)
+
     def test_invalid_batch_size_is_rejected(self):
         with self.assertRaises(CommandError):
             call_command("process_email_outbox", batch_size=0)
 
         with self.assertRaises(ValueError):
             NotificationService.process_due_email_batch(batch_size=1001)
+
+        with self.assertRaises(CommandError):
+            call_command("run_email_outbox_worker", batch_size=0, max_loops=1)

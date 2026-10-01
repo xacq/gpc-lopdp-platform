@@ -38,6 +38,25 @@ services:
       - private_data:/app/private_storage
       - clamav_data:/var/lib/clamav
 
+  email-worker:
+    image: gpc-lopdp-platform:local
+    restart: unless-stopped
+    env_file:
+      - ${TENANT_ENV_FILE:-deploy/docker.env}
+    depends_on:
+      web:
+        condition: service_healthy
+    entrypoint: []
+    command:
+      - python
+      - manage.py
+      - run_email_outbox_worker
+      - --batch-size
+      - ${EMAIL_WORKER_BATCH_SIZE:-100}
+      - --interval-seconds
+      - ${EMAIL_WORKER_INTERVAL_SECONDS:-60}
+    stop_grace_period: 30s
+
   proxy:
     image: nginx:1.28-alpine
     restart: unless-stopped

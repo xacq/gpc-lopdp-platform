@@ -108,16 +108,18 @@ de instancias.
 ## Correo y procesos programados
 
 Cada empresa debe configurar su propio SMTP y `DEFAULT_FROM_EMAIL` en su
-archivo `.env`. Los correos salientes se almacenan primero en una cola y se
-envían mediante:
+archivo `.env`. Los correos salientes se almacenan primero en una cola y, en
+Docker, se envían automáticamente con el servicio `email-worker` incluido en
+`compose.yaml`.
+
+Para diagnosticar o forzar un despacho puntual:
 
 ```bash
 python manage.py process_email_outbox --batch-size 100 --drain
 ```
 
-En producción, programe este proceso periódicamente. También deben
-programarse las alertas de plazo, retención y limpieza de cargas temporales
-según el procedimiento operativo definido para cada empresa.
+También deben programarse las alertas de plazo, retención y limpieza de cargas
+temporales según el procedimiento operativo definido para cada empresa.
 
 ## Producción y seguridad
 
