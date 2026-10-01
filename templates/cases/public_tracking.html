@@ -13,6 +13,11 @@
                 <div class="tracking-query__brand">{% include "includes/vinesa_brand.html" with compact=True %}</div>
                 <h2>Seguimiento público</h2>
                 <p>Los datos de acceso son personales. No los compartas con terceros.</p>
+                <div class="tracking-verification-note" role="note">
+                    <strong>Antes de consultar el estado</strong>
+                    <p>Si todavía no has validado tu correo electrónico, primero confirma tu dirección con el código de verificación recibido. Esto permite continuar la gestión de tu solicitud.</p>
+                    <a class="button button--secondary" href="{% url 'cases:public_email_verification' %}">Verificar correo</a>
+                </div>
                 {% if access_error %}<div class="alert alert-danger" role="alert">{{ access_error }}</div>{% endif %}
                 <form method="post" action="{% url 'cases:public_tracking' %}">
                     {% csrf_token %}

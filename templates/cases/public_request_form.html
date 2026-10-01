@@ -26,6 +26,19 @@
             <p>Al enviar recibirás por correo los códigos para verificar tu dirección y consultar el estado. No compartas esos códigos.</p>
         </div>
 
+        <section class="portal-quick-guide" aria-labelledby="requestQuickGuideTitle">
+            <div>
+                <p class="section-kicker">Guía rápida</p>
+                <h2 id="requestQuickGuideTitle">¿Cómo se presenta la solicitud?</h2>
+            </div>
+            <ol>
+                <li><strong>Registra tus datos.</strong><span>Usa un correo al que tengas acceso.</span></li>
+                <li><strong>Describe el derecho que quieres ejercer.</strong><span>Indica con claridad qué necesitas.</span></li>
+                <li><strong>Adjunta documentos si corresponde.</strong><span>PDF, JPG o PNG hasta 25 MB por archivo.</span></li>
+                <li><strong>Envía y verifica tu correo.</strong><span>Recibirás códigos para confirmar tu correo y consultar el estado.</span></li>
+            </ol>
+        </section>
+
         <form class="public-request-form" method="post" action="{% url 'cases:public_request_create' %}" enctype="multipart/form-data" data-request-wizard>
             {% csrf_token %}
             {% for hidden in form.hidden_fields %}{{ hidden }}{% endfor %}

@@ -250,6 +250,10 @@ class PublicIntakeHttpTests(TestCase):
         response = self.client.get(reverse("cases:public_request_create"))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "Presentar una solicitud")
+        self.assertContains(response, "Guía rápida")
+        self.assertContains(response, "¿Cómo se presenta la solicitud?")
+        self.assertContains(response, "Registra tus datos")
+        self.assertContains(response, "Envía y verifica tu correo")
         self.assertContains(response, "Seleccionar archivo", count=3)
         self.assertContains(response, "Ningún archivo seleccionado", count=3)
         self.assertContains(
@@ -299,6 +303,23 @@ class PublicIntakeHttpTests(TestCase):
                 html,
                 rf'<(?:input|select|textarea)[^>]*name="{field_name}"[^>]*required',
             )
+        self.assert_private_headers(response)
+
+    def test_public_tracking_guides_email_verification_before_status_lookup(self):
+        response = self.client.get(reverse("cases:public_tracking"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Consulta tu solicitud")
+        self.assertContains(response, "Antes de consultar el estado")
+        self.assertContains(
+            response,
+            "Si todavía no has validado tu correo electrónico",
+        )
+        self.assertContains(response, "Verificar correo")
+        self.assertContains(
+            response,
+            reverse("cases:public_email_verification"),
+        )
         self.assert_private_headers(response)
 
     def test_valid_submission_uses_prg_and_queues_encrypted_email(self):
