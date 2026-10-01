@@ -88,6 +88,16 @@ class AttachmentService:
         ".jpeg": "image/jpeg",
         ".png": "image/png",
     }
+    GENERIC_DECLARED_MIME_TYPES = {
+        "",
+        "application/octet-stream",
+        "binary/octet-stream",
+    }
+    ALTERNATIVE_MIME_BY_EXTENSION = {
+        ".pdf": {
+            "application/x-pdf",
+        },
+    }
 
     ALLOWED_SCAN_RESULTS = {
         "CLEAN",
@@ -231,18 +241,6 @@ class AttachmentService:
                 "File extension is not allowed."
             )
 
-        declared_mime = (
-            declared_mime
-            .strip()
-            .lower()
-        )
-
-        if declared_mime != expected_mime:
-            raise FileRejectedError(
-                "Declared MIME does not match "
-                "the file extension."
-            )
-
         detected = cls._detected_mime(
             content
         )
@@ -251,6 +249,23 @@ class AttachmentService:
             raise FileRejectedError(
                 "File content does not match "
                 "the declared MIME."
+            )
+
+        declared_mime = (
+            (declared_mime or "")
+            .strip()
+            .lower()
+        )
+        allowed_declared_mimes = {
+            expected_mime,
+            *cls.GENERIC_DECLARED_MIME_TYPES,
+            *cls.ALTERNATIVE_MIME_BY_EXTENSION.get(extension, set()),
+        }
+
+        if declared_mime not in allowed_declared_mimes:
+            raise FileRejectedError(
+                "Declared MIME does not match "
+                "the file extension."
             )
 
         return detected

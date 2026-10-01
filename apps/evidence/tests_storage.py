@@ -4,6 +4,7 @@ from pathlib import Path
 
 from django.contrib.auth import get_user_model
 from django.test import (
+    SimpleTestCase,
     TestCase,
     override_settings,
 )
@@ -52,6 +53,31 @@ PDF_BYTES = (
     b"endobj\n"
     b"%%EOF\n"
 )
+
+
+class AttachmentFileValidationTests(SimpleTestCase):
+    def test_valid_pdf_accepts_generic_declared_mime(self):
+        for declared_mime in (
+            "",
+            "application/octet-stream",
+            "application/x-pdf",
+            "application/pdf",
+        ):
+            with self.subTest(declared_mime=declared_mime):
+                detected = AttachmentService._validate_file(
+                    filename="documento.pdf",
+                    declared_mime=declared_mime,
+                    content=PDF_BYTES,
+                )
+                self.assertEqual(detected, "application/pdf")
+
+    def test_valid_pdf_rejects_misleading_declared_image_mime(self):
+        with self.assertRaises(FileRejectedError):
+            AttachmentService._validate_file(
+                filename="documento.pdf",
+                declared_mime="image/png",
+                content=PDF_BYTES,
+            )
 
 
 class CleanScanner:
