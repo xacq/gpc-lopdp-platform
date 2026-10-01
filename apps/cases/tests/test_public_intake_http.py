@@ -97,6 +97,16 @@ class PublicIntakeTests(TestCase):
         )
         self.assertIn(result.request.reference_number, payload["body"])
         self.assertIn("https://privacidad.vinesa.test/", payload["body"])
+        self.assertIn("VINESA", payload["body"])
+        self.assertIn(
+            "Plataforma de Privacidad y Gestión de Solicitudes LOPDP",
+            payload["body"],
+        )
+        self.assertIn("Paso 1: verifica tu correo electrónico", payload["body"])
+        self.assertIn(
+            "Paso 2: consulta el seguimiento de tu trámite",
+            payload["body"],
+        )
         self.assertNotIn(
             verification.encode(),
             bytes(result.communication.body_encrypted),

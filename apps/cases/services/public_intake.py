@@ -147,16 +147,31 @@ class PublicIntakeService:
             portal_base = f"{public_site_url.rstrip('/')}/cases/public"
             recipient = normalize_email(email)
             message_subject = f"Solicitud recibida: {case.reference_number}"
+            organization_name = (
+                organization.trade_name
+                or organization.legal_name
+                or "Organización"
+            )
             message_body = (
-                "Recibimos tu solicitud de ejercicio de derechos.\n\n"
-                f"Referencia: {case.reference_number}\n"
-                "Para confirmar tu correo visita:\n"
+                f"{organization_name}\n"
+                "Plataforma de Privacidad y Gestión de Solicitudes LOPDP\n"
+                f"{public_site_url.rstrip('/')}/\n\n"
+                "Recibimos tu solicitud de ejercicio de derechos.\n"
+                f"Número de referencia: {case.reference_number}\n\n"
+                "Paso 1: verifica tu correo electrónico\n"
+                "Para confirmar que este correo te pertenece, visita:\n"
                 f"{portal_base}/verify-email/\n"
+                f"Número de referencia: {case.reference_number}\n"
                 f"Código de verificación: {verification.token}\n\n"
-                "Para consultar el estado visita:\n"
+                "Paso 2: consulta el seguimiento de tu trámite\n"
+                "Después de verificar tu correo, podrás consultar el estado en:\n"
                 f"{portal_base}/tracking/\n"
+                f"Número de referencia: {case.reference_number}\n"
                 f"Código de seguimiento: {tracking.token}\n\n"
-                "Conserva estos códigos y no los compartas."
+                "Importante:\n"
+                "- El código de verificación se usa para confirmar tu correo.\n"
+                "- El código de seguimiento se usa para consultar el estado del trámite.\n"
+                "- Conserva estos códigos y no los compartas."
             )
 
             communication = NotificationService.queue_email(
