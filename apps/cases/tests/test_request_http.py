@@ -193,6 +193,27 @@ class RequestHttpTests(TestCase):
         self.assertContains(response, "Solicitud reservada uno")
         self.assertContains(response, "Plazos y aclaraciones")
         self.assertContains(response, "Canales relacionados")
+        self.assertContains(response, "Cliente")
+        self.assertNotContains(response, "CUSTOMER")
+
+    def test_case_detail_timeline_uses_spanish_status_labels(self):
+        self.request_one = CaseWorkflowService.transition(
+            request=self.request_one,
+            target_status=RightsRequest.Status.UNDER_REVIEW,
+            actor=self.operator,
+        )
+        force_mfa_login(self.client, self.manager)
+
+        response = self.client.get(
+            reverse(
+                "cases:request_detail",
+                kwargs={"request_id": self.request_one.id},
+            )
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Recibida → En revisión")
+        self.assertNotContains(response, "RECEIVED → UNDER_REVIEW")
 
     def test_operator_cannot_assign_case(self):
         force_mfa_login(self.client, self.operator)
