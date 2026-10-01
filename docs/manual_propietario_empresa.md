@@ -86,8 +86,8 @@ Las causales de rechazo deben usarse solo cuando sean aplicables al derecho soli
 Registrar una resolución no envía automáticamente el correo final. Para comunicar la decisión:
 
 1. Abra **Comunicaciones** desde el expediente o el menú principal.
-2. Seleccione **Correo saliente**.
-3. Elija el expediente, destinatario, tipo de comunicación y asunto.
+2. Seleccione **Enviar correo al titular**.
+3. Elija el expediente, confirme el destinatario autocompletado, tipo de comunicación y asunto.
 4. Redacte una respuesta clara y coherente con la resolución.
 5. Registre y ponga en cola el correo.
 6. Confirme que el estado cambie a **Enviado** o **Entregado**.

@@ -93,31 +93,31 @@ El sistema permite clasificar las comunicaciones con los siguientes tipos:
 
 Usar el tipo que mejor describa el contenido real de la comunicacion. Si no existe una categoria especifica, seleccionar **Otro**.
 
-## 7. Registrar una comunicacion saliente
+## 7. Enviar correo al titular
 
-Usar esta opcion cuando el sistema debe dejar registro de un correo enviado al titular u otro destinatario relacionado con el expediente.
+Usar esta opcion cuando el sistema debe enviar y dejar registro de un correo dirigido al titular u otro destinatario relacionado con el expediente.
 
 1. Entrar a **Comunicaciones**.
-2. Abrir **+ Registrar comunicacion**.
-3. Seleccionar la pestana **Correo saliente**.
+2. Abrir **+ Enviar o registrar comunicacion del expediente**.
+3. Seleccionar la pestana **Enviar correo al titular**.
 4. Completar:
    - **Expediente**.
    - **Tipo**.
-   - **Destinatario**.
+   - **Destinatario**. Se completa automaticamente al elegir el expediente, pero puede editarse.
    - **Asunto**.
    - **Mensaje**.
 5. Marcar **Visible para el titular** solo si el mensaje debe aparecer en la vista publica o de seguimiento del titular.
-6. Seleccionar **Registrar y poner en cola**.
+6. Seleccionar **Registrar correo y poner en cola de envio**.
 
 Importante: el registro queda en cola para envio. Si el correo SMTP de la instancia aun no esta configurado, el sistema puede registrar la comunicacion pero no enviarla realmente al destinatario.
 
 ## 8. Registrar una comunicacion entrante
 
-Usar esta opcion para dejar constancia de una llamada, correo recibido, documento fisico u otra comunicacion que llego a la empresa.
+Usar esta opcion para dejar constancia de una llamada, correo recibido, documento fisico u otra comunicacion que llego a la empresa. Esta opcion no envia correos; solo guarda el antecedente en el expediente.
 
 1. Entrar a **Comunicaciones**.
-2. Abrir **+ Registrar comunicacion**.
-3. Seleccionar la pestana **Comunicacion entrante**.
+2. Abrir **+ Enviar o registrar comunicacion del expediente**.
+3. Seleccionar la pestana **Registrar comunicacion recibida**.
 4. Completar:
    - **Expediente**.
    - **Canal**.
@@ -126,7 +126,7 @@ Usar esta opcion para dejar constancia de una llamada, correo recibido, document
    - **Asunto**.
    - **Mensaje**.
 5. Marcar **Visible para el titular** solo si corresponde.
-6. Seleccionar **Registrar comunicacion**.
+6. Seleccionar **Guardar comunicacion recibida**.
 
 La comunicacion entrante queda registrada con estado **Recibido**.
 

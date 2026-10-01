@@ -313,7 +313,13 @@ class CommunicationHttpTests(TestCase):
         self.assertContains(response, "/static/js/communications-panel.js")
         self.assertContains(
             response,
-            "Se completa automáticamente al elegir un expediente",
+            "Se completa automáticamente al elegir un expediente y puede editarse antes de enviar",
+        )
+        self.assertContains(response, "Enviar correo al titular")
+        self.assertContains(response, "Registrar comunicación recibida")
+        self.assertContains(
+            response,
+            "Guardar comunicación recibida",
         )
 
     def test_auditor_panel_has_no_composer(self):
@@ -322,7 +328,10 @@ class CommunicationHttpTests(TestCase):
         response = self.client.get(reverse("communications:panel"))
 
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "Registrar comunicación")
+        self.assertNotContains(
+            response,
+            "Enviar o registrar comunicación del expediente",
+        )
 
     def test_idempotency_prevents_duplicate_messages(self):
         force_mfa_login(self.client, self.manager)
