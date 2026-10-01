@@ -1,6 +1,6 @@
 # Cargas públicas seguras
 
-Los documentos públicos admitidos son PDF, JPG y PNG, con un máximo de 10 MB
+Los documentos públicos admitidos son PDF, JPG y PNG, con un máximo de 25 MB
 por archivo y tres campos de carga por solicitud. El servidor limita la carga
 en memoria y valida extensión, MIME declarado y firma binaria.
 
