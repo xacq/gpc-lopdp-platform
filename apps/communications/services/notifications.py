@@ -4,17 +4,22 @@ import re
 import uuid
 from dataclasses import dataclass
 from datetime import timedelta
+from html import escape
 from typing import Callable
+from urllib.parse import urljoin
 
 from django.conf import settings
-from django.core.mail import EmailMessage
+from django.core.mail import EmailMultiAlternatives
 from django.db import IntegrityError, connection, transaction
 from django.db.models import Q
+from django.utils import timezone
+from django.utils.formats import date_format
 
 from apps.audit.models import AuditLog
 from apps.audit.services.audit import AuditService
 from apps.communications.models import RequestCommunication
 from apps.core.services.crypto import CryptoService
+from apps.organization.models import SystemSetting
 
 
 class NotificationServiceError(Exception):
@@ -49,6 +54,9 @@ class NotificationService:
     EMAIL_PATTERN = re.compile(
         r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}",
         re.IGNORECASE,
+    )
+    TOKEN_PATTERN = re.compile(
+        r"Código de (?P<kind>verificación|seguimiento): (?P<token>\S+)"
     )
 
     @classmethod
@@ -243,6 +251,325 @@ class NotificationService:
         )
 
         return value[:500]
+
+    @classmethod
+    def _public_site_url(cls, organization: SystemSetting) -> str:
+        return (
+            getattr(settings, "PUBLIC_SITE_URL", "")
+            or f"https://{organization.domain}"
+        ).rstrip("/")
+
+    @classmethod
+    def _absolute_url(cls, base_url: str, value: str | None) -> str | None:
+        if not value:
+            return None
+        if value.startswith(("http://", "https://")):
+            return value
+        return urljoin(f"{base_url}/", value.lstrip("/"))
+
+    @classmethod
+    def _format_local_datetime(cls, value) -> str:
+        if value is None:
+            value = timezone.now()
+        return date_format(
+            timezone.localtime(value),
+            "d/m/Y H:i",
+        )
+
+    @classmethod
+    def _paragraphs(cls, body: str) -> str:
+        paragraphs = []
+        for block in body.split("\n\n"):
+            lines = [
+                escape(line.strip())
+                for line in block.splitlines()
+                if line.strip()
+            ]
+            if lines:
+                paragraphs.append(
+                    "<p style=\"margin:0 0 12px;color:#351411;"
+                    "font-size:15px;line-height:1.6;\">"
+                    + "<br>".join(lines)
+                    + "</p>"
+                )
+        return "".join(paragraphs)
+
+    @classmethod
+    def _email_shell(
+        cls,
+        *,
+        organization: SystemSetting,
+        public_site_url: str,
+        title: str,
+        preheader: str,
+        content_html: str,
+    ) -> str:
+        trade_name = organization.trade_name or organization.legal_name
+        primary = organization.primary_color or "#C8393C"
+        secondary = organization.secondary_color or "#552A2A"
+        accent = organization.accent_color or primary
+        privacy_url = f"{public_site_url}/legal/"
+        logo_url = cls._absolute_url(public_site_url, organization.effective_logo_url)
+        logo_html = (
+            f'<img src="{escape(logo_url, quote=True)}" '
+            f'alt="{escape(trade_name, quote=True)}" '
+            'style="display:block;margin:0 auto 12px;max-width:180px;'
+            'max-height:72px;width:auto;height:auto;">'
+            if logo_url
+            else (
+                f'<div style="font-family:Georgia,serif;font-size:28px;'
+                f'color:{secondary};letter-spacing:.04em;margin-bottom:8px;">'
+                f'{escape(trade_name)}</div>'
+            )
+        )
+
+        return f"""<!doctype html>
+<html lang="es">
+<body style="margin:0;padding:0;background:#f7f2f0;font-family:Arial,Helvetica,sans-serif;color:#351411;">
+  <div style="display:none;max-height:0;overflow:hidden;color:transparent;">{escape(preheader)}</div>
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#f7f2f0;padding:28px 12px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:640px;background:#ffffff;border:1px solid #eadbd6;border-radius:18px;overflow:hidden;box-shadow:0 14px 34px rgba(72,35,28,.08);">
+          <tr>
+            <td align="center" style="padding:30px 34px 22px;border-bottom:1px solid #f0e4e0;">
+              {logo_html}
+              <div style="font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:{primary};font-weight:700;">Plataforma de Privacidad y Gestión LOPDP</div>
+              <a href="{escape(public_site_url, quote=True)}" style="display:inline-block;margin-top:8px;color:{accent};font-size:14px;text-decoration:none;">{escape(public_site_url)}</a>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:30px 34px;">
+              <h1 style="margin:0 0 18px;font-family:Georgia,'Times New Roman',serif;font-size:28px;line-height:1.18;color:{secondary};font-weight:500;">{escape(title)}</h1>
+              {content_html}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:20px 34px;background:#fbf7f5;border-top:1px solid #f0e4e0;color:#6e625e;font-size:12px;line-height:1.6;text-align:center;">
+              <div>© {timezone.localdate().year} {escape(organization.legal_name)}</div>
+              <div>Canal de privacidad: <a href="mailto:{escape(organization.contact_email, quote=True)}" style="color:{accent};">{escape(organization.contact_email)}</a></div>
+              <div><a href="{escape(privacy_url, quote=True)}" style="color:{accent};">Página de privacidad</a></div>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>"""
+
+    @classmethod
+    def _button(cls, *, url: str, label: str, color: str) -> str:
+        return (
+            f'<a href="{escape(url, quote=True)}" '
+            'style="display:inline-block;padding:12px 18px;border-radius:9px;'
+            f'background:{color};color:#ffffff;text-decoration:none;'
+            'font-weight:700;font-size:14px;">'
+            f'{escape(label)}</a>'
+        )
+
+    @classmethod
+    def _code_box(cls, *, label: str, value: str) -> str:
+        return (
+            '<div style="margin:12px 0 18px;padding:12px 14px;'
+            'background:#f8f1ee;border:1px solid #eadbd6;border-radius:10px;">'
+            f'<div style="font-size:12px;text-transform:uppercase;'
+            f'letter-spacing:.06em;color:#7a6e6a;font-weight:700;">{escape(label)}</div>'
+            f'<div style="margin-top:6px;font-family:Consolas,Monaco,monospace;'
+            f'font-size:13px;line-height:1.45;color:#351411;word-break:break-all;">'
+            f'{escape(value)}</div></div>'
+        )
+
+    @classmethod
+    def _tokens_from_body(cls, body: str) -> dict[str, str]:
+        tokens = {}
+        for match in cls.TOKEN_PATTERN.finditer(body):
+            tokens[match.group("kind")] = match.group("token")
+        return tokens
+
+    @classmethod
+    def _acknowledgement_html(
+        cls,
+        *,
+        communication: RequestCommunication,
+        body: str,
+        organization: SystemSetting,
+        public_site_url: str,
+    ) -> str:
+        tokens = cls._tokens_from_body(body)
+        reference = communication.request.reference_number
+        if (
+            not tokens.get("verificación")
+            or not tokens.get("seguimiento")
+        ):
+            return cls._generic_html(
+                communication=communication,
+                body=body,
+                organization=organization,
+                public_site_url=public_site_url,
+            )
+
+        portal_base = f"{public_site_url}/cases/public"
+        verify_url = f"{portal_base}/verify-email/"
+        tracking_url = f"{portal_base}/tracking/"
+        privacy_url = f"{public_site_url}/legal/"
+        primary = organization.primary_color or "#C8393C"
+        secondary = organization.secondary_color or "#552A2A"
+
+        content = (
+            '<p style="margin:0 0 16px;color:#351411;font-size:15px;line-height:1.6;">'
+            "Hemos recibido tu solicitud de ejercicio de derechos.</p>"
+            f'{cls._code_box(label="Número de referencia", value=reference)}'
+            f'<div style="margin:22px 0;padding-top:4px;">'
+            f'<h2 style="margin:0 0 8px;color:{secondary};font-size:18px;">'
+            "Paso 1 · Verifica tu correo electrónico</h2>"
+            '<p style="margin:0 0 14px;color:#5f5350;font-size:14px;line-height:1.55;">'
+            "Para continuar con la gestión, confirma que este correo te pertenece.</p>"
+            f'{cls._button(url=verify_url, label="Verificar correo", color=primary)}'
+            f'<div style="margin-top:10px;"><a href="{escape(verify_url, quote=True)}" '
+            f'style="color:{primary};font-size:13px;">{escape(verify_url)}</a></div>'
+            f'{cls._code_box(label="Código de verificación", value=tokens.get("verificación", ""))}'
+            "</div>"
+            f'<div style="margin:22px 0;padding-top:4px;">'
+            f'<h2 style="margin:0 0 8px;color:{secondary};font-size:18px;">'
+            "Paso 2 · Revisa el seguimiento</h2>"
+            '<p style="margin:0 0 14px;color:#5f5350;font-size:14px;line-height:1.55;">'
+            "Después de verificar tu correo, podrás consultar el estado del trámite.</p>"
+            f'{cls._button(url=tracking_url, label="Revisar seguimiento", color=primary)}'
+            f'<div style="margin-top:10px;"><a href="{escape(tracking_url, quote=True)}" '
+            f'style="color:{primary};font-size:13px;">{escape(tracking_url)}</a></div>'
+            f'{cls._code_box(label="Código de seguimiento", value=tokens.get("seguimiento", ""))}'
+            "</div>"
+            '<div style="margin-top:20px;padding:14px;border-radius:10px;'
+            'background:#fff8f6;border:1px solid #f0ddd7;color:#5f5350;'
+            'font-size:13px;line-height:1.55;">'
+            "<strong>Importante:</strong> conserva estos códigos y no los compartas. "
+            "El código de verificación confirma tu correo y el código de seguimiento "
+            "permite consultar el estado del trámite.</div>"
+            f'<p style="margin:16px 0 0;color:#5f5350;font-size:13px;">'
+            f'Página de privacidad: <a href="{escape(privacy_url, quote=True)}" '
+            f'style="color:{primary};">{escape(privacy_url)}</a></p>'
+        )
+
+        return cls._email_shell(
+            organization=organization,
+            public_site_url=public_site_url,
+            title="Solicitud recibida",
+            preheader=f"Solicitud {reference} recibida. Verifica tu correo y revisa el seguimiento.",
+            content_html=content,
+        )
+
+    @classmethod
+    def _response_html(
+        cls,
+        *,
+        communication: RequestCommunication,
+        body: str,
+        organization: SystemSetting,
+        public_site_url: str,
+    ) -> str:
+        reference = communication.request.reference_number
+        tracking_url = f"{public_site_url}/cases/public/tracking/"
+        privacy_url = f"{public_site_url}/legal/"
+        primary = organization.primary_color or "#C8393C"
+
+        content = (
+            f'{cls._code_box(label="Expediente", value=reference)}'
+            '<table role="presentation" width="100%" cellspacing="0" cellpadding="0" '
+            'style="margin:0 0 18px;"><tr>'
+            '<td style="padding:10px 0;color:#6e625e;font-size:13px;">'
+            '<strong style="color:#351411;">Fecha de respuesta:</strong><br>'
+            f'{escape(cls._format_local_datetime(communication.created_at))}</td>'
+            '<td style="padding:10px 0;color:#6e625e;font-size:13px;">'
+            '<strong style="color:#351411;">Responsable:</strong><br>'
+            f'{escape(organization.trade_name or organization.legal_name)}</td>'
+            '</tr></table>'
+            '<div style="margin:18px 0;padding:18px;border:1px solid #eadbd6;'
+            'border-radius:12px;background:#fffaf8;">'
+            '<div style="margin:0 0 10px;font-size:12px;text-transform:uppercase;'
+            'letter-spacing:.08em;color:#7a6e6a;font-weight:700;">Mensaje del Delegado</div>'
+            f'{cls._paragraphs(body)}'
+            '</div>'
+            f'{cls._button(url=tracking_url, label="Revisar seguimiento", color=primary)}'
+            f'<div style="margin-top:10px;"><a href="{escape(tracking_url, quote=True)}" '
+            f'style="color:{primary};font-size:13px;">{escape(tracking_url)}</a></div>'
+            f'<p style="margin:18px 0 0;color:#5f5350;font-size:13px;line-height:1.55;">'
+            "Este mensaje corresponde a una comunicación oficial dentro del trámite "
+            "de ejercicio de derechos LOPDP.</p>"
+            f'<p style="margin:10px 0 0;color:#5f5350;font-size:13px;">'
+            f'Página de privacidad: <a href="{escape(privacy_url, quote=True)}" '
+            f'style="color:{primary};">{escape(privacy_url)}</a></p>'
+        )
+
+        return cls._email_shell(
+            organization=organization,
+            public_site_url=public_site_url,
+            title="Respuesta del Delegado de Protección de Datos",
+            preheader=f"Respuesta oficial para el expediente {reference}.",
+            content_html=content,
+        )
+
+    @classmethod
+    def _generic_html(
+        cls,
+        *,
+        communication: RequestCommunication,
+        body: str,
+        organization: SystemSetting,
+        public_site_url: str,
+    ) -> str:
+        return cls._email_shell(
+            organization=organization,
+            public_site_url=public_site_url,
+            title=communication.get_communication_type_display(),
+            preheader=f"Comunicación del expediente {communication.request.reference_number}.",
+            content_html=(
+                f'{cls._code_box(label="Expediente", value=communication.request.reference_number)}'
+                '<div style="margin:18px 0;padding:18px;border:1px solid #eadbd6;'
+                'border-radius:12px;background:#fffaf8;">'
+                f'{cls._paragraphs(body)}'
+                '</div>'
+            ),
+        )
+
+    @classmethod
+    def _html_body(
+        cls,
+        *,
+        communication: RequestCommunication,
+        body: str,
+    ) -> str:
+        organization = SystemSetting.objects.get(singleton_key=1)
+        public_site_url = cls._public_site_url(organization)
+
+        if (
+            communication.communication_type
+            == RequestCommunication.CommunicationType.ACKNOWLEDGEMENT
+        ):
+            return cls._acknowledgement_html(
+                communication=communication,
+                body=body,
+                organization=organization,
+                public_site_url=public_site_url,
+            )
+
+        if (
+            communication.communication_type
+            == RequestCommunication.CommunicationType.RESPONSE
+        ):
+            return cls._response_html(
+                communication=communication,
+                body=body,
+                organization=organization,
+                public_site_url=public_site_url,
+            )
+
+        return cls._generic_html(
+            communication=communication,
+            body=body,
+            organization=organization,
+            public_site_url=public_site_url,
+        )
 
     @classmethod
     def _audit(
@@ -705,10 +1032,17 @@ class NotificationService:
             )
 
         try:
-            message = EmailMessage(
+            message = EmailMultiAlternatives(
                 subject=payload["subject"],
                 body=payload["body"],
                 to=[payload["recipient"]],
+            )
+            message.attach_alternative(
+                cls._html_body(
+                    communication=communication,
+                    body=payload["body"],
+                ),
+                "text/html",
             )
 
             sent_count = message.send(

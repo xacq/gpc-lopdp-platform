@@ -277,6 +277,14 @@ class NotificationServiceTests(
             mail.outbox[0].to,
             ["subject@example.com"],
         )
+        self.assertEqual(
+            mail.outbox[0].alternatives[0][1],
+            "text/html",
+        )
+        self.assertIn(
+            "Plataforma de Privacidad",
+            mail.outbox[0].alternatives[0][0],
+        )
 
     def test_sent_email_processing_is_idempotent(self):
         communication = self.queue()
@@ -305,7 +313,7 @@ class NotificationServiceTests(
 
         with patch(
             "apps.communications.services.notifications."
-            "EmailMessage.send",
+            "EmailMultiAlternatives.send",
             side_effect=RuntimeError(
                 "Simulated delivery failure"
             ),

@@ -298,7 +298,7 @@ class NotificationConcurrencyTests(
 
         with patch(
             "apps.communications.services."
-            "notifications.EmailMessage.send",
+            "notifications.EmailMultiAlternatives.send",
             new=fake_send,
         ):
             first = threading.Thread(
