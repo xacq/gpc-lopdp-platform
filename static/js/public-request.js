@@ -8,6 +8,8 @@
     const steps = Array.from(document.querySelectorAll("[data-wizard-steps] .request-stepper__item"));
     const representativeToggle = form.elements.namedItem("has_representative");
     const representativeFields = form.querySelector(".representative-fields");
+    const submitButton = form.querySelector("[data-submit-button]");
+    const submitStatus = form.querySelector("[data-submit-status]");
     const representativeRequiredNames = [
         "representative_name",
         "representative_document_type",
@@ -102,6 +104,11 @@
     });
 
     form.addEventListener("submit", (event) => {
+        if (form.dataset.submitting === "true") {
+            event.preventDefault();
+            return;
+        }
+
         for (let index = 0; index < panels.length; index += 1) {
             const invalidField = panels[index].querySelector(":invalid");
             if (invalidField) {
@@ -110,6 +117,22 @@
                 validatePanel(panels[index]);
                 return;
             }
+        }
+
+        form.dataset.submitting = "true";
+        if (submitButton) {
+            submitButton.disabled = true;
+            submitButton.setAttribute("aria-busy", "true");
+            submitButton.textContent = (
+                submitButton.dataset.loadingLabel || "Enviando solicitud…"
+            );
+        }
+        form.querySelectorAll("[data-wizard-back], [data-wizard-next]").forEach((button) => {
+            button.disabled = true;
+        });
+        if (submitStatus) {
+            submitStatus.hidden = false;
+            submitStatus.scrollIntoView({behavior: "smooth", block: "center"});
         }
     });
 

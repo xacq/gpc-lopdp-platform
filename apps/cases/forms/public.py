@@ -1,3 +1,5 @@
+import uuid
+
 from django import forms
 from django.urls import reverse
 from django.utils.html import format_html
@@ -21,6 +23,10 @@ ADDITIONAL_DOCUMENTATION_HELP_TEXT = (
 
 
 class PublicRequestForm(RequestCreateForm):
+    submission_key = forms.UUIDField(
+        required=True,
+        widget=forms.HiddenInput,
+    )
     identity_document = forms.FileField(
         label="Documento de identidad (opcional)",
         required=False,
@@ -50,6 +56,8 @@ class PublicRequestForm(RequestCreateForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        if not self.initial.get("submission_key"):
+            self.initial["submission_key"] = uuid.uuid4()
         setting = SystemSetting.objects.filter(singleton_key=1).first()
         organization_name = "la empresa"
         if setting is not None:

@@ -1,5 +1,6 @@
 import base64
 import tempfile
+import uuid
 from pathlib import Path
 
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -69,6 +70,7 @@ class PublicUploadHttpTests(TestCase):
             "representative_document_number": "",
             "representative_email": "",
             "privacy_acknowledgement": "on",
+            "submission_key": str(uuid.uuid4()),
             "website": "",
         }
 
@@ -105,6 +107,24 @@ class PublicUploadHttpTests(TestCase):
         )
         self.assertNotIn("identidad-privada.pdf", serialized_audit)
         self.assertNotIn(attachment.storage_key, serialized_audit)
+
+    def test_repeated_public_document_submission_key_is_ignored(self):
+        data = dict(self.data)
+        data["identity_document"] = self.pdf()
+        first = self.client.post(
+            reverse("cases:public_request_create"), data
+        )
+        repeated = dict(self.data)
+        repeated["identity_document"] = self.pdf("identidad-repetida.pdf")
+        second = self.client.post(
+            reverse("cases:public_request_create"), repeated
+        )
+
+        self.assertEqual(first.status_code, 303)
+        self.assertEqual(second.status_code, 303)
+        self.assertEqual(RightsRequest.objects.count(), 1)
+        self.assertEqual(RequestAttachment.objects.count(), 1)
+        self.assertEqual(TemporaryUpload.objects.count(), 1)
 
     def test_mime_mismatch_is_rejected_without_persistence(self):
         data = dict(self.data)
@@ -166,6 +186,7 @@ class PublicUploadHttpTests(TestCase):
         self.assertEqual(first.status_code, 303)
 
         mismatched = dict(self.data)
+        mismatched["submission_key"] = str(uuid.uuid4())
         mismatched["email"] = "different@example.com"
         mismatched["supporting_document"] = self.pdf("evidencia.pdf")
         second = self.client.post(

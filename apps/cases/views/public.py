@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import uuid
 
+from django.db import IntegrityError
 from django.http import HttpResponse
 from django.shortcuts import render
 from django.urls import reverse
+from django.utils import timezone
 from django.utils.http import content_disposition_header
 from django.views.decorators.http import require_http_methods, require_POST
 
@@ -15,7 +17,7 @@ from apps.cases.forms import (
     PublicTrackingCodeResendForm,
     PublicTrackingForm,
 )
-from apps.cases.models import RightsRequest
+from apps.cases.models import PublicIntakeSubmission, RightsRequest
 from apps.cases.services.cases import CaseWorkflowError
 from apps.cases.services.intake import CaseIntakeError
 from apps.cases.services.public_downloads import (
@@ -80,6 +82,17 @@ def _private_response(response: HttpResponse) -> HttpResponse:
     return response
 
 
+def _public_request_received_redirect() -> HttpResponse:
+    return _private_response(
+        HttpResponse(
+            status=303,
+            headers={
+                "Location": reverse("cases:public_request_received"),
+            },
+        )
+    )
+
+
 def _status_label(value: str) -> str:
     try:
         return RightsRequest.Status(value).label
@@ -93,6 +106,14 @@ def public_request_create(request):
         form = PublicRequestForm(request.POST, request.FILES)
         if form.is_valid():
             cleaned = form.cleaned_data
+            submission_record = None
+            try:
+                submission_record = PublicIntakeSubmission.objects.create(
+                    idempotency_key=cleaned["submission_key"],
+                )
+            except IntegrityError:
+                return _public_request_received_redirect()
+
             upload_fields = (
                 ("identity_document", "IDENTITY_DOCUMENT"),
                 ("authority_document", "AUTHORITY_DOCUMENT"),
@@ -143,6 +164,8 @@ def public_request_create(request):
                             issued_upload=issued_upload,
                             session_key=upload_session_key,
                         )
+                    if submission_record is not None:
+                        submission_record.delete()
                     form.add_error(
                         None,
                         PUBLIC_UPLOAD_REJECTION_ERROR,
@@ -156,7 +179,7 @@ def public_request_create(request):
 
             submitted = False
             try:
-                PublicIntakeService.submit(
+                result = PublicIntakeService.submit(
                     subject_type=cleaned["subject_type"],
                     document_type=cleaned["document_type"],
                     document_number=cleaned["document_number"],
@@ -194,6 +217,15 @@ def public_request_create(request):
                 pass
             else:
                 submitted = True
+                if submission_record is not None:
+                    submission_record.request = result.request
+                    submission_record.completed_at = timezone.now()
+                    submission_record.save(
+                        update_fields=[
+                            "request",
+                            "completed_at",
+                        ]
+                    )
             finally:
                 if not submitted:
                     for issued_upload in issued_uploads:
@@ -201,14 +233,9 @@ def public_request_create(request):
                             issued_upload=issued_upload,
                             session_key=upload_session_key,
                         )
-            return _private_response(
-                HttpResponse(
-                    status=303,
-                    headers={
-                        "Location": reverse("cases:public_request_received"),
-                    },
-                )
-            )
+                    if submission_record is not None:
+                        submission_record.delete()
+            return _public_request_received_redirect()
     else:
         form = PublicRequestForm()
 

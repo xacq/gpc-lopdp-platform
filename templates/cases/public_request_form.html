@@ -101,9 +101,12 @@
                     <label for="{{ form.privacy_acknowledgement.id_for_label }}">{{ form.privacy_acknowledgement.label }} <span class="required-mark" aria-hidden="true">*</span></label>
                 </div>
                 {% for error in form.privacy_acknowledgement.errors %}<div class="public-field__error" role="alert">{{ error }}</div>{% endfor %}
+                <div class="portal-alert portal-alert--info public-request-form__submitting" role="status" data-submit-status hidden>
+                    <p>Estamos enviando tu solicitud y procesando los documentos adjuntos. No cierres esta ventana ni presiones nuevamente el botón.</p>
+                </div>
                 <div class="public-request-form__actions">
                     <button class="button button--secondary" type="button" data-wizard-back>← Anterior</button>
-                    <button class="button button--primary" type="submit">Enviar solicitud <span aria-hidden="true">→</span></button>
+                    <button class="button button--primary" type="submit" data-submit-button data-default-label="Enviar solicitud →" data-loading-label="Enviando solicitud…">Enviar solicitud <span aria-hidden="true">→</span></button>
                 </div>
             </section>
         </form>

@@ -1,6 +1,7 @@
 import base64
 from datetime import timedelta
 import re
+import uuid
 from unittest.mock import patch
 
 from django.test import Client, TestCase, override_settings
@@ -239,6 +240,7 @@ class PublicIntakeHttpTests(TestCase):
             "representative_document_number": "",
             "representative_email": "",
             "privacy_acknowledgement": "on",
+            "submission_key": str(uuid.uuid4()),
             "website": "",
         }
 
@@ -340,6 +342,20 @@ class PublicIntakeHttpTests(TestCase):
         self.assertNotContains(confirmation, self.post_data["email"])
         self.assertNotContains(confirmation, self.post_data["document_number"])
 
+    def test_repeated_submission_key_does_not_create_duplicate_request(self):
+        first = self.client.post(
+            reverse("cases:public_request_create"), self.post_data
+        )
+        second = self.client.post(
+            reverse("cases:public_request_create"), self.post_data
+        )
+
+        self.assertEqual(first.status_code, 303)
+        self.assertEqual(second.status_code, 303)
+        self.assertEqual(first["Location"], second["Location"])
+        self.assertEqual(RightsRequest.objects.count(), 1)
+        self.assertEqual(RequestCommunication.objects.count(), 1)
+
     def test_invalid_form_does_not_create_request(self):
         data = dict(self.post_data)
         data["privacy_acknowledgement"] = ""
@@ -377,6 +393,7 @@ class PublicIntakeHttpTests(TestCase):
             reverse("cases:public_request_create"), self.post_data
         )
         mismatched = dict(self.post_data)
+        mismatched["submission_key"] = str(uuid.uuid4())
         mismatched["email"] = "different-owner@example.com"
         second = self.client.post(
             reverse("cases:public_request_create"), mismatched
@@ -474,6 +491,7 @@ class PublicIntakeHttpTests(TestCase):
         client.get(url)
         data = {
             **self.post_data,
+            "submission_key": str(uuid.uuid4()),
             "csrfmiddlewaretoken": client.cookies["csrftoken"].value,
         }
 

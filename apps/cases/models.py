@@ -290,6 +290,48 @@ class RightsRequest(models.Model):
         return self.reference_number
 
 
+class PublicIntakeSubmission(models.Model):
+    idempotency_key = models.UUIDField(
+        unique=True,
+    )
+
+    request = models.ForeignKey(
+        RightsRequest,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="public_intake_submissions",
+        db_index=False,
+    )
+
+    created_at = models.DateTimeField(
+        db_default=TransactionNow(),
+        editable=False,
+    )
+
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    class Meta:
+        db_table = "public_intake_submissions"
+
+        indexes = [
+            models.Index(
+                fields=["created_at"],
+                name="idx_public_intake_created",
+            ),
+            models.Index(
+                fields=["request"],
+                name="idx_public_intake_request",
+            ),
+        ]
+
+    def __str__(self):
+        return str(self.idempotency_key)
+
+
 class RequestAccessToken(models.Model):
     class Purpose(models.TextChoices):
         TRACKING = "TRACKING", "Seguimiento"

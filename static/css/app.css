@@ -554,6 +554,7 @@ body {
     place-items: center;
 }
 .portal-alert--danger { border-color: #edb7b7; background: #fff2f2; color: #8f1717; }
+.portal-alert--info { border-color: #c8d8e0; background: #f2f8fb; color: #34536a; }
 
 .portal-quick-guide {
     display: grid;
@@ -665,6 +666,8 @@ body {
 .portal-panel--confirmation { background: #fffaf8; }
 .public-request-form__actions { display: flex; justify-content: flex-end; gap: 0.8rem; margin-top: 1rem; }
 .public-request-form button.button { cursor: pointer; }
+.public-request-form button.button:disabled { cursor: wait; opacity: 0.72; }
+.public-request-form__submitting { margin: 1rem 0 0; }
 .wizard-actions {
     display: flex;
     justify-content: flex-end;
