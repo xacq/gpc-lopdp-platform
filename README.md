@@ -26,6 +26,7 @@ volúmenes y archivos de configuración aislados.
 - [Despacho de correo](docs/operations/email_outbox.md)
 - [Cargas públicas](docs/operations/public_uploads.md)
 - [Mantenimiento del servidor](docs/operations/server_maintenance.md)
+- [Estado actual de producción](docs/operations/production_status.md)
 - [Checklist de publicación](docs/operations/release_checklist.md)
 
 ### Entrega formal
