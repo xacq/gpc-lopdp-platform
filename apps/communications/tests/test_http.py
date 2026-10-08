@@ -60,6 +60,10 @@ class CommunicationHttpTests(TestCase):
             assigned_to=self.operator,
             subject=self.subject_with_email,
         )
+        self.closed = self._request(
+            "VS-COMM-004",
+            status=RightsRequest.Status.CLOSED,
+        )
 
     def _user(self, email, role_code):
         user = get_user_model().objects.create_user(
@@ -100,14 +104,20 @@ class CommunicationHttpTests(TestCase):
             email_lookup_hash=uuid.uuid4().hex + uuid.uuid4().hex,
         )
 
-    def _request(self, reference, assigned_to=None, subject=None):
+    def _request(
+        self,
+        reference,
+        assigned_to=None,
+        subject=None,
+        status=RightsRequest.Status.UNDER_REVIEW,
+    ):
         return RightsRequest.objects.create(
             data_subject=subject or self.subject,
             right=self.right,
             reference_number=reference,
             request_details_encrypted=b"encrypted-request",
             subject_snapshot_encrypted=b"encrypted-snapshot",
-            status=RightsRequest.Status.UNDER_REVIEW,
+            status=status,
             assigned_to=assigned_to,
         )
 
@@ -293,7 +303,30 @@ class CommunicationHttpTests(TestCase):
         panel = self.client.get(reverse("communications:panel"))
         self.assertContains(panel, "Comunicaciones")
         self.assertContains(panel, self.assigned.reference_number)
+        self.assertNotContains(panel, self.closed.reference_number)
         self.assertIn("no-cache", panel["Cache-Control"])
+
+    def test_finalized_cases_are_not_available_for_new_communications(self):
+        force_mfa_login(self.client, self.manager)
+
+        panel = self.client.get(reverse("communications:panel"))
+        blocked = self._post(
+            "communications:create_outbound",
+            {
+                "request_id": str(self.closed.id),
+                "communication_type": "RESPONSE",
+                "recipient": "closed@example.test",
+                "subject": "Mensaje no permitido",
+                "body": "No debe registrarse sobre expedientes finalizados.",
+            },
+        )
+
+        self.assertEqual(panel.status_code, 200)
+        self.assertNotContains(panel, self.closed.reference_number)
+        self.assertEqual(blocked.status_code, 403)
+        self.assertFalse(
+            RequestCommunication.objects.filter(request=self.closed).exists()
+        )
 
     def test_panel_links_selected_case_to_subject_email_recipient(self):
         force_mfa_login(self.client, self.manager)

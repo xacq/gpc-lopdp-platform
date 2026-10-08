@@ -66,6 +66,19 @@ def _require_panel(user):
         raise PermissionDenied
 
 
+FINAL_REQUEST_STATUSES = {
+    RightsRequest.Status.RESPONDED,
+    RightsRequest.Status.REJECTED,
+    RightsRequest.Status.ARCHIVED,
+    RightsRequest.Status.CANCELLED,
+    RightsRequest.Status.CLOSED,
+}
+
+
+def _is_open_for_communications(case):
+    return case.status not in FINAL_REQUEST_STATUSES
+
+
 def _manageable_case(user, request_id):
     case = visible_requests_for(user, RightsRequest.objects.all()).filter(
         pk=request_id
@@ -77,11 +90,19 @@ def _manageable_case(user, request_id):
     return case
 
 
+def _communicable_case(user, request_id):
+    case = _manageable_case(user, request_id)
+    if not _is_open_for_communications(case):
+        raise PermissionDenied
+    return case
+
+
 def _manageable_cases_with_recipient_email(user):
     cases = []
     queryset = (
         visible_requests_for(user)
         .select_related("right", "data_subject")
+        .exclude(status__in=FINAL_REQUEST_STATUSES)
         .order_by("-received_at", "-id")
     )
     for case in queryset:
@@ -113,7 +134,7 @@ def communication_panel(request):
         create_form = form_class(request.POST)
         if create_form.is_valid():
             data = create_form.cleaned_data
-            case = _manageable_case(request.user, data["request_id"])
+            case = _communicable_case(request.user, data["request_id"])
             try:
                 if mode == "outbound":
                     NotificationService.queue_email(
@@ -222,7 +243,7 @@ def communication_create_outbound(request):
     data, error = _json_form(OutboundCommunicationForm, request)
     if error:
         return error
-    case = _manageable_case(request.user, data["request_id"])
+    case = _communicable_case(request.user, data["request_id"])
     try:
         communication = NotificationService.queue_email(
             request=case,
@@ -249,7 +270,7 @@ def communication_create_inbound(request):
     data, error = _json_form(InboundCommunicationForm, request)
     if error:
         return error
-    case = _manageable_case(request.user, data["request_id"])
+    case = _communicable_case(request.user, data["request_id"])
     try:
         communication = NotificationService.record_inbound(
             request=case,
