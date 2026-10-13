@@ -7,6 +7,7 @@ from django.core.exceptions import (
     PermissionDenied,
 )
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Count, Q
 from django.http import (
     HttpResponseBadRequest,
@@ -36,6 +37,7 @@ from apps.cases.forms.requests import (
 )
 from apps.cases.models import (
     RequestClarification,
+    RequestResolution,
     RightsRequest,
 )
 from apps.cases.policies import (
@@ -58,10 +60,17 @@ from apps.cases.services.intake import (
     CaseIntakeError,
     CaseIntakeService,
 )
+from apps.cases.services.notifications import (
+    CaseNotificationService,
+)
 from apps.cases.services.resolutions import (
     ResolutionService,
     ResolutionServiceError,
 )
+from apps.communications.services.notifications import (
+    NotificationServiceError,
+)
+from apps.core.services.crypto import CryptoError
 from apps.subjects.services.subjects import (
     RepresentativeService,
     SubjectServiceError,
@@ -562,33 +571,58 @@ def request_clarification_create(
 
         if form.is_valid():
             try:
-                (
-                    CaseWorkflowService
-                    .request_clarification(
-                        request=case,
-                        message=(
-                            form.cleaned_data[
-                                "message"
-                            ]
-                        ),
-                        clarification_due_at=(
-                            form.cleaned_data.get(
-                                "clarification_due_at"
-                            )
-                        ),
-                        legal_basis=(
-                            form.cleaned_data.get(
-                                "legal_basis"
-                            )
-                        ),
-                        actor=request.user,
+                message = form.cleaned_data[
+                    "message"
+                ]
+                clarification_due_at = (
+                    form.cleaned_data.get(
+                        "clarification_due_at"
                     )
                 )
+                legal_basis = (
+                    form.cleaned_data.get(
+                        "legal_basis"
+                    )
+                )
+
+                with transaction.atomic():
+                    clarification = (
+                        CaseWorkflowService
+                        .request_clarification(
+                            request=case,
+                            message=message,
+                            clarification_due_at=(
+                                clarification_due_at
+                            ),
+                            legal_basis=(
+                                legal_basis
+                            ),
+                            actor=request.user,
+                        )
+                    )
+                    (
+                        CaseNotificationService
+                        .clarification_requested(
+                            request=clarification.request,
+                            message=message,
+                            clarification_due_at=(
+                                clarification.due_at
+                            ),
+                            legal_basis=legal_basis,
+                            actor=request.user,
+                            clarification_id=(
+                                clarification.id
+                            ),
+                        )
+                    )
             except CasePermissionError:
                 raise PermissionDenied
             except (
                 CaseWorkflowError,
                 DeadlineServiceError,
+                NotificationServiceError,
+                SubjectServiceError,
+                CryptoError,
                 ValueError,
             ):
                 form.add_error(
@@ -737,23 +771,41 @@ def request_extension(
 
         if form.is_valid():
             try:
-                (
-                    CaseWorkflowService
-                    .apply_extension(
-                        request=case,
-                        reason=(
-                            form.cleaned_data[
-                                "reason"
-                            ]
-                        ),
-                        actor=request.user,
+                reason = form.cleaned_data[
+                    "reason"
+                ]
+
+                with transaction.atomic():
+                    extension_deadline = (
+                        CaseWorkflowService
+                        .apply_extension(
+                            request=case,
+                            reason=reason,
+                            actor=request.user,
+                        )
                     )
-                )
+                    (
+                        CaseNotificationService
+                        .extension_applied(
+                            request=(
+                                extension_deadline
+                                .request
+                            ),
+                            reason=reason,
+                            extension_deadline=(
+                                extension_deadline
+                            ),
+                            actor=request.user,
+                        )
+                    )
             except CasePermissionError:
                 raise PermissionDenied
             except (
                 CaseWorkflowError,
                 DeadlineServiceError,
+                NotificationServiceError,
+                SubjectServiceError,
+                CryptoError,
                 ValueError,
             ):
                 form.add_error(
@@ -811,36 +863,63 @@ def request_resolution(
 
         if form.is_valid():
             try:
-                ResolutionService.resolve(
-                    request=case,
-                    resolution_type=(
-                        form.cleaned_data[
-                            "resolution_type"
-                        ]
-                    ),
-                    details=(
-                        form.cleaned_data[
-                            "details"
-                        ]
-                    ),
-                    outcome_reason=(
-                        form.cleaned_data.get(
-                            "outcome_reason"
-                        )
-                    ),
-                    legal_basis=(
-                        form.cleaned_data.get(
-                            "legal_basis"
-                        )
-                    ),
-                    actor=request.user,
+                resolution_type = (
+                    form.cleaned_data[
+                        "resolution_type"
+                    ]
                 )
+                details = form.cleaned_data[
+                    "details"
+                ]
+
+                with transaction.atomic():
+                    resolution = (
+                        ResolutionService
+                        .resolve(
+                            request=case,
+                            resolution_type=(
+                                resolution_type
+                            ),
+                            details=details,
+                            outcome_reason=(
+                                form.cleaned_data.get(
+                                    "outcome_reason"
+                                )
+                            ),
+                            legal_basis=(
+                                form.cleaned_data.get(
+                                    "legal_basis"
+                                )
+                            ),
+                            actor=request.user,
+                        )
+                    )
+                    (
+                        CaseNotificationService
+                        .resolution_registered(
+                            request=(
+                                resolution.request
+                            ),
+                            resolution_type=(
+                                resolution
+                                .resolution_type
+                            ),
+                            details=details,
+                            actor=request.user,
+                            resolution_id=(
+                                resolution.id
+                            ),
+                        )
+                    )
             except CasePermissionError:
                 raise PermissionDenied
             except (
                 ResolutionServiceError,
                 CaseWorkflowError,
                 DeadlineServiceError,
+                NotificationServiceError,
+                SubjectServiceError,
+                CryptoError,
                 ValueError,
             ):
                 form.add_error(
@@ -888,16 +967,43 @@ def request_mark_responded(
     )
 
     try:
-        ResolutionService.mark_responded(
-            request=case,
-            actor=request.user,
-        )
+        with transaction.atomic():
+            responded = (
+                ResolutionService
+                .mark_responded(
+                    request=case,
+                    actor=request.user,
+                )
+            )
+            resolution = (
+                RequestResolution
+                .objects
+                .select_related("request")
+                .get(request=responded)
+            )
+            details = (
+                ResolutionService
+                .decrypt_details(
+                    resolution
+                )
+            )
+            (
+                CaseNotificationService
+                .response_marked(
+                    request=responded,
+                    details=details,
+                    actor=request.user,
+                )
+            )
     except CasePermissionError:
         raise PermissionDenied
     except (
         ResolutionServiceError,
         CaseWorkflowError,
         DeadlineServiceError,
+        NotificationServiceError,
+        SubjectServiceError,
+        CryptoError,
         ValueError,
     ):
         return HttpResponseBadRequest(

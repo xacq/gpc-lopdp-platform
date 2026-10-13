@@ -16,6 +16,9 @@ from apps.cases.services.cases import (
 from apps.cases.services.deadlines import (
     DeadlineService,
 )
+from apps.communications.models import (
+    RequestCommunication,
+)
 from apps.legal_content.models import (
     RightCatalog,
     RightRule,
@@ -275,6 +278,21 @@ class ClarificationHttpTests(TestCase):
                 ),
             ).count(),
             1,
+        )
+        self.assertTrue(
+            RequestCommunication.objects.filter(
+                request=self.case,
+                communication_type=(
+                    RequestCommunication
+                    .CommunicationType
+                    .INFORMATION_REQUEST
+                ),
+                delivery_status=(
+                    RequestCommunication
+                    .DeliveryStatus
+                    .PENDING
+                ),
+            ).exists()
         )
 
     def test_assigned_operator_can_request_clarification(self):

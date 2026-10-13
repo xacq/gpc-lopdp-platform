@@ -21,6 +21,9 @@ from apps.cases.services.deadlines import (
 from apps.cases.services.resolutions import (
     ResolutionService,
 )
+from apps.communications.models import (
+    RequestCommunication,
+)
 from apps.legal_content.models import (
     RightCatalog,
     RightRule,
@@ -479,6 +482,21 @@ class ResolutionHttpTests(TestCase):
             deadline.status,
             RequestDeadline.Status.COMPLETED,
         )
+        self.assertTrue(
+            RequestCommunication.objects.filter(
+                request=case,
+                communication_type=(
+                    RequestCommunication
+                    .CommunicationType
+                    .REJECTION
+                ),
+                delivery_status=(
+                    RequestCommunication
+                    .DeliveryStatus
+                    .PENDING
+                ),
+            ).exists()
+        )
 
     def test_cancel_from_received(self):
         case = self.create_request(
@@ -582,6 +600,21 @@ class ResolutionHttpTests(TestCase):
         )
         self.assertIsNotNone(case.responded_at)
         self.assertIsNone(case.current_due_at)
+        self.assertTrue(
+            RequestCommunication.objects.filter(
+                request=case,
+                communication_type=(
+                    RequestCommunication
+                    .CommunicationType
+                    .RESPONSE
+                ),
+                delivery_status=(
+                    RequestCommunication
+                    .DeliveryStatus
+                    .PENDING
+                ),
+            ).exists()
+        )
 
     def test_mark_responded_without_resolution_is_bad_request(self):
         case = self.create_request()

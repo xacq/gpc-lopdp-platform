@@ -16,6 +16,9 @@ from apps.cases.services.cases import (
 from apps.cases.services.deadlines import (
     DeadlineService,
 )
+from apps.communications.models import (
+    RequestCommunication,
+)
 from apps.legal_content.models import (
     RightCatalog,
     RightRule,
@@ -255,6 +258,21 @@ class ExtensionHttpTests(TestCase):
         self.assertEqual(
             self.case.current_due_at,
             extension.due_at,
+        )
+        self.assertTrue(
+            RequestCommunication.objects.filter(
+                request=self.case,
+                communication_type=(
+                    RequestCommunication
+                    .CommunicationType
+                    .EXTENSION_NOTICE
+                ),
+                delivery_status=(
+                    RequestCommunication
+                    .DeliveryStatus
+                    .PENDING
+                ),
+            ).exists()
         )
 
     def test_extension_while_awaiting_information_keeps_state(self):

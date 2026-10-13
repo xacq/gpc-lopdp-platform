@@ -518,6 +518,10 @@ class NotificationService:
         organization: SystemSetting,
         public_site_url: str,
     ) -> str:
+        primary = organization.primary_color or "#C8393C"
+        tracking_url = f"{public_site_url}/cases/public/tracking/"
+        privacy_url = f"{public_site_url}/legal/"
+
         return cls._email_shell(
             organization=organization,
             public_site_url=public_site_url,
@@ -529,6 +533,15 @@ class NotificationService:
                 'border-radius:12px;background:#fffaf8;">'
                 f'{cls._paragraphs(body)}'
                 '</div>'
+                f'{cls._button(url=tracking_url, label="Revisar seguimiento", color=primary)}'
+                f'<div style="margin-top:10px;"><a href="{escape(tracking_url, quote=True)}" '
+                f'style="color:{primary};font-size:13px;">{escape(tracking_url)}</a></div>'
+                f'<p style="margin:18px 0 0;color:#5f5350;font-size:13px;line-height:1.55;">'
+                "Este mensaje corresponde a una comunicación oficial dentro del trámite "
+                "de ejercicio de derechos LOPDP.</p>"
+                f'<p style="margin:10px 0 0;color:#5f5350;font-size:13px;">'
+                f'Página de privacidad: <a href="{escape(privacy_url, quote=True)}" '
+                f'style="color:{primary};">{escape(privacy_url)}</a></p>'
             ),
         )
 
