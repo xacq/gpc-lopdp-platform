@@ -224,7 +224,7 @@ class DetailedCaseReportService(CaseReportService):
         try:
             snapshot = CaseWorkflowService.decrypt_subject_snapshot(case)
         except CryptoError:
-            snapshot = {}
+            snapshot = None
 
         representative_name = "—"
         representative_document = "—"
@@ -252,16 +252,16 @@ class DetailedCaseReportService(CaseReportService):
         return {
             "subject_type": cls._choice_label(
                 DataSubject.SubjectType.choices,
-                snapshot.get("subject_type"),
+                getattr(snapshot, "subject_type", None),
             ),
             "document_type": cls._choice_label(
                 DataSubject.DocumentType.choices,
-                snapshot.get("document_type"),
+                getattr(snapshot, "document_type", None),
             ),
-            "document_number": snapshot.get("document_number", ""),
-            "full_name": snapshot.get("full_name", ""),
-            "email": snapshot.get("email", ""),
-            "phone": snapshot.get("phone") or "—",
+            "document_number": getattr(snapshot, "document_number", "") or "",
+            "full_name": getattr(snapshot, "full_name", "") or "",
+            "email": getattr(snapshot, "email", "") or "",
+            "phone": getattr(snapshot, "phone", None) or "—",
             "representative_name": representative_name,
             "representative_document": representative_document,
             "representative_email": representative_email,
