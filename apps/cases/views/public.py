@@ -190,6 +190,8 @@ def public_request_create(request):
             try:
                 privacy_policy = LegalDocumentService.current(
                     document_type=LegalDocument.DocumentType.PRIVACY_POLICY,
+                ) or LegalDocumentService.current_or_latest_published(
+                    document_type=LegalDocument.DocumentType.PRIVACY_POLICY,
                 )
                 result = PublicIntakeService.submit(
                     subject_type=cleaned["subject_type"],
