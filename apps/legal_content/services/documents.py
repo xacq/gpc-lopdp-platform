@@ -259,6 +259,29 @@ class LegalDocumentService:
             .first()
         )
 
+    @classmethod
+    def current_or_latest_published(
+        cls,
+        *,
+        document_type: str,
+        at=None,
+    ) -> LegalDocument | None:
+        current = cls.current(
+            document_type=document_type,
+            at=at,
+        )
+        if current is not None:
+            return current
+        document_type = cls._normalize_type(document_type)
+        return (
+            LegalDocument.objects.filter(
+                document_type=document_type,
+                is_published=True,
+            )
+            .order_by("-effective_from", "-created_at")
+            .first()
+        )
+
 
 class NoticeDeliveryService:
     @classmethod
@@ -270,6 +293,8 @@ class NoticeDeliveryService:
         rendered_content: str,
         delivery_channel: str = NoticeDelivery.DeliveryChannel.WEB,
         acknowledged: bool = False,
+        acknowledged_at=None,
+        delivered_at=None,
         ip_address: str | None = None,
         user_agent: str | None = None,
         correlation_id: uuid.UUID | None = None,
@@ -288,20 +313,29 @@ class NoticeDeliveryService:
         rendered_hash = hashlib.sha256(
             str(rendered_content).encode("utf-8")
         ).hexdigest()
-        acknowledged_at = timezone.now() if acknowledged else None
+        acknowledged_at = (
+            acknowledged_at or timezone.now()
+            if acknowledged
+            else None
+        )
         correlation_id = correlation_id or uuid.uuid4()
 
         with transaction.atomic():
-            delivery = NoticeDelivery.objects.create(
-                request=request,
-                legal_document=persisted_document,
-                delivery_channel=channel,
-                acknowledged=acknowledged,
-                acknowledged_at=acknowledged_at,
-                ip_address=ip_address,
-                user_agent=(str(user_agent)[:500] if user_agent else None),
-                rendered_content_sha256=rendered_hash,
-            )
+            values = {
+                "request": request,
+                "legal_document": persisted_document,
+                "delivery_channel": channel,
+                "acknowledged": acknowledged,
+                "acknowledged_at": acknowledged_at,
+                "ip_address": ip_address,
+                "user_agent": (
+                    str(user_agent)[:500] if user_agent else None
+                ),
+                "rendered_content_sha256": rendered_hash,
+            }
+            if delivered_at is not None:
+                values["delivered_at"] = delivered_at
+            delivery = NoticeDelivery.objects.create(**values)
             AuditService.write(
                 action="NOTICE_DELIVERY_RECORDED",
                 entity_type="NoticeDelivery",
