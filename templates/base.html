@@ -25,7 +25,7 @@
                     <a class="admin-nav-link{% if request.resolver_match.namespace == 'cases' or request.resolver_match.namespace == 'evidence' %} admin-nav-link--active{% endif %}" href="{% url 'cases:request_list' %}"><span aria-hidden="true">▢</span> Expedientes</a>
                     {% if nav_can_assign_cases %}<a class="admin-nav-link{% if request.resolver_match.namespace == 'assignments' %} admin-nav-link--active{% endif %}" href="{% url 'assignments:index' %}"><span aria-hidden="true">♧</span> Asignaciones</a>{% endif %}
                     <a class="admin-nav-link{% if request.resolver_match.namespace == 'communications' %} admin-nav-link--active{% endif %}" href="{% url 'communications:panel' %}"><span aria-hidden="true">✉</span> Comunicaciones</a>
-                    <a class="admin-nav-link{% if request.resolver_match.url_name == 'reports' %} admin-nav-link--active{% endif %}" href="{% url 'core:reports' %}"><span aria-hidden="true">▤</span> Reportes</a>
+                    <a class="admin-nav-link{% if request.resolver_match.url_name == 'reports' or request.resolver_match.url_name == 'request_report' %} admin-nav-link--active{% endif %}" href="{% url 'core:reports' %}"><span aria-hidden="true">▤</span> Reportes</a>
                     {% if nav_can_assign_cases %}<a class="admin-nav-link{% if request.resolver_match.namespace == 'retention' %} admin-nav-link--active{% endif %}" href="{% url 'retention:panel' %}"><span aria-hidden="true">⌛</span> Retención</a>{% endif %}
                 {% endif %}
                 {% if nav_can_read_audit %}

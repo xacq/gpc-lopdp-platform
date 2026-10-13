@@ -5,8 +5,16 @@ from django.db.models.functions import Coalesce, TruncMonth
 from django.utils import timezone
 
 from apps.cases.models import RightsRequest
-from apps.cases.policies import can_access_case_panel, visible_requests_for
+from apps.cases.policies import (
+    can_access_case_panel,
+    can_view_sensitive_case_data,
+    visible_requests_for,
+)
 from apps.cases.services.dashboard import CaseDashboardService
+from apps.cases.services.cases import CaseWorkflowService
+from apps.core.services.crypto import CryptoError
+from apps.subjects.models import DataSubject, SubjectRepresentative
+from apps.subjects.services.subjects import RepresentativeService
 
 
 class ReportPermissionError(Exception):
@@ -189,4 +197,175 @@ class CaseReportService:
             "by_status": by_status,
             "by_right": by_right,
             "by_month": by_month,
+        }
+
+
+class DetailedCaseReportService(CaseReportService):
+    @staticmethod
+    def _choice_label(choices, value):
+        return dict(choices).get(value, value or "")
+
+    @classmethod
+    def _subject_payload(cls, *, user, case):
+        if not can_view_sensitive_case_data(user, case):
+            return {
+                "subject_type": "Protegido",
+                "document_type": "Protegido",
+                "document_number": "Protegido",
+                "full_name": "Protegido",
+                "email": "Protegido",
+                "phone": "Protegido",
+                "representative_name": "—",
+                "representative_document": "—",
+                "representative_email": "—",
+                "representative_status": "—",
+            }
+
+        try:
+            snapshot = CaseWorkflowService.decrypt_subject_snapshot(case)
+        except CryptoError:
+            snapshot = {}
+
+        representative_name = "—"
+        representative_document = "—"
+        representative_email = "—"
+        representative_status = "—"
+        if case.representative_id:
+            try:
+                representative = RepresentativeService.decrypt(
+                    case.representative
+                )
+            except CryptoError:
+                representative = None
+            if representative is not None:
+                representative_name = representative.representative_name
+                representative_document = (
+                    f"{cls._choice_label(SubjectRepresentative.DocumentType.choices, representative.representative_document_type)} "
+                    f"{representative.representative_document_number}"
+                )
+                representative_email = representative.representative_email or "—"
+                representative_status = cls._choice_label(
+                    SubjectRepresentative.VerificationStatus.choices,
+                    representative.verification_status,
+                )
+
+        return {
+            "subject_type": cls._choice_label(
+                DataSubject.SubjectType.choices,
+                snapshot.get("subject_type"),
+            ),
+            "document_type": cls._choice_label(
+                DataSubject.DocumentType.choices,
+                snapshot.get("document_type"),
+            ),
+            "document_number": snapshot.get("document_number", ""),
+            "full_name": snapshot.get("full_name", ""),
+            "email": snapshot.get("email", ""),
+            "phone": snapshot.get("phone") or "—",
+            "representative_name": representative_name,
+            "representative_document": representative_document,
+            "representative_email": representative_email,
+            "representative_status": representative_status,
+        }
+
+    @classmethod
+    def _privacy_payload(cls, case):
+        delivery = (
+            case.notice_deliveries.filter(acknowledged=True)
+            .select_related("legal_document")
+            .order_by("-acknowledged_at", "-delivered_at")
+            .first()
+        )
+        if delivery is None:
+            return {
+                "accepted": "No registrado",
+                "accepted_at": None,
+                "document_title": "—",
+                "document_version": "—",
+                "document_sha256": "—",
+                "content_sha256": "—",
+                "channel": "—",
+                "ip_address": "—",
+                "user_agent": "—",
+            }
+        document = delivery.legal_document
+        return {
+            "accepted": "Sí" if delivery.acknowledged else "No",
+            "accepted_at": delivery.acknowledged_at,
+            "document_title": document.title,
+            "document_version": document.version,
+            "document_sha256": document.content_sha256,
+            "content_sha256": delivery.rendered_content_sha256,
+            "channel": delivery.get_delivery_channel_display(),
+            "ip_address": delivery.ip_address or "—",
+            "user_agent": delivery.user_agent or "—",
+        }
+
+    @classmethod
+    def rows(cls, *, user, filters):
+        queryset = (
+            cls._filtered_queryset(user=user, filters=filters)
+            .select_related("right", "assigned_to", "representative")
+            .annotate(
+                attachment_count=Count(
+                    "attachments",
+                    filter=Q(attachments__deleted_at__isnull=True),
+                    distinct=True,
+                ),
+                communication_count=Count("communications", distinct=True),
+            )
+            .order_by("-received_at", "-id")
+        )
+
+        rows = []
+        for case in queryset:
+            subject = cls._subject_payload(user=user, case=case)
+            privacy = cls._privacy_payload(case)
+            rows.append(
+                {
+                    "id": case.id,
+                    "reference_number": case.reference_number,
+                    "received_at": case.received_at,
+                    "right": case.right.name,
+                    "status": case.get_status_display(),
+                    "source_channel": case.get_source_channel_display(),
+                    "assigned_to": (
+                        case.assigned_to.full_name
+                        or case.assigned_to.email
+                        if case.assigned_to_id
+                        else "Sin asignar"
+                    ),
+                    "identity_status": case.get_identity_status_display(),
+                    "current_due_at": case.current_due_at,
+                    "responded_at": case.responded_at,
+                    "closed_at": case.closed_at,
+                    "attachment_count": case.attachment_count,
+                    "communication_count": case.communication_count,
+                    **subject,
+                    **{
+                        f"privacy_{key}": value
+                        for key, value in privacy.items()
+                    },
+                }
+            )
+        return rows
+
+    @classmethod
+    def build(cls, *, user, filters) -> dict:
+        rows = cls.rows(user=user, filters=filters)
+        return {
+            "generated_at": timezone.now(),
+            "filters": {
+                "date_from": filters.get("date_from"),
+                "date_to": filters.get("date_to"),
+                "right_code": filters.get("right_code") or None,
+                "status": filters.get("status") or None,
+                "assigned_to": (
+                    str(filters["assigned_to"])
+                    if filters.get("assigned_to")
+                    else None
+                ),
+            },
+            "total": len(rows),
+            "rows": rows,
         }

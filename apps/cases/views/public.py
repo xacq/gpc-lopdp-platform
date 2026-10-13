@@ -51,6 +51,8 @@ from apps.evidence.services.temporary_uploads import (
     TemporaryUploadError,
     TemporaryUploadService,
 )
+from apps.legal_content.models import LegalDocument
+from apps.legal_content.services.documents import LegalDocumentService
 from apps.subjects.services.subjects import SubjectServiceError
 
 
@@ -98,6 +100,13 @@ def _status_label(value: str) -> str:
         return RightsRequest.Status(value).label
     except ValueError:
         return value
+
+
+def _client_ip(request) -> str | None:
+    forwarded_for = request.META.get("HTTP_X_FORWARDED_FOR", "")
+    if forwarded_for:
+        return forwarded_for.split(",", 1)[0].strip() or None
+    return request.META.get("REMOTE_ADDR") or None
 
 
 @require_http_methods(["GET", "POST"])
@@ -179,6 +188,9 @@ def public_request_create(request):
 
             submitted = False
             try:
+                privacy_policy = LegalDocumentService.current(
+                    document_type=LegalDocument.DocumentType.PRIVACY_POLICY,
+                )
                 result = PublicIntakeService.submit(
                     subject_type=cleaned["subject_type"],
                     document_type=cleaned["document_type"],
@@ -198,6 +210,11 @@ def public_request_create(request):
                     representative_email=cleaned.get("representative_email"),
                     temporary_uploads=issued_uploads,
                     upload_session_key=upload_session_key,
+                    privacy_policy_document=privacy_policy,
+                    privacy_acknowledgement_ip=_client_ip(request),
+                    privacy_acknowledgement_user_agent=(
+                        request.META.get("HTTP_USER_AGENT")
+                    ),
                     correlation_id=uuid.uuid4(),
                 )
             except (

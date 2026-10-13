@@ -150,9 +150,26 @@ class ReportBackendTests(TestCase):
         self.assertContains(response, "Resumen por derecho")
         self.assertContains(response, "Expedientes por mes")
         self.assertContains(response, "Expedientes por estado")
+        self.assertContains(response, "Ver solicitudes")
         self.assertContains(response, "Acceso")
         self.assertNotContains(response, "VS-REPORT-001")
         self.assertIn("no-cache", response["Cache-Control"])
+
+    def test_detailed_request_report_lists_cases_and_exports_csv(self):
+        force_mfa_login(self.client, self.manager)
+
+        response = self.client.get(reverse("core:request_report"))
+        export = self.client.get(reverse("core:request_report_export_csv"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Reporte detallado de solicitudes")
+        self.assertContains(response, "VS-REPORT-001")
+        self.assertContains(response, "No registrado")
+        self.assertIn("no-cache", response["Cache-Control"])
+        self.assertEqual(export.status_code, 200)
+        content = export.content.decode("utf-8-sig")
+        self.assertIn("Aceptó política", content)
+        self.assertIn("VS-REPORT-001", content)
 
     def test_filters_are_combined_and_normalized(self):
         force_mfa_login(self.client, self.manager)

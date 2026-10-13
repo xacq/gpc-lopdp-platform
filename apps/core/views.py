@@ -3,8 +3,10 @@ import csv
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from django.core.paginator import Paginator
 from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render
+from django.utils import timezone
 from django.views.decorators.cache import never_cache
 from django.views.decorators.http import require_GET
 
@@ -14,7 +16,11 @@ from apps.cases.services.dashboard import (
 )
 from apps.cases.forms.reports import CaseReportFilterForm
 from apps.cases.policies import can_access_case_panel, visible_requests_for
-from apps.cases.services.reports import CaseReportService, ReportPermissionError
+from apps.cases.services.reports import (
+    CaseReportService,
+    DetailedCaseReportService,
+    ReportPermissionError,
+)
 from apps.core.manuals import (
     MANUALS,
     get_manual,
@@ -132,6 +138,26 @@ def _report_payload(request):
     return payload, None
 
 
+def _detailed_report_payload(request):
+    if not can_access_case_panel(request.user):
+        raise PermissionDenied
+    form = CaseReportFilterForm(request.GET)
+    if not form.is_valid():
+        return None, JsonResponse(
+            {"errors": form.errors.get_json_data()},
+            status=400,
+            json_dumps_params={"ensure_ascii": False},
+        )
+    try:
+        payload = DetailedCaseReportService.build(
+            user=request.user,
+            filters=form.cleaned_data,
+        )
+    except ReportPermissionError:
+        raise PermissionDenied
+    return payload, None
+
+
 @never_cache
 @login_required
 @require_GET
@@ -176,6 +202,35 @@ def reports(request):
         request,
         "core/reports.html",
         _report_page_context(request, report=payload),
+    )
+
+
+@never_cache
+@login_required
+@require_GET
+def request_report(request):
+    payload, error = _detailed_report_payload(request)
+    if error:
+        return render(
+            request,
+            "core/request_report.html",
+            {
+                **_report_page_context(request, report=None),
+                "detail_report": None,
+            },
+            status=400,
+        )
+
+    paginator = Paginator(payload["rows"], 25)
+    page = paginator.get_page(request.GET.get("page"))
+    return render(
+        request,
+        "core/request_report.html",
+        {
+            **_report_page_context(request, report=None),
+            "detail_report": payload,
+            "page_obj": page,
+        },
     )
 
 
@@ -232,6 +287,97 @@ def report_export_csv(request):
                 row["in_process"],
                 row["pending"],
                 row["completion_percentage"],
+            )
+        )
+    return response
+
+
+def _csv_datetime(value):
+    if value is None:
+        return ""
+    return timezone.localtime(value).strftime("%d/%m/%Y %H:%M")
+
+
+@never_cache
+@login_required
+@require_GET
+def request_report_export_csv(request):
+    payload, error = _detailed_report_payload(request)
+    if error:
+        return error
+    response = HttpResponse(content_type="text/csv; charset=utf-8")
+    response["Content-Disposition"] = (
+        'attachment; filename="reporte-detallado-solicitudes.csv"'
+    )
+    response.write("\ufeff")
+    writer = csv.writer(response)
+    writer.writerow(
+        (
+            "Referencia",
+            "Recepción",
+            "Derecho",
+            "Estado",
+            "Canal",
+            "Asignado a",
+            "Identidad",
+            "Tipo de titular",
+            "Nombre",
+            "Documento",
+            "Correo",
+            "Teléfono",
+            "Representante",
+            "Documento representante",
+            "Correo representante",
+            "Estado representante",
+            "Vencimiento",
+            "Respondido",
+            "Cerrado",
+            "Adjuntos",
+            "Comunicaciones",
+            "Aceptó política",
+            "Fecha aceptación",
+            "Documento legal",
+            "Versión política",
+            "Hash política publicada",
+            "Hash contenido aceptado",
+            "Canal aceptación",
+            "IP aceptación",
+            "Navegador",
+        )
+    )
+    for row in payload["rows"]:
+        writer.writerow(
+            (
+                row["reference_number"],
+                _csv_datetime(row["received_at"]),
+                row["right"],
+                row["status"],
+                row["source_channel"],
+                row["assigned_to"],
+                row["identity_status"],
+                row["subject_type"],
+                row["full_name"],
+                f"{row['document_type']} {row['document_number']}".strip(),
+                row["email"],
+                row["phone"],
+                row["representative_name"],
+                row["representative_document"],
+                row["representative_email"],
+                row["representative_status"],
+                _csv_datetime(row["current_due_at"]),
+                _csv_datetime(row["responded_at"]),
+                _csv_datetime(row["closed_at"]),
+                row["attachment_count"],
+                row["communication_count"],
+                row["privacy_accepted"],
+                _csv_datetime(row["privacy_accepted_at"]),
+                row["privacy_document_title"],
+                row["privacy_document_version"],
+                row["privacy_document_sha256"],
+                row["privacy_content_sha256"],
+                row["privacy_channel"],
+                row["privacy_ip_address"],
+                row["privacy_user_agent"],
             )
         )
     return response

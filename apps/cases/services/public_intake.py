@@ -17,6 +17,8 @@ from apps.cases.services.tokens import (
 )
 from apps.communications.models import RequestCommunication
 from apps.communications.services.notifications import NotificationService
+from apps.evidence.models import NoticeDelivery
+from apps.legal_content.services.documents import NoticeDeliveryService
 from apps.organization.models import SystemSetting
 from apps.evidence.services.temporary_uploads import TemporaryUploadService
 from apps.subjects.services.normalization import normalize_email
@@ -75,6 +77,9 @@ class PublicIntakeService:
         representative_email: str | None = None,
         temporary_uploads=(),
         upload_session_key: str | None = None,
+        privacy_policy_document=None,
+        privacy_acknowledgement_ip: str | None = None,
+        privacy_acknowledgement_user_agent: str | None = None,
         correlation_id=None,
     ) -> PublicIntakeResult:
         if correlation_id is None:
@@ -115,6 +120,18 @@ class PublicIntakeService:
                 ),
                 representative_email=representative_email,
             )
+
+            if privacy_policy_document is not None:
+                NoticeDeliveryService.record(
+                    request=case,
+                    legal_document=privacy_policy_document,
+                    rendered_content=privacy_policy_document.content_html,
+                    delivery_channel=NoticeDelivery.DeliveryChannel.WEB,
+                    acknowledged=True,
+                    ip_address=privacy_acknowledgement_ip,
+                    user_agent=privacy_acknowledgement_user_agent,
+                    correlation_id=correlation_id,
+                )
 
             verification = RequestAccessTokenService.issue(
                 request=case,

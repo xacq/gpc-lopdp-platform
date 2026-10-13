@@ -1,5 +1,6 @@
 import base64
 from datetime import timedelta
+import hashlib
 import re
 import uuid
 from unittest.mock import patch
@@ -20,7 +21,8 @@ from apps.communications.services.notifications import (
     NotificationService,
     NotificationServiceError,
 )
-from apps.legal_content.models import RightCatalog
+from apps.evidence.models import NoticeDelivery
+from apps.legal_content.models import LegalDocument, RightCatalog
 from apps.organization.models import SystemSetting
 
 
@@ -116,6 +118,34 @@ class PublicIntakeTests(TestCase):
             tracking.encode(),
             bytes(result.communication.body_encrypted),
         )
+
+    def test_service_records_privacy_policy_acknowledgement(self):
+        content = "<p>Contenido legal vigente</p>"
+        content_sha256 = hashlib.sha256(content.encode("utf-8")).hexdigest()
+        privacy = LegalDocument.objects.create(
+            document_type=LegalDocument.DocumentType.PRIVACY_POLICY,
+            title="Política de Privacidad",
+            slug="privacidad",
+            version="1.0",
+            content_html=content,
+            content_sha256=content_sha256,
+            effective_from=timezone.now(),
+            is_published=True,
+        )
+
+        result = self.submit(
+            privacy_policy_document=privacy,
+            privacy_acknowledgement_ip="127.0.0.1",
+            privacy_acknowledgement_user_agent="Test browser",
+        )
+
+        delivery = NoticeDelivery.objects.get(request=result.request)
+        self.assertEqual(delivery.legal_document, privacy)
+        self.assertTrue(delivery.acknowledged)
+        self.assertIsNotNone(delivery.acknowledged_at)
+        self.assertEqual(delivery.ip_address, "127.0.0.1")
+        self.assertEqual(delivery.user_agent, "Test browser")
+        self.assertEqual(delivery.rendered_content_sha256, content_sha256)
 
     def test_email_verification_is_single_use_and_keeps_identity_pending(self):
         result = self.submit()

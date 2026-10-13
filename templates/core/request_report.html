@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load section_help %}
+{% block title %}Reporte detallado de solicitudes{% endblock %}
+{% block content %}
+<header class="page-heading admin-page-heading">
+    <div>
+        <p class="page-kicker">Trazabilidad de solicitudes</p>
+        <h1>Reporte detallado de solicitudes</h1>
+        <p>Lista expedientes, datos del titular y evidencia de aceptación de la política de privacidad.</p>
+    </div>
+    <div class="section-heading-actions">
+        {% section_help "reports" %}
+        <a class="btn btn-light" href="{% url 'core:reports' %}">Ver métricas</a>
+        {% if detail_report %}<a class="btn btn-outline-primary" href="{% url 'core:request_report_export_csv' %}?{{ request.GET.urlencode }}">Exportar CSV</a>{% endif %}
+    </div>
+</header>
+
+<form class="card app-card filter-panel" method="get">
+    {% if filter_form.non_field_errors %}<div class="alert alert-danger">{{ filter_form.non_field_errors }}</div>{% endif %}
+    <div class="filter-grid">
+        <label>Desde<input class="form-control" type="date" name="date_from" value="{{ request.GET.date_from }}"></label>
+        <label>Hasta<input class="form-control" type="date" name="date_to" value="{{ request.GET.date_to }}"></label>
+        <label>Derecho<select class="form-select" name="right_code"><option value="">Todos</option>{% for right in rights %}<option value="{{ right.code }}"{% if request.GET.right_code == right.code %} selected{% endif %}>{{ right.name }}</option>{% endfor %}</select></label>
+        <label>Estado<select class="form-select" name="status">{% for value, label in filter_form.fields.status.choices %}<option value="{{ value }}"{% if request.GET.status == value %} selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+        <label>Responsable<select class="form-select" name="assigned_to"><option value="">Todos</option>{% for assignee in assignees %}<option value="{{ assignee.id }}"{% if request.GET.assigned_to == assignee.id|stringformat:'s' %} selected{% endif %}>{{ assignee.full_name|default:assignee.email }}</option>{% endfor %}</select></label>
+        <div class="filter-actions"><a class="btn btn-light" href="{% url 'core:request_report' %}">Limpiar</a><button class="btn btn-primary" type="submit">Aplicar filtros</button></div>
+    </div>
+</form>
+
+{% if detail_report %}
+<section class="card app-card admin-data-card">
+    <header class="admin-data-card__header">
+        <div>
+            <p class="page-kicker">Solicitudes</p>
+            <h2>{{ detail_report.total }} expediente{{ detail_report.total|pluralize }}</h2>
+        </div>
+    </header>
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Referencia</th>
+                    <th>Recepción</th>
+                    <th>Derecho / Estado</th>
+                    <th>Titular</th>
+                    <th>Contacto</th>
+                    <th>Política de privacidad</th>
+                    <th>Actividad</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in page_obj.object_list %}
+                <tr>
+                    <td><a href="{% url 'cases:request_detail' row.id %}">{{ row.reference_number }}</a><br><small>{{ row.source_channel }}</small></td>
+                    <td>{{ row.received_at|date:"d/m/Y H:i" }}</td>
+                    <td><strong>{{ row.right }}</strong><br><span class="status-badge">{{ row.status }}</span><br><small>Identidad: {{ row.identity_status }}</small></td>
+                    <td><strong>{{ row.full_name }}</strong><br><small>{{ row.subject_type }} · {{ row.document_type }} {{ row.document_number }}</small>{% if row.representative_name != "—" %}<br><small>Rep.: {{ row.representative_name }}</small>{% endif %}</td>
+                    <td>{{ row.email }}<br><small>{{ row.phone }}</small></td>
+                    <td>
+                        <strong>{{ row.privacy_accepted }}</strong>
+                        {% if row.privacy_accepted_at %}<br><small>{{ row.privacy_accepted_at|date:"d/m/Y H:i" }}</small>{% endif %}
+                        <br><small>{{ row.privacy_document_title }} v{{ row.privacy_document_version }}</small>
+                        <br><small>Canal: {{ row.privacy_channel }}</small>
+                    </td>
+                    <td><small>Asignado: {{ row.assigned_to }}</small><br><small>Adjuntos: {{ row.attachment_count }} · Comunicaciones: {{ row.communication_count }}</small>{% if row.current_due_at %}<br><small>Vence: {{ row.current_due_at|date:"d/m/Y H:i" }}</small>{% endif %}</td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center text-body-secondary py-5">No hay solicitudes para los filtros seleccionados.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if page_obj.paginator.num_pages > 1 %}
+    <nav class="table-pagination">
+        <span>Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}</span>
+        <div>
+            {% if page_obj.has_previous %}<a class="btn btn-sm btn-light" href="{% querystring page=page_obj.previous_page_number %}">Anterior</a>{% endif %}
+            {% if page_obj.has_next %}<a class="btn btn-sm btn-light" href="{% querystring page=page_obj.next_page_number %}">Siguiente</a>{% endif %}
+        </div>
+    </nav>
+    {% endif %}
+</section>
+{% endif %}
+{% endblock %}
